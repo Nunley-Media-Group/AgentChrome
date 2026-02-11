@@ -1,0 +1,17 @@
+[workspace]
+resolver = "3"
+
+[package]
+name = "chrome-cli"
+version = "0.1.0"
+edition = "2024"
+authors = ["Nunley Media Group"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/Nunley-Media-Group/chrome-cli"
+description = "A CLI tool for browser automation via the Chrome DevTools Protocol"
+keywords = ["chrome", "cdp", "browser", "automation", "cli"]
+categories = ["command-line-utilities", "development-tools"]
+
+[lints.clippy]
+all = "deny"
+pedantic = "warn"
