@@ -92,12 +92,12 @@ fn chrome_candidates(channel: Channel) -> Vec<PathBuf> {
 
     #[cfg(target_os = "linux")]
     {
-        linux_candidates(channel)
+        linux_candidates(&channel)
     }
 
     #[cfg(target_os = "windows")]
     {
-        windows_candidates(channel)
+        windows_candidates(&channel)
     }
 
     #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
