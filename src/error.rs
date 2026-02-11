@@ -51,6 +51,57 @@ impl AppError {
     }
 
     #[must_use]
+    pub fn stale_session() -> Self {
+        Self {
+            message: "Session is stale: Chrome is not reachable at the stored address. \
+                      Run 'chrome-cli connect' to establish a new connection."
+                .into(),
+            code: ExitCode::ConnectionError,
+        }
+    }
+
+    #[must_use]
+    pub fn no_session() -> Self {
+        Self {
+            message: "No active session. Run 'chrome-cli connect' or \
+                      'chrome-cli connect --launch' to establish a connection."
+                .into(),
+            code: ExitCode::ConnectionError,
+        }
+    }
+
+    #[must_use]
+    #[allow(dead_code)]
+    pub fn target_not_found(tab: &str) -> Self {
+        Self {
+            message: format!(
+                "Tab '{tab}' not found. Run 'chrome-cli tabs list' to see available tabs."
+            ),
+            code: ExitCode::TargetError,
+        }
+    }
+
+    #[must_use]
+    #[allow(dead_code)]
+    pub fn no_page_targets() -> Self {
+        Self {
+            message: "No page targets found in Chrome. Open a tab first.".into(),
+            code: ExitCode::TargetError,
+        }
+    }
+
+    #[must_use]
+    #[allow(dead_code)]
+    pub fn no_chrome_found() -> Self {
+        Self {
+            message: "No Chrome instance found. Run 'chrome-cli connect' or \
+                      'chrome-cli connect --launch' to establish a connection."
+                .into(),
+            code: ExitCode::ConnectionError,
+        }
+    }
+
+    #[must_use]
     pub fn to_json(&self) -> String {
         let output = ErrorOutput {
             error: &self.message,
@@ -102,5 +153,42 @@ mod tests {
             err.to_string(),
             "general error: connect: not yet implemented"
         );
+    }
+
+    #[test]
+    fn stale_session_error() {
+        let err = AppError::stale_session();
+        assert!(err.message.contains("stale"));
+        assert!(err.message.contains("chrome-cli connect"));
+        assert!(matches!(err.code, ExitCode::ConnectionError));
+    }
+
+    #[test]
+    fn no_session_error() {
+        let err = AppError::no_session();
+        assert!(err.message.contains("No active session"));
+        assert!(matches!(err.code, ExitCode::ConnectionError));
+    }
+
+    #[test]
+    fn target_not_found_error() {
+        let err = AppError::target_not_found("ABCDEF");
+        assert!(err.message.contains("ABCDEF"));
+        assert!(err.message.contains("tabs list"));
+        assert!(matches!(err.code, ExitCode::TargetError));
+    }
+
+    #[test]
+    fn no_page_targets_error() {
+        let err = AppError::no_page_targets();
+        assert!(err.message.contains("No page targets"));
+        assert!(matches!(err.code, ExitCode::TargetError));
+    }
+
+    #[test]
+    fn no_chrome_found_error() {
+        let err = AppError::no_chrome_found();
+        assert!(err.message.contains("No Chrome instance found"));
+        assert!(matches!(err.code, ExitCode::ConnectionError));
     }
 }

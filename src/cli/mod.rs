@@ -173,11 +173,20 @@ pub enum ChromeChannel {
 }
 
 /// Arguments for the `connect` subcommand.
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Args)]
 pub struct ConnectArgs {
     /// Launch a new Chrome instance instead of connecting to an existing one
     #[arg(long)]
     pub launch: bool,
+
+    /// Show current connection status
+    #[arg(long, conflicts_with_all = ["launch", "disconnect"])]
+    pub status: bool,
+
+    /// Disconnect and remove session file
+    #[arg(long, conflicts_with_all = ["launch", "status"])]
+    pub disconnect: bool,
 
     /// Launch Chrome in headless mode
     #[arg(long, requires = "launch")]
