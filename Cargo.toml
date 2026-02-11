@@ -12,6 +12,17 @@ description = "A CLI tool for browser automation via the Chrome DevTools Protoco
 keywords = ["chrome", "cdp", "browser", "automation", "cli"]
 categories = ["command-line-utilities", "development-tools"]
 
+[dev-dependencies]
+cucumber = "0.21"
+serde = { version = "1", features = ["derive"] }
+serde_yaml = "0.9"
+futures = "0.3"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+
+[[test]]
+name = "bdd"
+harness = false
+
 [lints.clippy]
 all = "deny"
 pedantic = "warn"
