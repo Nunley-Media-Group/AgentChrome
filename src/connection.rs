@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use crate::cdp::{CdpError, CdpSession};
+use crate::cdp::{CdpError, CdpEvent, CdpSession};
 use crate::chrome::{TargetInfo, discover_chrome, query_targets, query_version};
 use crate::error::AppError;
 use crate::session;
@@ -208,6 +208,18 @@ impl ManagedSession {
     #[must_use]
     pub fn session_id(&self) -> &str {
         self.session.session_id()
+    }
+
+    /// Subscribe to CDP events matching a method name within this session.
+    ///
+    /// # Errors
+    ///
+    /// Returns `CdpError` if the transport task has exited.
+    pub async fn subscribe(
+        &self,
+        method: &str,
+    ) -> Result<tokio::sync::mpsc::Receiver<CdpEvent>, CdpError> {
+        self.session.subscribe(method).await
     }
 
     /// Returns the set of currently enabled domains.

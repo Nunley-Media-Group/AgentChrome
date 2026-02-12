@@ -37,7 +37,7 @@ Feature: CLI skeleton with clap derive macros and top-level help
   Scenario: Default connection values are applied
     Given chrome-cli is built
     When I run "chrome-cli navigate"
-    Then stderr should contain "not yet implemented"
+    Then stderr should contain "URL is required"
     And the exit code should be 1
 
   # --- Output Format Conflicts ---
@@ -59,7 +59,6 @@ Feature: CLI skeleton with clap derive macros and top-level help
 
     Examples:
       | subcommand |
-      | navigate   |
       | page       |
       | dom        |
       | js         |
@@ -82,7 +81,7 @@ Feature: CLI skeleton with clap derive macros and top-level help
 
   Scenario: Error output is structured JSON on stderr
     Given chrome-cli is built
-    When I run "chrome-cli navigate"
+    When I run "chrome-cli page"
     Then the exit code should be 1
     And stderr should be valid JSON
     And stderr JSON should have key "error"
@@ -94,19 +93,19 @@ Feature: CLI skeleton with clap derive macros and top-level help
     Given chrome-cli is built
     When I run "chrome-cli --port 9333 --host 192.168.1.100 navigate"
     Then the exit code should be 1
-    And stderr should contain "not yet implemented"
+    And stderr should contain "URL is required"
 
   Scenario: WebSocket URL option is accepted
     Given chrome-cli is built
     When I run "chrome-cli --ws-url ws://localhost:9222/devtools/browser/abc navigate"
     Then the exit code should be 1
-    And stderr should contain "not yet implemented"
+    And stderr should contain "URL is required"
 
   Scenario: Timeout option is accepted
     Given chrome-cli is built
     When I run "chrome-cli --timeout 5000 navigate"
     Then the exit code should be 1
-    And stderr should contain "not yet implemented"
+    And stderr should contain "URL is required"
 
   Scenario: Tab ID option is accepted
     Given chrome-cli is built

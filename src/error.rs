@@ -96,6 +96,22 @@ impl AppError {
     }
 
     #[must_use]
+    pub fn navigation_failed(error_text: &str) -> Self {
+        Self {
+            message: format!("Navigation failed: {error_text}"),
+            code: ExitCode::GeneralError,
+        }
+    }
+
+    #[must_use]
+    pub fn navigation_timeout(timeout_ms: u64, strategy: &str) -> Self {
+        Self {
+            message: format!("Navigation timed out after {timeout_ms}ms waiting for {strategy}"),
+            code: ExitCode::TimeoutError,
+        }
+    }
+
+    #[must_use]
     pub fn no_chrome_found() -> Self {
         Self {
             message: "No Chrome instance found. Run 'chrome-cli connect' or \
@@ -195,6 +211,23 @@ mod tests {
         assert!(err.message.contains("Cannot close the last tab"));
         assert!(err.message.contains("at least one open tab"));
         assert!(matches!(err.code, ExitCode::TargetError));
+    }
+
+    #[test]
+    fn navigation_failed_error() {
+        let err = AppError::navigation_failed("net::ERR_NAME_NOT_RESOLVED");
+        assert!(err.message.contains("Navigation failed"));
+        assert!(err.message.contains("ERR_NAME_NOT_RESOLVED"));
+        assert!(matches!(err.code, ExitCode::GeneralError));
+    }
+
+    #[test]
+    fn navigation_timeout_error() {
+        let err = AppError::navigation_timeout(30000, "load");
+        assert!(err.message.contains("timed out"));
+        assert!(err.message.contains("30000ms"));
+        assert!(err.message.contains("load"));
+        assert!(matches!(err.code, ExitCode::TimeoutError));
     }
 
     #[test]
