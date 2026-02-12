@@ -308,6 +308,9 @@ pub enum PageCommand {
 
     /// Capture the accessibility tree of the page
     Snapshot(PageSnapshotArgs),
+
+    /// Find elements by text, CSS selector, or accessibility role
+    Find(PageFindArgs),
 }
 
 /// Arguments for `page text`.
@@ -328,6 +331,29 @@ pub struct PageSnapshotArgs {
     /// Save snapshot to file instead of stdout
     #[arg(long)]
     pub file: Option<PathBuf>,
+}
+
+/// Arguments for `page find`.
+#[derive(Args)]
+pub struct PageFindArgs {
+    /// Text to search for (searches accessible names, text content, labels)
+    pub query: Option<String>,
+
+    /// Find by CSS selector instead of text
+    #[arg(long)]
+    pub selector: Option<String>,
+
+    /// Filter by accessibility role (button, link, textbox, etc.)
+    #[arg(long)]
+    pub role: Option<String>,
+
+    /// Require exact text match (default: case-insensitive substring)
+    #[arg(long)]
+    pub exact: bool,
+
+    /// Maximum results to return
+    #[arg(long, default_value_t = 10)]
+    pub limit: usize,
 }
 
 /// Wait strategy for navigation commands.
