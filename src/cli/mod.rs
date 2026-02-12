@@ -101,7 +101,7 @@ pub enum Command {
         long_about = "Navigate to URLs, reload pages, go back/forward in history, and wait for \
             navigation events. Supports waiting for load, DOMContentLoaded, or network idle."
     )]
-    Navigate,
+    Navigate(NavigateArgs),
 
     /// Page inspection (screenshot, text, accessibility tree, find)
     #[command(
@@ -240,6 +240,71 @@ pub struct TabsActivateArgs {
     /// Suppress output after activation
     #[arg(long)]
     pub quiet: bool,
+}
+
+/// Arguments for the `navigate` subcommand group.
+#[derive(Args)]
+#[command(args_conflicts_with_subcommands = true)]
+pub struct NavigateArgs {
+    #[command(subcommand)]
+    pub command: Option<NavigateCommand>,
+
+    #[command(flatten)]
+    pub url_args: NavigateUrlArgs,
+}
+
+/// Navigate subcommands.
+#[derive(Subcommand)]
+pub enum NavigateCommand {
+    /// Go back in browser history
+    Back,
+
+    /// Go forward in browser history
+    Forward,
+
+    /// Reload the current page
+    Reload(NavigateReloadArgs),
+}
+
+/// Arguments for direct URL navigation (`navigate <URL>`).
+#[derive(Args)]
+pub struct NavigateUrlArgs {
+    /// URL to navigate to
+    pub url: Option<String>,
+
+    /// Wait strategy after navigation
+    #[arg(long, value_enum, default_value_t = WaitUntil::Load)]
+    pub wait_until: WaitUntil,
+
+    /// Navigation timeout in milliseconds
+    #[arg(long)]
+    pub timeout: Option<u64>,
+
+    /// Bypass the browser cache
+    #[arg(long)]
+    pub ignore_cache: bool,
+}
+
+/// Arguments for `navigate reload`.
+#[derive(Args)]
+pub struct NavigateReloadArgs {
+    /// Bypass the browser cache on reload
+    #[arg(long)]
+    pub ignore_cache: bool,
+}
+
+/// Wait strategy for navigation commands.
+#[derive(Debug, Clone, Copy, ValueEnum, Default, PartialEq, Eq)]
+pub enum WaitUntil {
+    /// Wait for the load event
+    #[default]
+    Load,
+    /// Wait for DOMContentLoaded event
+    Domcontentloaded,
+    /// Wait until network is idle (no requests for 500ms)
+    Networkidle,
+    /// Return immediately after initiating navigation
+    None,
 }
 
 /// Arguments for the `connect` subcommand.
