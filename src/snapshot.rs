@@ -926,13 +926,7 @@ mod tests {
     fn search_tree_role_filter() {
         let nodes = search_test_nodes();
         let build = build_tree(&nodes, false);
-        let hits = search_tree(
-            &build.root,
-            "Log",
-            Some("button"),
-            false,
-            10,
-        );
+        let hits = search_tree(&build.root, "Log", Some("button"), false, 10);
         assert_eq!(hits.len(), 1);
         assert_eq!(hits[0].name, "Login");
         assert_eq!(hits[0].role, "button");
@@ -976,13 +970,7 @@ mod tests {
     fn search_tree_includes_backend_dom_node_id() {
         let nodes = search_test_nodes();
         let build = build_tree(&nodes, false);
-        let hits = search_tree(
-            &build.root,
-            "Submit",
-            Some("button"),
-            false,
-            10,
-        );
+        let hits = search_tree(&build.root, "Submit", Some("button"), false, 10);
         assert_eq!(hits.len(), 1);
         assert_eq!(hits[0].uid.as_deref(), Some("s1"));
         assert_eq!(hits[0].backend_dom_node_id, Some(10));
