@@ -232,6 +232,95 @@ fn build_subtree(
 }
 
 // =============================================================================
+// Tree search
+// =============================================================================
+
+/// A single hit from searching the snapshot tree.
+#[derive(Debug, Clone)]
+pub struct SearchHit {
+    pub uid: Option<String>,
+    pub role: String,
+    pub name: String,
+    pub backend_dom_node_id: Option<i64>,
+}
+
+/// Search the snapshot tree for nodes matching the given criteria.
+///
+/// Walks the tree depth-first (document order) and returns up to `limit` matches.
+///
+/// - `query`: text to match against node names (required for text search)
+/// - `role_filter`: only include nodes with this role
+/// - `exact`: if true, match name exactly (case-sensitive); otherwise case-insensitive substring
+pub fn search_tree(
+    root: &SnapshotNode,
+    query: &str,
+    role_filter: Option<&str>,
+    exact: bool,
+    limit: usize,
+    uid_map: &HashMap<String, i64>,
+) -> Vec<SearchHit> {
+    let mut ctx = SearchContext {
+        query,
+        query_lower: query.to_lowercase(),
+        role_filter,
+        exact,
+        limit,
+        uid_map,
+        results: Vec::new(),
+    };
+    search_node(root, &mut ctx);
+    ctx.results
+}
+
+struct SearchContext<'a> {
+    query: &'a str,
+    query_lower: String,
+    role_filter: Option<&'a str>,
+    exact: bool,
+    limit: usize,
+    uid_map: &'a HashMap<String, i64>,
+    results: Vec<SearchHit>,
+}
+
+fn search_node(node: &SnapshotNode, ctx: &mut SearchContext<'_>) {
+    if ctx.results.len() >= ctx.limit {
+        return;
+    }
+
+    // Check role filter
+    let role_matches = ctx.role_filter.is_none_or(|r| node.role == r);
+
+    // Check text match
+    let text_matches = if ctx.query.is_empty() {
+        true
+    } else if ctx.exact {
+        node.name == ctx.query
+    } else {
+        node.name.to_lowercase().contains(&ctx.query_lower)
+    };
+
+    if role_matches && text_matches {
+        let backend_id = node
+            .uid
+            .as_ref()
+            .and_then(|uid| ctx.uid_map.get(uid).copied());
+        ctx.results.push(SearchHit {
+            uid: node.uid.clone(),
+            role: node.role.clone(),
+            name: node.name.clone(),
+            backend_dom_node_id: backend_id,
+        });
+    }
+
+    for child in &node.children {
+        if ctx.results.len() >= ctx.limit {
+            return;
+        }
+        search_node(child, ctx);
+    }
+}
+
+// =============================================================================
 // Text formatting
 // =============================================================================
 
@@ -737,5 +826,174 @@ mod tests {
             SnapshotStateError::InvalidFormat("bad".into()).to_string(),
             "invalid snapshot state file: bad"
         );
+    }
+
+    // =========================================================================
+    // search_tree tests
+    // =========================================================================
+
+    fn search_test_nodes() -> Vec<serde_json::Value> {
+        vec![
+            json!({
+                "nodeId": "1",
+                "ignored": false,
+                "role": {"type": "role", "value": "document"},
+                "name": {"type": "computedString", "value": "Test Page"},
+                "properties": [],
+                "childIds": ["2", "3", "4", "5"],
+                "backendDOMNodeId": 1
+            }),
+            json!({
+                "nodeId": "2",
+                "ignored": false,
+                "role": {"type": "role", "value": "button"},
+                "name": {"type": "computedString", "value": "Submit"},
+                "properties": [],
+                "childIds": [],
+                "backendDOMNodeId": 10
+            }),
+            json!({
+                "nodeId": "3",
+                "ignored": false,
+                "role": {"type": "role", "value": "button"},
+                "name": {"type": "computedString", "value": "Login"},
+                "properties": [],
+                "childIds": [],
+                "backendDOMNodeId": 20
+            }),
+            json!({
+                "nodeId": "4",
+                "ignored": false,
+                "role": {"type": "role", "value": "link"},
+                "name": {"type": "computedString", "value": "Log out"},
+                "properties": [],
+                "childIds": [],
+                "backendDOMNodeId": 30
+            }),
+            json!({
+                "nodeId": "5",
+                "ignored": false,
+                "role": {"type": "role", "value": "heading"},
+                "name": {"type": "computedString", "value": "Submit Your Application"},
+                "properties": [],
+                "childIds": [],
+                "backendDOMNodeId": 40
+            }),
+        ]
+    }
+
+    #[test]
+    fn search_tree_substring_match() {
+        let nodes = search_test_nodes();
+        let build = build_tree(&nodes, false);
+        let hits = search_tree(&build.root, "Submit", None, false, 10, &build.uid_map);
+        assert_eq!(hits.len(), 2);
+        assert_eq!(hits[0].name, "Submit");
+        assert_eq!(hits[0].role, "button");
+        assert_eq!(hits[1].name, "Submit Your Application");
+        assert_eq!(hits[1].role, "heading");
+    }
+
+    #[test]
+    fn search_tree_case_insensitive() {
+        let nodes = search_test_nodes();
+        let build = build_tree(&nodes, false);
+        let hits = search_tree(&build.root, "submit", None, false, 10, &build.uid_map);
+        assert_eq!(hits.len(), 2);
+    }
+
+    #[test]
+    fn search_tree_exact_match() {
+        let nodes = search_test_nodes();
+        let build = build_tree(&nodes, false);
+        let hits = search_tree(&build.root, "Submit", None, true, 10, &build.uid_map);
+        assert_eq!(hits.len(), 1);
+        assert_eq!(hits[0].name, "Submit");
+    }
+
+    #[test]
+    fn search_tree_exact_match_case_sensitive() {
+        let nodes = search_test_nodes();
+        let build = build_tree(&nodes, false);
+        let hits = search_tree(&build.root, "submit", None, true, 10, &build.uid_map);
+        assert_eq!(hits.len(), 0);
+    }
+
+    #[test]
+    fn search_tree_role_filter() {
+        let nodes = search_test_nodes();
+        let build = build_tree(&nodes, false);
+        let hits = search_tree(
+            &build.root,
+            "Log",
+            Some("button"),
+            false,
+            10,
+            &build.uid_map,
+        );
+        assert_eq!(hits.len(), 1);
+        assert_eq!(hits[0].name, "Login");
+        assert_eq!(hits[0].role, "button");
+    }
+
+    #[test]
+    fn search_tree_combined_role_and_text() {
+        let nodes = search_test_nodes();
+        let build = build_tree(&nodes, false);
+        let hits = search_tree(&build.root, "Log", Some("link"), false, 10, &build.uid_map);
+        assert_eq!(hits.len(), 1);
+        assert_eq!(hits[0].name, "Log out");
+        assert_eq!(hits[0].role, "link");
+    }
+
+    #[test]
+    fn search_tree_limit() {
+        let nodes = search_test_nodes();
+        let build = build_tree(&nodes, false);
+        // All nodes match empty query
+        let hits = search_tree(&build.root, "", None, false, 2, &build.uid_map);
+        assert_eq!(hits.len(), 2);
+    }
+
+    #[test]
+    fn search_tree_no_matches() {
+        let nodes = search_test_nodes();
+        let build = build_tree(&nodes, false);
+        let hits = search_tree(&build.root, "nonexistent", None, false, 10, &build.uid_map);
+        assert!(hits.is_empty());
+    }
+
+    #[test]
+    fn search_tree_empty_tree() {
+        let build = build_tree(&[], false);
+        let hits = search_tree(&build.root, "anything", None, false, 10, &build.uid_map);
+        assert!(hits.is_empty());
+    }
+
+    #[test]
+    fn search_tree_includes_backend_dom_node_id() {
+        let nodes = search_test_nodes();
+        let build = build_tree(&nodes, false);
+        let hits = search_tree(
+            &build.root,
+            "Submit",
+            Some("button"),
+            false,
+            10,
+            &build.uid_map,
+        );
+        assert_eq!(hits.len(), 1);
+        assert_eq!(hits[0].uid.as_deref(), Some("s1"));
+        assert_eq!(hits[0].backend_dom_node_id, Some(10));
+    }
+
+    #[test]
+    fn search_tree_document_order() {
+        let nodes = search_test_nodes();
+        let build = build_tree(&nodes, false);
+        // Empty query matches all nodes, verifying depth-first order
+        let hits = search_tree(&build.root, "", None, false, 100, &build.uid_map);
+        let roles: Vec<&str> = hits.iter().map(|h| h.role.as_str()).collect();
+        assert_eq!(roles, ["document", "button", "button", "link", "heading"]);
     }
 }
