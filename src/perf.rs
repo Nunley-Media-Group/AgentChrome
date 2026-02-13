@@ -1193,6 +1193,63 @@ mod tests {
     }
 
     // =========================================================================
+    // LCP breakdown and subresource URL helper
+    // =========================================================================
+
+    #[test]
+    fn analyze_lcp_breakdown_computes_split() {
+        let events = vec![
+            make_trace_event(
+                "navigationStart",
+                "blink.user_timing",
+                1_000_000.0,
+                0.0,
+                serde_json::json!({}),
+            ),
+            make_trace_event(
+                "ResourceSendRequest",
+                "devtools.timeline",
+                1_000_000.0,
+                0.0,
+                serde_json::json!({"data": {"requestId": "1", "url": "https://example.com/"}}),
+            ),
+            make_trace_event(
+                "ResourceReceiveResponse",
+                "devtools.timeline",
+                1_180_000.0,
+                0.0,
+                serde_json::json!({"data": {"requestId": "1"}}),
+            ),
+            make_trace_event(
+                "largestContentfulPaint::Candidate",
+                "loading",
+                2_200_000.0,
+                0.0,
+                serde_json::json!({"data": {"size": 5000}}),
+            ),
+        ];
+        let result = analyze_lcp_breakdown(&events);
+        assert!((result["ttfb_ms"].as_f64().unwrap() - 180.0).abs() < 0.1);
+        assert!((result["total_ms"].as_f64().unwrap() - 1200.0).abs() < 0.1);
+        // Remaining (1200 - 180 = 1020) split approximately 30/40/30
+        let load_delay = result["load_delay_ms"].as_f64().unwrap();
+        let load_duration = result["load_duration_ms"].as_f64().unwrap();
+        let render_delay = result["render_delay_ms"].as_f64().unwrap();
+        assert!((load_delay + load_duration + render_delay - 1020.0).abs() < 0.1);
+    }
+
+    #[test]
+    fn is_subresource_url_identifies_resources() {
+        assert!(is_subresource_url("https://example.com/app.js"));
+        assert!(is_subresource_url("https://example.com/style.css"));
+        assert!(is_subresource_url("https://example.com/image.png"));
+        assert!(is_subresource_url("https://example.com/font.woff2"));
+        assert!(!is_subresource_url("https://example.com/"));
+        assert!(!is_subresource_url("https://example.com/page"));
+        assert!(!is_subresource_url("https://example.com/api/data"));
+    }
+
+    // =========================================================================
     // Plain text formatters
     // =========================================================================
 
