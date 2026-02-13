@@ -311,6 +311,53 @@ pub enum PageCommand {
 
     /// Find elements by text, CSS selector, or accessibility role
     Find(PageFindArgs),
+
+    /// Capture a screenshot of the page, an element, or a region
+    Screenshot(PageScreenshotArgs),
+}
+
+/// Image format for screenshots.
+#[derive(Debug, Clone, Copy, ValueEnum, Default)]
+pub enum ScreenshotFormat {
+    /// PNG (lossless, default)
+    #[default]
+    Png,
+    /// JPEG (lossy)
+    Jpeg,
+    /// WebP (lossy)
+    Webp,
+}
+
+/// Arguments for `page screenshot`.
+#[derive(Args)]
+pub struct PageScreenshotArgs {
+    /// Capture the entire scrollable page (not just the viewport)
+    #[arg(long)]
+    pub full_page: bool,
+
+    /// Screenshot a specific element by CSS selector
+    #[arg(long)]
+    pub selector: Option<String>,
+
+    /// Screenshot a specific element by accessibility UID (from snapshot)
+    #[arg(long)]
+    pub uid: Option<String>,
+
+    /// Image format: png (default), jpeg, webp
+    #[arg(long, value_enum, default_value_t = ScreenshotFormat::Png)]
+    pub format: ScreenshotFormat,
+
+    /// JPEG/WebP quality (0-100, ignored for PNG)
+    #[arg(long, value_parser = clap::value_parser!(u8).range(0..=100))]
+    pub quality: Option<u8>,
+
+    /// Save screenshot to a file path
+    #[arg(long)]
+    pub file: Option<PathBuf>,
+
+    /// Capture a specific viewport region (X,Y,WIDTH,HEIGHT)
+    #[arg(long)]
+    pub clip: Option<String>,
 }
 
 /// Arguments for `page text`.

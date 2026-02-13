@@ -6,7 +6,10 @@ use chrome_cli::cdp::{CdpClient, CdpConfig};
 use chrome_cli::connection::{ManagedSession, resolve_connection, resolve_target};
 use chrome_cli::error::{AppError, ExitCode};
 
-use crate::cli::{GlobalOpts, PageArgs, PageCommand, PageFindArgs, PageSnapshotArgs, PageTextArgs};
+use crate::cli::{
+    GlobalOpts, PageArgs, PageCommand, PageFindArgs, PageScreenshotArgs, PageSnapshotArgs,
+    PageTextArgs, ScreenshotFormat,
+};
 
 // =============================================================================
 // Output types
@@ -37,6 +40,24 @@ struct BoundingBox {
     y: f64,
     width: f64,
     height: f64,
+}
+
+/// Output when screenshot is returned as base64 (no --file).
+#[derive(Serialize)]
+struct ScreenshotResult {
+    format: String,
+    data: String,
+    width: u32,
+    height: u32,
+}
+
+/// Output when screenshot is saved to a file (--file).
+#[derive(Serialize)]
+struct ScreenshotFileResult {
+    format: String,
+    file: String,
+    width: u32,
+    height: u32,
 }
 
 // =============================================================================
@@ -83,6 +104,7 @@ pub async fn execute_page(global: &GlobalOpts, args: &PageArgs) -> Result<(), Ap
         PageCommand::Text(text_args) => execute_text(global, text_args).await,
         PageCommand::Snapshot(snap_args) => execute_snapshot(global, snap_args).await,
         PageCommand::Find(find_args) => execute_find(global, find_args).await,
+        PageCommand::Screenshot(ss_args) => execute_screenshot(global, ss_args).await,
     }
 }
 

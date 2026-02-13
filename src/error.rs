@@ -144,6 +144,34 @@ impl AppError {
     }
 
     #[must_use]
+    pub fn screenshot_failed(description: &str) -> Self {
+        Self {
+            message: format!("Screenshot capture failed: {description}"),
+            code: ExitCode::GeneralError,
+        }
+    }
+
+    #[must_use]
+    pub fn uid_not_found(uid: &str) -> Self {
+        Self {
+            message: format!(
+                "UID '{uid}' not found. Run 'chrome-cli page snapshot' first."
+            ),
+            code: ExitCode::GeneralError,
+        }
+    }
+
+    #[must_use]
+    pub fn invalid_clip(input: &str) -> Self {
+        Self {
+            message: format!(
+                "Invalid clip format: expected X,Y,WIDTH,HEIGHT (e.g. 10,20,200,100): {input}"
+            ),
+            code: ExitCode::GeneralError,
+        }
+    }
+
+    #[must_use]
     pub fn no_chrome_found() -> Self {
         Self {
             message: "No Chrome instance found. Run 'chrome-cli connect' or \
@@ -300,5 +328,30 @@ mod tests {
         let err = AppError::no_chrome_found();
         assert!(err.message.contains("No Chrome instance found"));
         assert!(matches!(err.code, ExitCode::ConnectionError));
+    }
+
+    #[test]
+    fn screenshot_failed_error() {
+        let err = AppError::screenshot_failed("timeout waiting for capture");
+        assert!(err.message.contains("Screenshot capture failed"));
+        assert!(err.message.contains("timeout waiting for capture"));
+        assert!(matches!(err.code, ExitCode::GeneralError));
+    }
+
+    #[test]
+    fn uid_not_found_error() {
+        let err = AppError::uid_not_found("s99");
+        assert!(err.message.contains("s99"));
+        assert!(err.message.contains("page snapshot"));
+        assert!(matches!(err.code, ExitCode::GeneralError));
+    }
+
+    #[test]
+    fn invalid_clip_error() {
+        let err = AppError::invalid_clip("abc");
+        assert!(err.message.contains("Invalid clip format"));
+        assert!(err.message.contains("X,Y,WIDTH,HEIGHT"));
+        assert!(err.message.contains("abc"));
+        assert!(matches!(err.code, ExitCode::GeneralError));
     }
 }
