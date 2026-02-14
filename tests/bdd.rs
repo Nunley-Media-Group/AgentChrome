@@ -352,6 +352,15 @@ fn stdout_should_contain(world: &mut CliWorld, expected: String) {
     );
 }
 
+#[then(expr = "stdout should not contain {string}")]
+fn stdout_should_not_contain(world: &mut CliWorld, unexpected: String) {
+    assert!(
+        !world.stdout.contains(&unexpected),
+        "stdout should NOT contain '{unexpected}'\nstdout: {}",
+        world.stdout
+    );
+}
+
 #[then(expr = "stderr should contain {string}")]
 fn stderr_should_contain(world: &mut CliWorld, expected: String) {
     assert!(
@@ -2196,4 +2205,7 @@ async fn main() {
 
     // Configuration file support — all scenarios are CLI-testable (no Chrome needed).
     ConfigWorld::run("tests/features/config.feature").await;
+
+    // Help text — all scenarios are CLI-testable (no Chrome needed, just --help output).
+    CliWorld::run("tests/features/help-text.feature").await;
 }
