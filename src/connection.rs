@@ -239,9 +239,7 @@ impl ManagedSession {
     ///
     /// Returns `CdpError` if the Page domain cannot be enabled or
     /// the event subscription fails.
-    pub async fn spawn_auto_dismiss(
-        &mut self,
-    ) -> Result<tokio::task::JoinHandle<()>, CdpError> {
+    pub async fn spawn_auto_dismiss(&mut self) -> Result<tokio::task::JoinHandle<()>, CdpError> {
         self.ensure_domain("Page").await?;
 
         let mut dialog_rx = self
