@@ -1792,11 +1792,7 @@ fn config_project_local_file(
 }
 
 #[given(regex = r#"^an XDG config file "([^"]+)" with content:$"#)]
-fn config_xdg_file(
-    world: &mut ConfigWorld,
-    relative_path: String,
-    step: &cucumber::gherkin::Step,
-) {
+fn config_xdg_file(world: &mut ConfigWorld, relative_path: String, step: &cucumber::gherkin::Step) {
     let content = step.docstring.as_ref().expect("Missing docstring in step");
     // Place config in the XDG config dir under fake home
     let fake_home = world.temp_dir.join("fake-home");
@@ -1810,11 +1806,7 @@ fn config_xdg_file(
 }
 
 #[given(regex = r#"^a home directory config file "([^"]+)" with content:$"#)]
-fn config_home_dir_file(
-    world: &mut ConfigWorld,
-    filename: String,
-    step: &cucumber::gherkin::Step,
-) {
+fn config_home_dir_file(world: &mut ConfigWorld, filename: String, step: &cucumber::gherkin::Step) {
     let content = step.docstring.as_ref().expect("Missing docstring in step");
     let fake_home = world.temp_dir.join("fake-home");
     let _ = std::fs::create_dir_all(&fake_home);
