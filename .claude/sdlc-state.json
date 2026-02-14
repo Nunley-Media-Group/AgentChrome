@@ -1,8 +1,9 @@
 {
-  "currentStep": 6,
+  "currentStep": 9,
   "currentIssue": 17,
   "currentBranch": "17-scroll-interactions",
   "featureName": "17-scroll-interactions",
-  "lastTransitionAt": "2026-02-14T10:56:30Z",
+  "prNumber": 55,
+  "lastTransitionAt": "2026-02-14T10:57:56Z",
   "retries": {}
 }
