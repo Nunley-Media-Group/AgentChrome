@@ -8,7 +8,7 @@ use chrome_cli::error::AppError;
 
 use crate::cli::{
     ClickArgs, ClickAtArgs, DragArgs, GlobalOpts, HoverArgs, InteractArgs, InteractCommand,
-    KeyArgs, TypeArgs,
+    KeyArgs, ScrollArgs, ScrollDirection, TypeArgs,
 };
 use crate::snapshot;
 
@@ -83,6 +83,14 @@ struct KeyResult {
     snapshot: Option<serde_json::Value>,
 }
 
+#[derive(Serialize)]
+struct ScrollResult {
+    scrolled: Coords,
+    position: Coords,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    snapshot: Option<serde_json::Value>,
+}
+
 // =============================================================================
 // Output formatting
 // =============================================================================
@@ -144,6 +152,45 @@ fn print_type_plain(result: &TypeResult) {
 
 fn print_key_plain(result: &KeyResult) {
     println!("Pressed {}", result.pressed);
+}
+
+fn print_scroll_plain(result: &ScrollResult, mode: &str) {
+    match mode {
+        "to-top" => println!(
+            "Scrolled to top at ({}, {})",
+            result.position.x, result.position.y
+        ),
+        "to-bottom" => println!(
+            "Scrolled to bottom at ({}, {})",
+            result.position.x, result.position.y
+        ),
+        "to-element" => println!(
+            "Scrolled to element at ({}, {})",
+            result.position.x, result.position.y
+        ),
+        "container" => println!(
+            "Scrolled container by ({}, {})",
+            result.scrolled.x, result.scrolled.y
+        ),
+        _ => {
+            let dir = if result.scrolled.y > 0.0 {
+                "down"
+            } else if result.scrolled.y < 0.0 {
+                "up"
+            } else if result.scrolled.x > 0.0 {
+                "right"
+            } else if result.scrolled.x < 0.0 {
+                "left"
+            } else {
+                "by"
+            };
+            let amount = result.scrolled.x.abs().max(result.scrolled.y.abs());
+            println!(
+                "Scrolled {dir} {amount}px to ({}, {})",
+                result.position.x, result.position.y
+            );
+        }
+    }
 }
 
 // =============================================================================
@@ -964,8 +1011,330 @@ async fn take_snapshot(
 }
 
 // =============================================================================
+// Scroll helpers
+// =============================================================================
+
+/// Read the current page scroll position (scrollX, scrollY).
+async fn get_scroll_position(session: &mut ManagedSession) -> Result<(f64, f64), AppError> {
+    let response = session
+        .send_command(
+            "Runtime.evaluate",
+            Some(serde_json::json!({
+                "expression": "JSON.stringify({x: window.scrollX, y: window.scrollY})",
+                "returnByValue": true,
+            })),
+        )
+        .await
+        .map_err(|e| AppError::interaction_failed("get_scroll_position", &e.to_string()))?;
+
+    let json_str = response["result"]["value"]
+        .as_str()
+        .unwrap_or(r#"{"x":0,"y":0}"#);
+    let pos: serde_json::Value = serde_json::from_str(json_str)
+        .map_err(|e| AppError::interaction_failed("get_scroll_position", &e.to_string()))?;
+
+    Ok((
+        pos["x"].as_f64().unwrap_or(0.0),
+        pos["y"].as_f64().unwrap_or(0.0),
+    ))
+}
+
+/// Read the current viewport dimensions (innerWidth, innerHeight).
+async fn get_viewport_dimensions(session: &mut ManagedSession) -> Result<(f64, f64), AppError> {
+    let response = session
+        .send_command(
+            "Runtime.evaluate",
+            Some(serde_json::json!({
+                "expression": "JSON.stringify({w: window.innerWidth, h: window.innerHeight})",
+                "returnByValue": true,
+            })),
+        )
+        .await
+        .map_err(|e| AppError::interaction_failed("get_viewport_dimensions", &e.to_string()))?;
+
+    let json_str = response["result"]["value"]
+        .as_str()
+        .unwrap_or(r#"{"w":1024,"h":768}"#);
+    let dims: serde_json::Value = serde_json::from_str(json_str)
+        .map_err(|e| AppError::interaction_failed("get_viewport_dimensions", &e.to_string()))?;
+
+    Ok((
+        dims["w"].as_f64().unwrap_or(1024.0),
+        dims["h"].as_f64().unwrap_or(768.0),
+    ))
+}
+
+/// Scroll the page by a delta using `window.scrollBy()`.
+async fn dispatch_page_scroll(
+    session: &mut ManagedSession,
+    dx: f64,
+    dy: f64,
+    smooth: bool,
+) -> Result<(), AppError> {
+    let behavior = if smooth { "smooth" } else { "instant" };
+    let expr = format!(
+        "window.scrollBy({{left: {dx}, top: {dy}, behavior: '{behavior}'}})"
+    );
+    session
+        .send_command(
+            "Runtime.evaluate",
+            Some(serde_json::json!({ "expression": expr })),
+        )
+        .await
+        .map_err(|e| AppError::interaction_failed("page_scroll", &e.to_string()))?;
+    Ok(())
+}
+
+/// Scroll the page to an absolute position using `window.scrollTo()`.
+async fn dispatch_page_scroll_to(
+    session: &mut ManagedSession,
+    x: f64,
+    y: f64,
+    smooth: bool,
+) -> Result<(), AppError> {
+    let behavior = if smooth { "smooth" } else { "instant" };
+    let expr = format!(
+        "window.scrollTo({{left: {x}, top: {y}, behavior: '{behavior}'}})"
+    );
+    session
+        .send_command(
+            "Runtime.evaluate",
+            Some(serde_json::json!({ "expression": expr })),
+        )
+        .await
+        .map_err(|e| AppError::interaction_failed("page_scroll_to", &e.to_string()))?;
+    Ok(())
+}
+
+/// Resolve a backend node ID to a Runtime object ID via DOM.resolveNode.
+async fn resolve_to_object_id(
+    session: &mut ManagedSession,
+    backend_node_id: i64,
+) -> Result<String, AppError> {
+    let resolve_params = serde_json::json!({ "backendNodeId": backend_node_id });
+    let resolve_response = session
+        .send_command("DOM.resolveNode", Some(resolve_params))
+        .await
+        .map_err(|e| AppError::interaction_failed("resolve_node", &e.to_string()))?;
+
+    resolve_response["object"]["objectId"]
+        .as_str()
+        .map(String::from)
+        .ok_or_else(|| AppError::interaction_failed("resolve_node", "no objectId returned"))
+}
+
+/// Scroll a container element by a delta.
+async fn dispatch_container_scroll(
+    session: &mut ManagedSession,
+    backend_node_id: i64,
+    dx: f64,
+    dy: f64,
+    smooth: bool,
+) -> Result<(), AppError> {
+    let object_id = resolve_to_object_id(session, backend_node_id).await?;
+    let behavior = if smooth { "smooth" } else { "instant" };
+    let func = format!(
+        "function() {{ this.scrollBy({{left: {dx}, top: {dy}, behavior: '{behavior}'}}); }}"
+    );
+    let call_params = serde_json::json!({
+        "objectId": object_id,
+        "functionDeclaration": func,
+        "arguments": [],
+    });
+    session
+        .send_command("Runtime.callFunctionOn", Some(call_params))
+        .await
+        .map_err(|e| AppError::interaction_failed("container_scroll", &e.to_string()))?;
+    Ok(())
+}
+
+/// Read a container element's scroll position.
+async fn get_container_scroll_position(
+    session: &mut ManagedSession,
+    backend_node_id: i64,
+) -> Result<(f64, f64), AppError> {
+    let object_id = resolve_to_object_id(session, backend_node_id).await?;
+    let call_params = serde_json::json!({
+        "objectId": object_id,
+        "functionDeclaration": "function() { return JSON.stringify({x: this.scrollLeft, y: this.scrollTop}); }",
+        "arguments": [],
+        "returnByValue": true,
+    });
+    let response = session
+        .send_command("Runtime.callFunctionOn", Some(call_params))
+        .await
+        .map_err(|e| AppError::interaction_failed("get_container_scroll", &e.to_string()))?;
+
+    let json_str = response["result"]["value"]
+        .as_str()
+        .unwrap_or(r#"{"x":0,"y":0}"#);
+    let pos: serde_json::Value = serde_json::from_str(json_str)
+        .map_err(|e| AppError::interaction_failed("get_container_scroll", &e.to_string()))?;
+
+    Ok((
+        pos["x"].as_f64().unwrap_or(0.0),
+        pos["y"].as_f64().unwrap_or(0.0),
+    ))
+}
+
+/// Wait for a smooth page scroll to finish by polling position until stable.
+async fn wait_for_smooth_page_scroll(session: &mut ManagedSession) -> Result<(), AppError> {
+    let mut last_pos = get_scroll_position(session).await?;
+    for _ in 0..15 {
+        // 15 × 200ms = 3s timeout
+        tokio::time::sleep(Duration::from_millis(200)).await;
+        let current_pos = get_scroll_position(session).await?;
+        if (current_pos.0 - last_pos.0).abs() < 1.0 && (current_pos.1 - last_pos.1).abs() < 1.0 {
+            return Ok(());
+        }
+        last_pos = current_pos;
+    }
+    Ok(())
+}
+
+/// Wait for a smooth container scroll to finish by polling position until stable.
+async fn wait_for_smooth_container_scroll(
+    session: &mut ManagedSession,
+    backend_node_id: i64,
+) -> Result<(), AppError> {
+    let mut last_pos = get_container_scroll_position(session, backend_node_id).await?;
+    for _ in 0..15 {
+        tokio::time::sleep(Duration::from_millis(200)).await;
+        let current_pos = get_container_scroll_position(session, backend_node_id).await?;
+        if (current_pos.0 - last_pos.0).abs() < 1.0 && (current_pos.1 - last_pos.1).abs() < 1.0 {
+            return Ok(());
+        }
+        last_pos = current_pos;
+    }
+    Ok(())
+}
+
+// =============================================================================
 // Command implementations
 // =============================================================================
+
+/// Get the document scroll height.
+async fn get_document_scroll_height(session: &mut ManagedSession) -> Result<f64, AppError> {
+    let response = session
+        .send_command(
+            "Runtime.evaluate",
+            Some(serde_json::json!({
+                "expression": "document.documentElement.scrollHeight",
+                "returnByValue": true,
+            })),
+        )
+        .await
+        .map_err(|e| AppError::interaction_failed("get_scroll_height", &e.to_string()))?;
+    Ok(response["result"]["value"].as_f64().unwrap_or(0.0))
+}
+
+/// Compute scroll delta and position change, returning (before, after) positions.
+fn compute_delta(before: (f64, f64), after: (f64, f64)) -> (f64, f64, f64, f64) {
+    (after.0 - before.0, after.1 - before.1, after.0, after.1)
+}
+
+/// Execute the `interact scroll` command.
+async fn execute_scroll(global: &GlobalOpts, args: &ScrollArgs) -> Result<(), AppError> {
+    let (_client, mut managed) = setup_session(global).await?;
+    if global.auto_dismiss_dialogs {
+        let _dismiss = managed.spawn_auto_dismiss().await?;
+    }
+
+    managed.ensure_domain("Runtime").await?;
+    managed.ensure_domain("DOM").await?;
+
+    let mode_label;
+    let (scrolled_x, scrolled_y, final_x, final_y) = if let Some(ref target) = args.to_element {
+        mode_label = "to-element";
+        let before = get_scroll_position(&mut managed).await?;
+        let backend_node_id = resolve_target_to_backend_node_id(&mut managed, target).await?;
+        scroll_into_view(&mut managed, backend_node_id).await?;
+        compute_delta(before, get_scroll_position(&mut managed).await?)
+    } else if args.to_top {
+        mode_label = "to-top";
+        let before = get_scroll_position(&mut managed).await?;
+        dispatch_page_scroll_to(&mut managed, 0.0, 0.0, args.smooth).await?;
+        if args.smooth {
+            wait_for_smooth_page_scroll(&mut managed).await?;
+        }
+        compute_delta(before, get_scroll_position(&mut managed).await?)
+    } else if args.to_bottom {
+        mode_label = "to-bottom";
+        let before = get_scroll_position(&mut managed).await?;
+        let height = get_document_scroll_height(&mut managed).await?;
+        dispatch_page_scroll_to(&mut managed, 0.0, height, args.smooth).await?;
+        if args.smooth {
+            wait_for_smooth_page_scroll(&mut managed).await?;
+        }
+        compute_delta(before, get_scroll_position(&mut managed).await?)
+    } else if let Some(ref container_target) = args.container {
+        mode_label = "container";
+        let cid = resolve_target_to_backend_node_id(&mut managed, container_target).await?;
+        let before = get_container_scroll_position(&mut managed, cid).await?;
+        let (vw, vh) = get_viewport_dimensions(&mut managed).await?;
+        let (dx, dy) = compute_scroll_delta(args.direction, args.amount, vw, vh);
+        dispatch_container_scroll(&mut managed, cid, dx, dy, args.smooth).await?;
+        if args.smooth {
+            wait_for_smooth_container_scroll(&mut managed, cid).await?;
+        }
+        compute_delta(before, get_container_scroll_position(&mut managed, cid).await?)
+    } else {
+        mode_label = "direction";
+        let before = get_scroll_position(&mut managed).await?;
+        let (vw, vh) = get_viewport_dimensions(&mut managed).await?;
+        let (dx, dy) = compute_scroll_delta(args.direction, args.amount, vw, vh);
+        dispatch_page_scroll(&mut managed, dx, dy, args.smooth).await?;
+        if args.smooth {
+            wait_for_smooth_page_scroll(&mut managed).await?;
+        }
+        compute_delta(before, get_scroll_position(&mut managed).await?)
+    };
+
+    // Take snapshot if requested
+    let snapshot = if args.include_snapshot {
+        let url_response = managed
+            .send_command(
+                "Runtime.evaluate",
+                Some(serde_json::json!({ "expression": "window.location.href" })),
+            )
+            .await?;
+        let url = url_response["result"]["value"]
+            .as_str()
+            .unwrap_or("")
+            .to_string();
+        Some(take_snapshot(&mut managed, &url).await?)
+    } else {
+        None
+    };
+
+    let result = ScrollResult {
+        scrolled: Coords { x: scrolled_x, y: scrolled_y },
+        position: Coords { x: final_x, y: final_y },
+        snapshot,
+    };
+
+    if global.output.plain {
+        print_scroll_plain(&result, mode_label);
+        Ok(())
+    } else {
+        print_output(&result, &global.output)
+    }
+}
+
+/// Compute scroll delta (dx, dy) from direction, optional amount, and viewport dimensions.
+fn compute_scroll_delta(
+    direction: ScrollDirection,
+    amount: Option<u32>,
+    viewport_width: f64,
+    viewport_height: f64,
+) -> (f64, f64) {
+    match direction {
+        ScrollDirection::Down => (0.0, amount.map_or(viewport_height, f64::from)),
+        ScrollDirection::Up => (0.0, -amount.map_or(viewport_height, f64::from)),
+        ScrollDirection::Right => (amount.map_or(viewport_width, f64::from), 0.0),
+        ScrollDirection::Left => (-amount.map_or(viewport_width, f64::from), 0.0),
+    }
+}
 
 /// Execute the `interact click` command.
 async fn execute_click(global: &GlobalOpts, args: &ClickArgs) -> Result<(), AppError> {
@@ -1315,6 +1684,7 @@ pub async fn execute_interact(global: &GlobalOpts, args: &InteractArgs) -> Resul
         InteractCommand::Drag(drag_args) => execute_drag(global, drag_args).await,
         InteractCommand::Type(type_args) => execute_type(global, type_args).await,
         InteractCommand::Key(key_args) => execute_key(global, key_args).await,
+        InteractCommand::Scroll(scroll_args) => execute_scroll(global, scroll_args).await,
     }
 }
 
@@ -1740,5 +2110,138 @@ mod tests {
         };
         let json: serde_json::Value = serde_json::to_value(&result).unwrap();
         assert_eq!(json["pressed"], "Control+A");
+    }
+
+    // =========================================================================
+    // ScrollResult serialization tests
+    // =========================================================================
+
+    #[test]
+    fn scroll_result_serialization() {
+        let result = ScrollResult {
+            scrolled: Coords { x: 0.0, y: 600.0 },
+            position: Coords { x: 0.0, y: 600.0 },
+            snapshot: None,
+        };
+        let json: serde_json::Value = serde_json::to_value(&result).unwrap();
+        assert_eq!(json["scrolled"]["x"], 0.0);
+        assert_eq!(json["scrolled"]["y"], 600.0);
+        assert_eq!(json["position"]["x"], 0.0);
+        assert_eq!(json["position"]["y"], 600.0);
+        assert!(json.get("snapshot").is_none());
+    }
+
+    #[test]
+    fn scroll_result_with_snapshot() {
+        let result = ScrollResult {
+            scrolled: Coords { x: 0.0, y: 300.0 },
+            position: Coords { x: 0.0, y: 300.0 },
+            snapshot: Some(serde_json::json!({"role": "document"})),
+        };
+        let json: serde_json::Value = serde_json::to_value(&result).unwrap();
+        assert_eq!(json["scrolled"]["y"], 300.0);
+        assert_eq!(json["position"]["y"], 300.0);
+        assert!(json.get("snapshot").is_some());
+        assert_eq!(json["snapshot"]["role"], "document");
+    }
+
+    #[test]
+    fn scroll_result_without_snapshot_omits_field() {
+        let result = ScrollResult {
+            scrolled: Coords { x: 200.0, y: 0.0 },
+            position: Coords {
+                x: 200.0,
+                y: 100.0,
+            },
+            snapshot: None,
+        };
+        let json_str = serde_json::to_string(&result).unwrap();
+        assert!(!json_str.contains("snapshot"));
+    }
+
+    // =========================================================================
+    // Scroll delta computation tests
+    // =========================================================================
+
+    #[test]
+    #[allow(clippy::float_cmp)]
+    fn compute_delta_returns_correct_values() {
+        let (dx, dy, px, py) = compute_delta((10.0, 20.0), (30.0, 50.0));
+        assert_eq!(dx, 20.0);
+        assert_eq!(dy, 30.0);
+        assert_eq!(px, 30.0);
+        assert_eq!(py, 50.0);
+    }
+
+    #[test]
+    #[allow(clippy::float_cmp)]
+    fn compute_delta_negative_scroll() {
+        let (dx, dy, px, py) = compute_delta((100.0, 200.0), (50.0, 100.0));
+        assert_eq!(dx, -50.0);
+        assert_eq!(dy, -100.0);
+        assert_eq!(px, 50.0);
+        assert_eq!(py, 100.0);
+    }
+
+    #[test]
+    #[allow(clippy::float_cmp)]
+    fn compute_delta_no_movement() {
+        let (dx, dy, px, py) = compute_delta((0.0, 0.0), (0.0, 0.0));
+        assert_eq!(dx, 0.0);
+        assert_eq!(dy, 0.0);
+        assert_eq!(px, 0.0);
+        assert_eq!(py, 0.0);
+    }
+
+    // =========================================================================
+    // Scroll direction delta computation tests
+    // =========================================================================
+
+    #[test]
+    #[allow(clippy::float_cmp)]
+    fn compute_scroll_delta_down_default() {
+        let (dx, dy) = compute_scroll_delta(ScrollDirection::Down, None, 1024.0, 768.0);
+        assert_eq!(dx, 0.0);
+        assert_eq!(dy, 768.0);
+    }
+
+    #[test]
+    #[allow(clippy::float_cmp)]
+    fn compute_scroll_delta_up_default() {
+        let (dx, dy) = compute_scroll_delta(ScrollDirection::Up, None, 1024.0, 768.0);
+        assert_eq!(dx, 0.0);
+        assert_eq!(dy, -768.0);
+    }
+
+    #[test]
+    #[allow(clippy::float_cmp)]
+    fn compute_scroll_delta_right_default() {
+        let (dx, dy) = compute_scroll_delta(ScrollDirection::Right, None, 1024.0, 768.0);
+        assert_eq!(dx, 1024.0);
+        assert_eq!(dy, 0.0);
+    }
+
+    #[test]
+    #[allow(clippy::float_cmp)]
+    fn compute_scroll_delta_left_default() {
+        let (dx, dy) = compute_scroll_delta(ScrollDirection::Left, None, 1024.0, 768.0);
+        assert_eq!(dx, -1024.0);
+        assert_eq!(dy, 0.0);
+    }
+
+    #[test]
+    #[allow(clippy::float_cmp)]
+    fn compute_scroll_delta_down_with_amount() {
+        let (dx, dy) = compute_scroll_delta(ScrollDirection::Down, Some(300), 1024.0, 768.0);
+        assert_eq!(dx, 0.0);
+        assert_eq!(dy, 300.0);
+    }
+
+    #[test]
+    #[allow(clippy::float_cmp)]
+    fn compute_scroll_delta_right_with_amount() {
+        let (dx, dy) = compute_scroll_delta(ScrollDirection::Right, Some(200), 1024.0, 768.0);
+        assert_eq!(dx, 200.0);
+        assert_eq!(dy, 0.0);
     }
 }

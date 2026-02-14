@@ -1742,6 +1742,18 @@ const FORM_TESTABLE_SCENARIOS: &[&str] = &[
     "Clear help displays all options",
 ];
 
+/// Scroll BDD scenarios that can be tested without a running Chrome instance.
+/// These are pure CLI argument validation and help text scenarios.
+const SCROLL_TESTABLE_SCENARIOS: &[&str] = &[
+    "Scroll accepts no mandatory arguments",
+    "Interact help lists scroll subcommand",
+    "Conflicting flags --to-top and --to-bottom",
+    "Conflicting flags --to-top and --direction",
+    "Conflicting flags --to-element and --to-top",
+    "Conflicting flags --to-element and --amount",
+    "Invalid direction value",
+];
+
 #[tokio::main]
 async fn main() {
     WorkflowWorld::run("tests/features/release-pipeline.feature").await;
@@ -1813,6 +1825,17 @@ async fn main() {
         .filter_run_and_exit(
             "tests/features/form.feature",
             |_feature, _rule, scenario| FORM_TESTABLE_SCENARIOS.contains(&scenario.name.as_str()),
+        )
+        .await;
+
+    // Scroll interactions — only CLI-testable scenarios (argument validation, help text, conflicts).
+    // Scenarios requiring a running Chrome instance are skipped.
+    CliWorld::cucumber()
+        .filter_run_and_exit(
+            "tests/features/scroll.feature",
+            |_feature, _rule, scenario| {
+                SCROLL_TESTABLE_SCENARIOS.contains(&scenario.name.as_str())
+            },
         )
         .await;
 }

@@ -629,6 +629,9 @@ pub enum InteractCommand {
 
     /// Press a key or key combination (e.g. Enter, Control+A)
     Key(KeyArgs),
+
+    /// Scroll the page or a container element
+    Scroll(ScrollArgs),
 }
 
 /// Arguments for `interact click`.
@@ -723,6 +726,58 @@ pub struct KeyArgs {
     /// Number of times to press the key
     #[arg(long, default_value_t = 1)]
     pub repeat: u32,
+
+    /// Include updated accessibility snapshot in output
+    #[arg(long)]
+    pub include_snapshot: bool,
+}
+
+/// Scroll direction for `interact scroll`.
+#[derive(Debug, Clone, Copy, ValueEnum, Default)]
+pub enum ScrollDirection {
+    /// Scroll down (default)
+    #[default]
+    Down,
+    /// Scroll up
+    Up,
+    /// Scroll left
+    Left,
+    /// Scroll right
+    Right,
+}
+
+/// Arguments for `interact scroll`.
+#[allow(clippy::struct_excessive_bools)]
+#[derive(Args)]
+pub struct ScrollArgs {
+    /// Scroll direction
+    #[arg(long, value_enum, default_value_t = ScrollDirection::Down,
+           conflicts_with_all = ["to_element", "to_top", "to_bottom"])]
+    pub direction: ScrollDirection,
+
+    /// Scroll distance in pixels (default: viewport height for vertical, viewport width for horizontal)
+    #[arg(long, conflicts_with_all = ["to_element", "to_top", "to_bottom"])]
+    pub amount: Option<u32>,
+
+    /// Scroll until a specific element is in view (UID like 's5' or CSS selector like 'css:#footer')
+    #[arg(long, conflicts_with_all = ["direction", "amount", "to_top", "to_bottom", "container"])]
+    pub to_element: Option<String>,
+
+    /// Scroll to the top of the page
+    #[arg(long, conflicts_with_all = ["direction", "amount", "to_element", "to_bottom", "container"])]
+    pub to_top: bool,
+
+    /// Scroll to the bottom of the page
+    #[arg(long, conflicts_with_all = ["direction", "amount", "to_element", "to_top", "container"])]
+    pub to_bottom: bool,
+
+    /// Use smooth scrolling behavior
+    #[arg(long)]
+    pub smooth: bool,
+
+    /// Scroll within a container element (UID like 's3' or CSS selector like 'css:.scrollable')
+    #[arg(long, conflicts_with_all = ["to_element", "to_top", "to_bottom"])]
+    pub container: Option<String>,
 
     /// Include updated accessibility snapshot in output
     #[arg(long)]

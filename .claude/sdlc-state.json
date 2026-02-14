@@ -1,8 +1,8 @@
 {
-  "currentStep": 4,
-  "currentIssue": 16,
-  "currentBranch": "16-form-input-and-filling",
-  "featureName": "16-form-input-and-filling",
-  "lastTransitionAt": "2026-02-14T06:30:00Z",
+  "currentStep": 6,
+  "currentIssue": 17,
+  "currentBranch": "17-scroll-interactions",
+  "featureName": "17-scroll-interactions",
+  "lastTransitionAt": "2026-02-14T10:56:30Z",
   "retries": {}
 }
