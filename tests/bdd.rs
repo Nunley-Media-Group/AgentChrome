@@ -1687,6 +1687,273 @@ fn keyboard_stdout_contains(world: &mut KeyboardWorld, expected: String) {
 }
 
 // =============================================================================
+// ConfigWorld — Configuration file BDD tests
+// =============================================================================
+
+#[derive(Debug, World)]
+struct ConfigWorld {
+    temp_dir: PathBuf,
+    config_path: Option<PathBuf>,
+    init_path: Option<PathBuf>,
+    stdout: String,
+    stderr: String,
+    exit_code: Option<i32>,
+}
+
+impl Default for ConfigWorld {
+    fn default() -> Self {
+        use std::sync::atomic::{AtomicU64, Ordering};
+        static COUNTER: AtomicU64 = AtomicU64::new(0);
+        let id = COUNTER.fetch_add(1, Ordering::Relaxed);
+        let temp_dir =
+            std::env::temp_dir().join(format!("chrome-cli-bdd-config-{}-{id}", std::process::id()));
+        let _ = std::fs::create_dir_all(&temp_dir);
+        Self {
+            temp_dir,
+            config_path: None,
+            init_path: None,
+            stdout: String::new(),
+            stderr: String::new(),
+            exit_code: None,
+        }
+    }
+}
+
+impl ConfigWorld {
+    fn run_chrome_cli(&mut self, args: &[&str]) {
+        self.run_chrome_cli_with_env(args, &[]);
+    }
+
+    fn run_chrome_cli_with_env(&mut self, args: &[&str], env_pairs: &[(&str, &str)]) {
+        let binary = binary_path();
+        // Use a fake HOME to prevent picking up the user's real config files
+        let fake_home = self.temp_dir.join("fake-home");
+        let _ = std::fs::create_dir_all(&fake_home);
+
+        let mut cmd = std::process::Command::new(&binary);
+        cmd.args(args)
+            .env("HOME", &fake_home)
+            .env("USERPROFILE", &fake_home)
+            // Clear config-related env vars to avoid interference
+            .env_remove("CHROME_CLI_CONFIG")
+            .env_remove("CHROME_CLI_PORT")
+            .env_remove("CHROME_CLI_HOST")
+            .env_remove("CHROME_CLI_TIMEOUT")
+            // Set CWD to a directory without a project-local config
+            .current_dir(&fake_home);
+
+        for (k, v) in env_pairs {
+            cmd.env(k, v);
+        }
+
+        let output = cmd
+            .output()
+            .unwrap_or_else(|e| panic!("Failed to run {}: {e}", binary.display()));
+
+        self.stdout = String::from_utf8_lossy(&output.stdout).to_string();
+        self.stderr = String::from_utf8_lossy(&output.stderr).to_string();
+        self.exit_code = Some(output.status.code().unwrap_or(-1));
+    }
+}
+
+// --- ConfigWorld Given steps ---
+
+#[given(regex = r#"^a config file at "([^"]+)" with content:$"#)]
+fn config_file_with_content(
+    world: &mut ConfigWorld,
+    filename: String,
+    step: &cucumber::gherkin::Step,
+) {
+    let content = step.docstring.as_ref().expect("Missing docstring in step");
+    let path = world.temp_dir.join(&filename);
+    std::fs::write(&path, content).unwrap();
+    world.config_path = Some(path);
+}
+
+#[given("no config file exists at the init target path")]
+fn config_no_init_target(world: &mut ConfigWorld) {
+    let path = world.temp_dir.join("init-target").join("config.toml");
+    // Ensure parent exists but file does not
+    let _ = std::fs::create_dir_all(path.parent().unwrap());
+    let _ = std::fs::remove_file(&path);
+    world.init_path = Some(path);
+}
+
+#[given("a config file already exists at the init target path")]
+fn config_existing_init_target(world: &mut ConfigWorld) {
+    let path = world.temp_dir.join("init-target").join("config.toml");
+    let _ = std::fs::create_dir_all(path.parent().unwrap());
+    std::fs::write(&path, "# existing config").unwrap();
+    world.init_path = Some(path);
+}
+
+// --- ConfigWorld When steps ---
+
+#[when(regex = r#"^I run chrome-cli with "([^"]*)"$"#)]
+fn config_run_command(world: &mut ConfigWorld, args_template: String) {
+    let args_str = resolve_config_template(world, &args_template);
+    let args: Vec<&str> = args_str.split_whitespace().collect();
+    world.run_chrome_cli(&args);
+}
+
+#[when(regex = r#"^I run chrome-cli with env ([A-Z_]+)="([^"]*)" and args "([^"]*)"$"#)]
+fn config_run_with_env(
+    world: &mut ConfigWorld,
+    env_key: String,
+    env_val_template: String,
+    args_template: String,
+) {
+    let env_val = resolve_config_template(world, &env_val_template);
+    let args_str = resolve_config_template(world, &args_template);
+    let args: Vec<&str> = args_str.split_whitespace().collect();
+    world.run_chrome_cli_with_env(&args, &[(&env_key, &env_val)]);
+}
+
+fn resolve_config_template(world: &ConfigWorld, template: &str) -> String {
+    let mut result = template.to_string();
+    if let Some(ref p) = world.config_path {
+        result = result.replace("{config_path}", &p.display().to_string());
+    }
+    if let Some(ref p) = world.init_path {
+        result = result.replace("{init_path}", &p.display().to_string());
+    }
+    result
+}
+
+// --- ConfigWorld Then steps ---
+
+#[then(expr = "the exit code should be {int}")]
+fn config_exit_code(world: &mut ConfigWorld, expected: i32) {
+    let actual = world.exit_code.expect("No exit code captured");
+    assert_eq!(
+        actual, expected,
+        "Expected exit code {expected}, got {actual}\nstdout: {}\nstderr: {}",
+        world.stdout, world.stderr
+    );
+}
+
+#[then("the exit code should be non-zero")]
+fn config_exit_code_nonzero(world: &mut ConfigWorld) {
+    let actual = world.exit_code.expect("No exit code captured");
+    assert_ne!(
+        actual, 0,
+        "Expected non-zero exit code, got 0\nstdout: {}\nstderr: {}",
+        world.stdout, world.stderr
+    );
+}
+
+#[then(regex = r#"^the JSON output field "([^"]+)" should be (\d+)$"#)]
+fn config_json_field_int(world: &mut ConfigWorld, field_path: String, expected: i64) {
+    let json = parse_stdout_json(world);
+    let value = resolve_json_path(&json, &field_path);
+    assert_eq!(
+        value.as_i64(),
+        Some(expected),
+        "Expected {field_path} = {expected}, got {value}\nstdout: {}",
+        world.stdout
+    );
+}
+
+#[then(regex = r#"^the JSON output field "([^"]+)" should be "([^"]*)"$"#)]
+fn config_json_field_string(world: &mut ConfigWorld, field_path: String, expected: String) {
+    let json = parse_stdout_json(world);
+    let value = resolve_json_path(&json, &field_path);
+    assert_eq!(
+        value.as_str(),
+        Some(expected.as_str()),
+        "Expected {field_path} = \"{expected}\", got {value}\nstdout: {}",
+        world.stdout
+    );
+}
+
+#[then(regex = r#"^the JSON output field "([^"]+)" should be (true|false)$"#)]
+fn config_json_field_bool(world: &mut ConfigWorld, field_path: String, expected: String) {
+    let json = parse_stdout_json(world);
+    let value = resolve_json_path(&json, &field_path);
+    let expected_bool = expected == "true";
+    assert_eq!(
+        value.as_bool(),
+        Some(expected_bool),
+        "Expected {field_path} = {expected}, got {value}\nstdout: {}",
+        world.stdout
+    );
+}
+
+#[then(regex = r#"^the JSON output field "([^"]+)" should be null$"#)]
+fn config_json_field_null(world: &mut ConfigWorld, field_path: String) {
+    let json = parse_stdout_json(world);
+    let value = resolve_json_path(&json, &field_path);
+    assert!(
+        value.is_null(),
+        "Expected {field_path} = null, got {value}\nstdout: {}",
+        world.stdout
+    );
+}
+
+#[then(regex = r#"^the JSON output field "([^"]+)" should contain "([^"]*)"$"#)]
+fn config_json_field_contains(world: &mut ConfigWorld, field_path: String, substring: String) {
+    let json = parse_stdout_json(world);
+    let value = resolve_json_path(&json, &field_path);
+    let value_str = value
+        .as_str()
+        .unwrap_or_else(|| panic!("Expected string at {field_path}, got {value}"));
+    assert!(
+        value_str.contains(&substring),
+        "Expected {field_path} to contain \"{substring}\", got \"{value_str}\"\nstdout: {}",
+        world.stdout
+    );
+}
+
+#[then(regex = r#"^the JSON output should contain key "([^"]+)"$"#)]
+fn config_json_has_key(world: &mut ConfigWorld, key: String) {
+    let json = parse_stdout_json(world);
+    assert!(
+        json.get(&key).is_some(),
+        "Expected JSON to contain key \"{key}\"\nstdout: {}",
+        world.stdout
+    );
+}
+
+#[then(expr = "stderr should contain {string}")]
+fn config_stderr_contains(world: &mut ConfigWorld, expected: String) {
+    assert!(
+        world
+            .stderr
+            .to_lowercase()
+            .contains(&expected.to_lowercase()),
+        "stderr does not contain '{expected}'\nstderr: {}",
+        world.stderr
+    );
+}
+
+#[then("the init target file should exist")]
+fn config_init_target_exists(world: &mut ConfigWorld) {
+    let path = world.init_path.as_ref().expect("No init path set");
+    assert!(
+        path.exists(),
+        "Expected init target file to exist at {}",
+        path.display()
+    );
+}
+
+fn parse_stdout_json(world: &ConfigWorld) -> serde_json::Value {
+    let trimmed = world.stdout.trim();
+    serde_json::from_str(trimmed).unwrap_or_else(|e| {
+        panic!("stdout is not valid JSON: {e}\nstdout: {trimmed}");
+    })
+}
+
+fn resolve_json_path<'a>(json: &'a serde_json::Value, path: &str) -> &'a serde_json::Value {
+    let mut current = json;
+    for part in path.split('.') {
+        current = current
+            .get(part)
+            .unwrap_or_else(|| panic!("JSON path '{path}' not found at '{part}'\nJSON: {json}"));
+    }
+    current
+}
+
+// =============================================================================
 // Main — run all worlds
 // =============================================================================
 
@@ -1881,4 +2148,7 @@ async fn main() {
             },
         )
         .await;
+
+    // Configuration file support — all scenarios are CLI-testable (no Chrome needed).
+    ConfigWorld::run("tests/features/config.feature").await;
 }

@@ -21,11 +21,12 @@ use chrome_cli::chrome::{
     self, Channel, LaunchConfig, discover_chrome, find_available_port, find_chrome_executable,
     launch_chrome, query_version,
 };
+use chrome_cli::config;
 use chrome_cli::connection::{self, extract_port_from_ws_url};
 use chrome_cli::error::{AppError, ExitCode};
 use chrome_cli::session::{self, SessionData};
 
-use cli::{ChromeChannel, Cli, Command, ConnectArgs, GlobalOpts};
+use cli::{ChromeChannel, Cli, Command, ConfigCommand, ConnectArgs, GlobalOpts};
 
 #[tokio::main]
 async fn main() {
@@ -39,20 +40,140 @@ async fn main() {
 }
 
 async fn run(cli: &Cli) -> Result<(), AppError> {
+    // Load config file (if any) and apply defaults to global opts
+    let (config_path, config_file) = config::load_config(cli.global.config.as_deref());
+    let global = apply_config_defaults(&cli.global, &config_file);
+
     match &cli.command {
-        Command::Connect(args) => execute_connect(&cli.global, args).await,
-        Command::Tabs(args) => tabs::execute_tabs(&cli.global, args).await,
-        Command::Navigate(args) => navigate::execute_navigate(&cli.global, args).await,
-        Command::Page(args) => page::execute_page(&cli.global, args).await,
+        Command::Config(args) => {
+            let resolved = build_resolved_config(&global, &config_file, config_path);
+            execute_config(&args.command, &resolved)
+        }
+        Command::Connect(args) => execute_connect(&global, args).await,
+        Command::Tabs(args) => tabs::execute_tabs(&global, args).await,
+        Command::Navigate(args) => navigate::execute_navigate(&global, args).await,
+        Command::Page(args) => page::execute_page(&global, args).await,
         Command::Dom => Err(AppError::not_implemented("dom")),
-        Command::Js(args) => js::execute_js(&cli.global, args).await,
-        Command::Console(args) => console::execute_console(&cli.global, args).await,
-        Command::Network(args) => network::execute_network(&cli.global, args).await,
-        Command::Interact(args) => interact::execute_interact(&cli.global, args).await,
-        Command::Form(args) => form::execute_form(&cli.global, args).await,
-        Command::Emulate(args) => emulate::execute_emulate(&cli.global, args).await,
-        Command::Perf(args) => perf::execute_perf(&cli.global, args).await,
-        Command::Dialog(args) => dialog::execute_dialog(&cli.global, args).await,
+        Command::Js(args) => js::execute_js(&global, args).await,
+        Command::Console(args) => console::execute_console(&global, args).await,
+        Command::Network(args) => network::execute_network(&global, args).await,
+        Command::Interact(args) => interact::execute_interact(&global, args).await,
+        Command::Form(args) => form::execute_form(&global, args).await,
+        Command::Emulate(args) => emulate::execute_emulate(&global, args).await,
+        Command::Perf(args) => perf::execute_perf(&global, args).await,
+        Command::Dialog(args) => dialog::execute_dialog(&global, args).await,
+    }
+}
+
+/// Build a fully resolved config from merged `GlobalOpts` and config file sections.
+///
+/// This is used by `config show` to display the final merged configuration from
+/// all sources (CLI flags > env vars > config file > defaults).
+fn build_resolved_config(
+    global: &GlobalOpts,
+    config_file: &config::ConfigFile,
+    config_path: Option<std::path::PathBuf>,
+) -> config::ResolvedConfig {
+    config::ResolvedConfig {
+        config_path,
+        connection: config::ResolvedConnection {
+            host: global.host.clone(),
+            port: global.port_or_default(),
+            timeout_ms: global.timeout.unwrap_or(30_000),
+        },
+        launch: config::ResolvedLaunch {
+            executable: config_file.launch.executable.clone(),
+            channel: config_file
+                .launch
+                .channel
+                .clone()
+                .unwrap_or_else(|| "stable".to_string()),
+            headless: config_file.launch.headless.unwrap_or(false),
+            extra_args: config_file.launch.extra_args.clone().unwrap_or_default(),
+        },
+        output: config::ResolvedOutput {
+            format: config_file
+                .output
+                .format
+                .clone()
+                .unwrap_or_else(|| "json".to_string()),
+        },
+        tabs: config::ResolvedTabs {
+            auto_activate: config_file.tabs.auto_activate.unwrap_or(true),
+            filter_internal: config_file.tabs.filter_internal.unwrap_or(true),
+        },
+    }
+}
+
+/// Apply config file defaults to global opts for fields that weren't set by CLI/env.
+///
+/// The precedence chain is: CLI flags > env vars > config file > built-in defaults.
+/// Since clap already handles CLI flags and env vars (via `env = "..."` attributes),
+/// we only fill in values from the config file for fields that are still at their defaults.
+fn apply_config_defaults(cli_global: &GlobalOpts, config: &config::ConfigFile) -> GlobalOpts {
+    // We can't easily detect "user provided --host" vs "default_value was used" for String
+    // fields. For Option fields, None means unset; for host (which has default_value), we
+    // check whether it matches the built-in default.
+    let host_is_default =
+        cli_global.host == "127.0.0.1" && std::env::var("CHROME_CLI_HOST").is_err();
+
+    GlobalOpts {
+        port: cli_global.port.or(config.connection.port),
+        host: if host_is_default {
+            config
+                .connection
+                .host
+                .clone()
+                .unwrap_or_else(|| cli_global.host.clone())
+        } else {
+            cli_global.host.clone()
+        },
+        ws_url: cli_global.ws_url.clone(),
+        timeout: cli_global.timeout.or(config.connection.timeout_ms),
+        tab: cli_global.tab.clone(),
+        auto_dismiss_dialogs: cli_global.auto_dismiss_dialogs,
+        config: cli_global.config.clone(),
+        output: cli::OutputFormat {
+            json: cli_global.output.json,
+            pretty: cli_global.output.pretty,
+            plain: cli_global.output.plain,
+        },
+    }
+}
+
+#[derive(Serialize)]
+struct ConfigInitOutput {
+    created: String,
+}
+
+#[derive(Serialize)]
+struct ConfigPathOutput {
+    config_path: Option<String>,
+}
+
+/// Execute config subcommands.
+fn execute_config(cmd: &ConfigCommand, resolved: &config::ResolvedConfig) -> Result<(), AppError> {
+    match cmd {
+        ConfigCommand::Show => {
+            print_json(resolved)?;
+            Ok(())
+        }
+        ConfigCommand::Init(args) => {
+            let path = config::init_config(args.path.as_deref())?;
+            print_json(&ConfigInitOutput {
+                created: path.display().to_string(),
+            })?;
+            Ok(())
+        }
+        ConfigCommand::Path => {
+            print_json(&ConfigPathOutput {
+                config_path: resolved
+                    .config_path
+                    .as_ref()
+                    .map(|p| p.display().to_string()),
+            })?;
+            Ok(())
+        }
     }
 }
 
