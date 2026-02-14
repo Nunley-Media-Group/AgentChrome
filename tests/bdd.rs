@@ -1753,6 +1753,9 @@ impl ConfigWorld {
             .env_remove("CHROME_CLI_PORT")
             .env_remove("CHROME_CLI_HOST")
             .env_remove("CHROME_CLI_TIMEOUT")
+            // Clear XDG vars so dirs::config_dir() falls back to $HOME/.config
+            .env_remove("XDG_CONFIG_HOME")
+            .env_remove("XDG_DATA_HOME")
             // Set CWD — project dir for project-local tests, fake_home otherwise
             .current_dir(work_dir);
 
