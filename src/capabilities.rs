@@ -428,6 +428,8 @@ pub fn execute_capabilities(global: &GlobalOpts, args: &CapabilitiesArgs) -> Res
 
     // Filter to a specific command if requested
     if let Some(ref name) = args.command {
+        let available: Vec<String> = manifest.commands.iter().map(|c| c.name.clone()).collect();
+
         let matching: Vec<CommandDescriptor> = manifest
             .commands
             .into_iter()
@@ -435,11 +437,6 @@ pub fn execute_capabilities(global: &GlobalOpts, args: &CapabilitiesArgs) -> Res
             .collect();
 
         if matching.is_empty() {
-            let available: Vec<String> = build_manifest(&cmd, true)
-                .commands
-                .iter()
-                .map(|c| c.name.clone())
-                .collect();
             return Err(AppError {
                 message: format!(
                     "Unknown command: '{name}'. Available: {}",
@@ -508,8 +505,14 @@ mod tests {
         let names: Vec<&str> = flags.iter().map(|f| f.name.as_str()).collect();
         assert!(names.contains(&"--port"), "Missing --port");
         assert!(names.contains(&"--host"), "Missing --host");
+        assert!(names.contains(&"--ws-url"), "Missing --ws-url");
         assert!(names.contains(&"--timeout"), "Missing --timeout");
         assert!(names.contains(&"--tab"), "Missing --tab");
+        assert!(
+            names.contains(&"--auto-dismiss-dialogs"),
+            "Missing --auto-dismiss-dialogs"
+        );
+        assert!(names.contains(&"--config"), "Missing --config");
         assert!(names.contains(&"--json"), "Missing --json");
         assert!(names.contains(&"--pretty"), "Missing --pretty");
         assert!(names.contains(&"--plain"), "Missing --plain");
