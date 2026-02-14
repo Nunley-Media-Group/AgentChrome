@@ -281,26 +281,33 @@ function() {
 // Core fill helper
 // =============================================================================
 
-/// Resolve a target to a Runtime object and call a JS function on it.
-async fn fill_element(
+/// Resolve a target to a Runtime object ID via DOM.resolveNode.
+async fn resolve_to_object_id(
     session: &mut ManagedSession,
     target: &str,
-    value: &str,
-) -> Result<(), AppError> {
+) -> Result<String, AppError> {
     let backend_node_id = resolve_target_to_backend_node_id(session, target).await?;
 
-    // Resolve backend node ID to a Runtime object
     let resolve_params = serde_json::json!({ "backendNodeId": backend_node_id });
     let resolve_response = session
         .send_command("DOM.resolveNode", Some(resolve_params))
         .await
         .map_err(|e| AppError::interaction_failed("resolve_node", &e.to_string()))?;
 
-    let object_id = resolve_response["object"]["objectId"]
+    resolve_response["object"]["objectId"]
         .as_str()
-        .ok_or_else(|| AppError::interaction_failed("resolve_node", "no objectId returned"))?;
+        .map(String::from)
+        .ok_or_else(|| AppError::interaction_failed("resolve_node", "no objectId returned"))
+}
 
-    // Call fill JS function on the element
+/// Resolve a target to a Runtime object and call a JS function on it.
+async fn fill_element(
+    session: &mut ManagedSession,
+    target: &str,
+    value: &str,
+) -> Result<(), AppError> {
+    let object_id = resolve_to_object_id(session, target).await?;
+
     let call_params = serde_json::json!({
         "objectId": object_id,
         "functionDeclaration": FILL_JS,
@@ -316,17 +323,7 @@ async fn fill_element(
 
 /// Clear an element's value via Runtime.callFunctionOn.
 async fn clear_element(session: &mut ManagedSession, target: &str) -> Result<(), AppError> {
-    let backend_node_id = resolve_target_to_backend_node_id(session, target).await?;
-
-    let resolve_params = serde_json::json!({ "backendNodeId": backend_node_id });
-    let resolve_response = session
-        .send_command("DOM.resolveNode", Some(resolve_params))
-        .await
-        .map_err(|e| AppError::interaction_failed("resolve_node", &e.to_string()))?;
-
-    let object_id = resolve_response["object"]["objectId"]
-        .as_str()
-        .ok_or_else(|| AppError::interaction_failed("resolve_node", "no objectId returned"))?;
+    let object_id = resolve_to_object_id(session, target).await?;
 
     let call_params = serde_json::json!({
         "objectId": object_id,
