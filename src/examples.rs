@@ -162,7 +162,8 @@ fn all_examples() -> Vec<CommandGroupSummary> {
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli js exec \"document.querySelector('#myId').textContent\"".into(),
+                    cmd: "chrome-cli js exec \"document.querySelector('#myId').textContent\""
+                        .into(),
                     description: "Use js exec to query DOM elements".into(),
                     flags: None,
                 },
@@ -429,10 +430,7 @@ fn all_examples() -> Vec<CommandGroupSummary> {
 // Output formatting
 // =============================================================================
 
-fn print_output(
-    value: &impl Serialize,
-    output: &crate::cli::OutputFormat,
-) -> Result<(), AppError> {
+fn print_output(value: &impl Serialize, output: &crate::cli::OutputFormat) -> Result<(), AppError> {
     let json = if output.pretty {
         serde_json::to_string_pretty(value)
     } else {
@@ -496,8 +494,7 @@ pub fn execute_examples(global: &GlobalOpts, args: &ExamplesArgs) -> Result<(), 
                 }
             } else {
                 let all = all_examples();
-                let available: Vec<&str> =
-                    all.iter().map(|g| g.command.as_str()).collect();
+                let available: Vec<&str> = all.iter().map(|g| g.command.as_str()).collect();
                 return Err(AppError {
                     message: format!(
                         "Unknown command group: '{name}'. Available: {}",
@@ -656,7 +653,10 @@ mod tests {
             assert!(!examples.is_empty());
             for ex in examples {
                 assert!(ex.get("cmd").is_some(), "missing 'cmd' field");
-                assert!(ex.get("description").is_some(), "missing 'description' field");
+                assert!(
+                    ex.get("description").is_some(),
+                    "missing 'description' field"
+                );
             }
         }
     }
@@ -677,10 +677,7 @@ mod tests {
     fn json_pretty_output_is_multiline() {
         let groups = all_examples();
         let json = serde_json::to_string_pretty(&groups).unwrap();
-        assert!(
-            json.lines().count() > 1,
-            "pretty JSON should be multi-line"
-        );
+        assert!(json.lines().count() > 1, "pretty JSON should be multi-line");
         assert!(json.contains('\n'));
     }
 

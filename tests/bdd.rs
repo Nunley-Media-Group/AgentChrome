@@ -2115,10 +2115,7 @@ fn examples_stdout_json_array(world: &mut ExamplesWorld) {
     let parsed: serde_json::Value = serde_json::from_str(trimmed).unwrap_or_else(|e| {
         panic!("stdout is not valid JSON: {e}\nstdout: {trimmed}");
     });
-    assert!(
-        parsed.is_array(),
-        "Expected JSON array, got: {parsed}"
-    );
+    assert!(parsed.is_array(), "Expected JSON array, got: {parsed}");
     world.parsed_json = Some(parsed);
 }
 
@@ -2128,10 +2125,7 @@ fn examples_stdout_json_object(world: &mut ExamplesWorld) {
     let parsed: serde_json::Value = serde_json::from_str(trimmed).unwrap_or_else(|e| {
         panic!("stdout is not valid JSON: {e}\nstdout: {trimmed}");
     });
-    assert!(
-        parsed.is_object(),
-        "Expected JSON object, got: {parsed}"
-    );
+    assert!(parsed.is_object(), "Expected JSON object, got: {parsed}");
     world.parsed_json = Some(parsed);
 }
 
