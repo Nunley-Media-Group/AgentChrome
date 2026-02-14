@@ -79,6 +79,13 @@ Feature: Keyboard Input
     Then the output JSON should contain "typed" equal to "test"
     And the output JSON should contain a "snapshot" field
 
+  Scenario: Type handles Unicode and special characters
+    Given Chrome is running with CDP enabled
+    And a page is loaded with a text input
+    When I run "chrome-cli interact type 'café'"
+    Then the output JSON should contain "typed" equal to "café"
+    And the output JSON should contain "length" equal to 4
+
   # --- Key: Happy Paths (require Chrome) ---
 
   Scenario: Press Enter key
@@ -94,6 +101,12 @@ Feature: Keyboard Input
     When I run "chrome-cli interact key Control+A"
     Then the output JSON should contain "pressed" equal to "Control+A"
 
+  Scenario: Press key with multiple modifiers
+    Given Chrome is running with CDP enabled
+    And a page is loaded with interactive elements
+    When I run "chrome-cli interact key Control+Shift+ArrowDown"
+    Then the output JSON should contain "pressed" equal to "Control+Shift+ArrowDown"
+
   Scenario: Press key with repeat
     Given Chrome is running with CDP enabled
     And a page is loaded with interactive elements
@@ -108,6 +121,34 @@ Feature: Keyboard Input
     Then the output JSON should contain "pressed" equal to "Tab"
     And the output JSON should contain a "snapshot" field
 
+  # --- Supported Key Categories (require Chrome) ---
+
+  Scenario Outline: Press supported keys from various categories
+    Given Chrome is running with CDP enabled
+    And a page is loaded with interactive elements
+    When I run "chrome-cli interact key <key>"
+    Then the output JSON should contain "pressed" equal to "<key>"
+    And the exit code should be 0
+
+    Examples:
+      | key           |
+      | a             |
+      | Z             |
+      | 5             |
+      | F1            |
+      | F12           |
+      | ArrowUp       |
+      | Home          |
+      | Backspace     |
+      | Tab           |
+      | Escape        |
+      | Space         |
+      | Numpad0       |
+      | NumpadAdd     |
+      | Minus         |
+      | Period        |
+      | CapsLock      |
+
   # --- Plain Text Output ---
 
   Scenario: Plain text output for type
@@ -121,3 +162,19 @@ Feature: Keyboard Input
     And a page is loaded with interactive elements
     When I run "chrome-cli interact key Enter --plain"
     Then the output should be plain text "Pressed Enter"
+
+  # --- Tab Targeting (require Chrome) ---
+
+  Scenario: Type with tab targeting
+    Given Chrome is running with CDP enabled
+    And a specific tab with a focused text input
+    When I run "chrome-cli interact type 'Hello' --tab ABC123"
+    Then the text is typed in the specified tab
+    And the exit code should be 0
+
+  Scenario: Key press with tab targeting
+    Given Chrome is running with CDP enabled
+    And a specific tab with a focused element
+    When I run "chrome-cli interact key Enter --tab ABC123"
+    Then the key is pressed in the specified tab
+    And the exit code should be 0

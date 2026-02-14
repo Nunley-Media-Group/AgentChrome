@@ -651,6 +651,7 @@ fn is_valid_key(key: &str) -> bool {
 }
 
 /// Parsed key combination.
+#[derive(Debug)]
 struct ParsedKey {
     /// The modifier bitmask (1=Alt, 2=Control, 4=Meta, 8=Shift).
     modifiers: u8,
@@ -669,18 +670,12 @@ fn parse_key_combination(input: &str) -> Result<ParsedKey, AppError> {
 
     for part in &parts {
         if !is_valid_key(part) {
-            return Err(AppError {
-                message: format!("Invalid key: '{part}'"),
-                code: chrome_cli::error::ExitCode::GeneralError,
-            });
+            return Err(AppError::invalid_key(part));
         }
 
         if is_modifier(part) {
             if seen_modifiers.contains(part) {
-                return Err(AppError {
-                    message: format!("Duplicate modifier: '{part}'"),
-                    code: chrome_cli::error::ExitCode::GeneralError,
-                });
+                return Err(AppError::duplicate_modifier(part));
             }
             seen_modifiers.push(part);
             match *part {
@@ -1430,5 +1425,302 @@ mod tests {
         assert_eq!(json["dragged"]["from"], "s1");
         assert_eq!(json["dragged"]["to"], "s2");
         assert!(json.get("snapshot").is_none());
+    }
+
+    // =========================================================================
+    // Key validation and parsing tests
+    // =========================================================================
+
+    #[test]
+    fn parse_single_key() {
+        let parsed = parse_key_combination("Enter").unwrap();
+        assert_eq!(parsed.modifiers, 0);
+        assert_eq!(parsed.key, "Enter");
+    }
+
+    #[test]
+    fn parse_modifier_plus_key() {
+        let parsed = parse_key_combination("Control+A").unwrap();
+        assert_eq!(parsed.modifiers, 2); // Control = bit 1 = 2
+        assert_eq!(parsed.key, "A");
+    }
+
+    #[test]
+    fn parse_multiple_modifiers() {
+        let parsed = parse_key_combination("Control+Shift+A").unwrap();
+        assert_eq!(parsed.modifiers, 10); // Control(2) + Shift(8) = 10
+        assert_eq!(parsed.key, "A");
+    }
+
+    #[test]
+    fn parse_all_modifiers() {
+        let parsed = parse_key_combination("Alt+Control+Meta+Shift+a").unwrap();
+        assert_eq!(parsed.modifiers, 15); // 1 + 2 + 4 + 8 = 15
+        assert_eq!(parsed.key, "a");
+    }
+
+    #[test]
+    fn parse_invalid_key_error() {
+        let err = parse_key_combination("FooBar").unwrap_err();
+        assert!(
+            err.message.contains("Invalid key: 'FooBar'"),
+            "got: {}",
+            err.message
+        );
+    }
+
+    #[test]
+    fn parse_duplicate_modifier_error() {
+        let err = parse_key_combination("Control+Control+A").unwrap_err();
+        assert!(
+            err.message.contains("Duplicate modifier: 'Control'"),
+            "got: {}",
+            err.message
+        );
+    }
+
+    #[test]
+    fn parse_single_letter_key() {
+        let parsed = parse_key_combination("a").unwrap();
+        assert_eq!(parsed.modifiers, 0);
+        assert_eq!(parsed.key, "a");
+    }
+
+    #[test]
+    fn parse_function_key() {
+        let parsed = parse_key_combination("F12").unwrap();
+        assert_eq!(parsed.modifiers, 0);
+        assert_eq!(parsed.key, "F12");
+    }
+
+    #[test]
+    fn parse_shift_plus_arrow() {
+        let parsed = parse_key_combination("Shift+ArrowDown").unwrap();
+        assert_eq!(parsed.modifiers, 8); // Shift = 8
+        assert_eq!(parsed.key, "ArrowDown");
+    }
+
+    #[test]
+    fn is_valid_key_modifiers() {
+        assert!(is_valid_key("Alt"));
+        assert!(is_valid_key("Control"));
+        assert!(is_valid_key("Meta"));
+        assert!(is_valid_key("Shift"));
+    }
+
+    #[test]
+    fn is_valid_key_common() {
+        assert!(is_valid_key("Enter"));
+        assert!(is_valid_key("Tab"));
+        assert!(is_valid_key("Space"));
+        assert!(is_valid_key("Backspace"));
+        assert!(is_valid_key("a"));
+        assert!(is_valid_key("Z"));
+        assert!(is_valid_key("0"));
+        assert!(is_valid_key("F1"));
+        assert!(is_valid_key("F24"));
+    }
+
+    #[test]
+    fn is_valid_key_invalid() {
+        assert!(!is_valid_key("FooBar"));
+        assert!(!is_valid_key(""));
+        assert!(!is_valid_key("enter")); // case-sensitive
+    }
+
+    #[test]
+    fn is_modifier_checks() {
+        assert!(is_modifier("Alt"));
+        assert!(is_modifier("Control"));
+        assert!(is_modifier("Meta"));
+        assert!(is_modifier("Shift"));
+        assert!(!is_modifier("Enter"));
+        assert!(!is_modifier("a"));
+    }
+
+    // =========================================================================
+    // CDP key mapping tests
+    // =========================================================================
+
+    #[test]
+    fn cdp_key_value_special_keys() {
+        assert_eq!(cdp_key_value("Enter"), "\r");
+        assert_eq!(cdp_key_value("Tab"), "\t");
+        assert_eq!(cdp_key_value("Space"), " ");
+        assert_eq!(cdp_key_value("Escape"), "Escape");
+        assert_eq!(cdp_key_value("Backspace"), "Backspace");
+        assert_eq!(cdp_key_value("Delete"), "Delete");
+    }
+
+    #[test]
+    fn cdp_key_value_single_chars() {
+        assert_eq!(cdp_key_value("a"), "a");
+        assert_eq!(cdp_key_value("Z"), "Z");
+        assert_eq!(cdp_key_value("5"), "5");
+    }
+
+    #[test]
+    fn cdp_key_value_symbols() {
+        assert_eq!(cdp_key_value("Minus"), "-");
+        assert_eq!(cdp_key_value("Equal"), "=");
+        assert_eq!(cdp_key_value("Comma"), ",");
+        assert_eq!(cdp_key_value("Period"), ".");
+        assert_eq!(cdp_key_value("Slash"), "/");
+        assert_eq!(cdp_key_value("Semicolon"), ";");
+        assert_eq!(cdp_key_value("Quote"), "'");
+        assert_eq!(cdp_key_value("Backquote"), "`");
+        assert_eq!(cdp_key_value("BracketLeft"), "[");
+        assert_eq!(cdp_key_value("BracketRight"), "]");
+        assert_eq!(cdp_key_value("Backslash"), "\\");
+    }
+
+    #[test]
+    fn cdp_key_value_modifiers() {
+        assert_eq!(cdp_key_value("Alt"), "Alt");
+        assert_eq!(cdp_key_value("Control"), "Control");
+        assert_eq!(cdp_key_value("Meta"), "Meta");
+        assert_eq!(cdp_key_value("Shift"), "Shift");
+    }
+
+    #[test]
+    fn cdp_key_value_function_keys() {
+        assert_eq!(cdp_key_value("F1"), "F1");
+        assert_eq!(cdp_key_value("F12"), "F12");
+        assert_eq!(cdp_key_value("F24"), "F24");
+    }
+
+    #[test]
+    fn cdp_key_value_navigation() {
+        assert_eq!(cdp_key_value("ArrowUp"), "ArrowUp");
+        assert_eq!(cdp_key_value("ArrowDown"), "ArrowDown");
+        assert_eq!(cdp_key_value("Home"), "Home");
+        assert_eq!(cdp_key_value("End"), "End");
+        assert_eq!(cdp_key_value("PageUp"), "PageUp");
+        assert_eq!(cdp_key_value("PageDown"), "PageDown");
+    }
+
+    #[test]
+    fn cdp_key_code_letters() {
+        assert_eq!(cdp_key_code("a"), "KeyA");
+        assert_eq!(cdp_key_code("z"), "KeyZ");
+        assert_eq!(cdp_key_code("A"), "KeyA");
+        assert_eq!(cdp_key_code("Z"), "KeyZ");
+    }
+
+    #[test]
+    fn cdp_key_code_digits() {
+        assert_eq!(cdp_key_code("0"), "Digit0");
+        assert_eq!(cdp_key_code("5"), "Digit5");
+        assert_eq!(cdp_key_code("9"), "Digit9");
+    }
+
+    #[test]
+    fn cdp_key_code_modifiers() {
+        assert_eq!(cdp_key_code("Alt"), "AltLeft");
+        assert_eq!(cdp_key_code("Control"), "ControlLeft");
+        assert_eq!(cdp_key_code("Meta"), "MetaLeft");
+        assert_eq!(cdp_key_code("Shift"), "ShiftLeft");
+    }
+
+    #[test]
+    fn cdp_key_code_special() {
+        assert_eq!(cdp_key_code("Enter"), "Enter");
+        assert_eq!(cdp_key_code("Tab"), "Tab");
+        assert_eq!(cdp_key_code("Space"), "Space");
+        assert_eq!(cdp_key_code("Backspace"), "Backspace");
+        assert_eq!(cdp_key_code("Escape"), "Escape");
+    }
+
+    #[test]
+    fn cdp_key_code_function_keys() {
+        assert_eq!(cdp_key_code("F1"), "F1");
+        assert_eq!(cdp_key_code("F12"), "F12");
+    }
+
+    #[test]
+    fn cdp_key_code_symbols() {
+        assert_eq!(cdp_key_code("Minus"), "Minus");
+        assert_eq!(cdp_key_code("Comma"), "Comma");
+        assert_eq!(cdp_key_code("Period"), "Period");
+        assert_eq!(cdp_key_code("Slash"), "Slash");
+    }
+
+    // =========================================================================
+    // TypeResult and KeyResult serialization tests
+    // =========================================================================
+
+    #[test]
+    fn type_result_serialization() {
+        let result = TypeResult {
+            typed: "Hello".to_string(),
+            length: 5,
+            snapshot: None,
+        };
+        let json: serde_json::Value = serde_json::to_value(&result).unwrap();
+        assert_eq!(json["typed"], "Hello");
+        assert_eq!(json["length"], 5);
+        assert!(json.get("snapshot").is_none());
+    }
+
+    #[test]
+    fn type_result_with_snapshot() {
+        let result = TypeResult {
+            typed: "test".to_string(),
+            length: 4,
+            snapshot: Some(serde_json::json!({"role": "document"})),
+        };
+        let json: serde_json::Value = serde_json::to_value(&result).unwrap();
+        assert_eq!(json["typed"], "test");
+        assert_eq!(json["length"], 4);
+        assert!(json.get("snapshot").is_some());
+    }
+
+    #[test]
+    fn key_result_serialization_single_press() {
+        let result = KeyResult {
+            pressed: "Enter".to_string(),
+            repeat: None,
+            snapshot: None,
+        };
+        let json: serde_json::Value = serde_json::to_value(&result).unwrap();
+        assert_eq!(json["pressed"], "Enter");
+        assert!(json.get("repeat").is_none());
+        assert!(json.get("snapshot").is_none());
+    }
+
+    #[test]
+    fn key_result_serialization_with_repeat() {
+        let result = KeyResult {
+            pressed: "ArrowDown".to_string(),
+            repeat: Some(5),
+            snapshot: None,
+        };
+        let json: serde_json::Value = serde_json::to_value(&result).unwrap();
+        assert_eq!(json["pressed"], "ArrowDown");
+        assert_eq!(json["repeat"], 5);
+    }
+
+    #[test]
+    fn key_result_serialization_with_snapshot() {
+        let result = KeyResult {
+            pressed: "Tab".to_string(),
+            repeat: None,
+            snapshot: Some(serde_json::json!({"role": "document"})),
+        };
+        let json: serde_json::Value = serde_json::to_value(&result).unwrap();
+        assert_eq!(json["pressed"], "Tab");
+        assert!(json.get("snapshot").is_some());
+        assert!(json.get("repeat").is_none());
+    }
+
+    #[test]
+    fn key_result_combination() {
+        let result = KeyResult {
+            pressed: "Control+A".to_string(),
+            repeat: None,
+            snapshot: None,
+        };
+        let json: serde_json::Value = serde_json::to_value(&result).unwrap();
+        assert_eq!(json["pressed"], "Control+A");
     }
 }
