@@ -1,9 +1,9 @@
 {
-  "currentStep": 1,
+  "currentStep": 0,
   "currentIssue": null,
   "currentBranch": "main",
   "featureName": null,
-  "lastTransitionAt": "2026-02-14T17:35:12.339Z",
+  "lastTransitionAt": "2026-02-14T17:35:15.522Z",
   "retries": {
     "1": 1
   }
