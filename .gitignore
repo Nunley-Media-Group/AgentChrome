@@ -12,6 +12,7 @@ man/
 
 # Claude local settings
 .claude/settings.local.json
+.claude/sdlc-state.json
 
 # OS files
 .DS_Store
