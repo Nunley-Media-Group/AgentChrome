@@ -2273,7 +2273,9 @@ fn caps_exit_code(world: &mut CapabilitiesWorld, expected: i32) {
 #[then(expr = "the JSON has key {string} with value {string}")]
 fn caps_json_key_value(world: &mut CapabilitiesWorld, key: String, value: String) {
     let json = world.parsed_json.as_ref().expect("No parsed JSON");
-    let actual = json.get(&key).unwrap_or_else(|| panic!("JSON missing key '{key}'"));
+    let actual = json
+        .get(&key)
+        .unwrap_or_else(|| panic!("JSON missing key '{key}'"));
     assert_eq!(
         actual.as_str().unwrap_or(""),
         value,
@@ -2284,13 +2286,18 @@ fn caps_json_key_value(world: &mut CapabilitiesWorld, key: String, value: String
 #[then(expr = "the JSON has key {string}")]
 fn caps_json_has_key(world: &mut CapabilitiesWorld, key: String) {
     let json = world.parsed_json.as_ref().expect("No parsed JSON");
-    assert!(json.get(&key).is_some(), "JSON missing key '{key}'\nJSON: {json}");
+    assert!(
+        json.get(&key).is_some(),
+        "JSON missing key '{key}'\nJSON: {json}"
+    );
 }
 
 #[then(expr = "the JSON has a {string} array")]
 fn caps_json_has_array(world: &mut CapabilitiesWorld, key: String) {
     let json = world.parsed_json.as_ref().expect("No parsed JSON");
-    let val = json.get(&key).unwrap_or_else(|| panic!("JSON missing key '{key}'"));
+    let val = json
+        .get(&key)
+        .unwrap_or_else(|| panic!("JSON missing key '{key}'"));
     assert!(val.is_array(), "'{key}' is not an array: {val}");
 }
 
@@ -2309,7 +2316,9 @@ fn caps_array_not_empty(world: &mut CapabilitiesWorld, key: String) {
 #[then("every command has \"name\" and \"description\" fields")]
 fn caps_every_command_has_name_and_description(world: &mut CapabilitiesWorld) {
     let json = world.parsed_json.as_ref().expect("No parsed JSON");
-    let commands = json["commands"].as_array().expect("commands is not an array");
+    let commands = json["commands"]
+        .as_array()
+        .expect("commands is not an array");
     for (i, cmd) in commands.iter().enumerate() {
         assert!(
             cmd.get("name").is_some(),
@@ -2325,7 +2334,9 @@ fn caps_every_command_has_name_and_description(world: &mut CapabilitiesWorld) {
 #[then("commands with subcommands have a \"subcommands\" array")]
 fn caps_commands_with_subcommands(world: &mut CapabilitiesWorld) {
     let json = world.parsed_json.as_ref().expect("No parsed JSON");
-    let commands = json["commands"].as_array().expect("commands is not an array");
+    let commands = json["commands"]
+        .as_array()
+        .expect("commands is not an array");
     let any_has_subcommands = commands.iter().any(|c| c.get("subcommands").is_some());
     assert!(any_has_subcommands, "No command has a 'subcommands' field");
 }
@@ -2345,7 +2356,9 @@ fn caps_array_has_exactly_n(world: &mut CapabilitiesWorld, key: String, expected
 #[then(expr = "the first command has name {string}")]
 fn caps_first_command_name(world: &mut CapabilitiesWorld, name: String) {
     let json = world.parsed_json.as_ref().expect("No parsed JSON");
-    let commands = json["commands"].as_array().expect("commands is not an array");
+    let commands = json["commands"]
+        .as_array()
+        .expect("commands is not an array");
     let first = &commands[0];
     assert_eq!(
         first["name"].as_str().unwrap_or(""),
@@ -2357,7 +2370,9 @@ fn caps_first_command_name(world: &mut CapabilitiesWorld, name: String) {
 #[then("no command has \"subcommands\"")]
 fn caps_no_command_has_subcommands(world: &mut CapabilitiesWorld) {
     let json = world.parsed_json.as_ref().expect("No parsed JSON");
-    let commands = json["commands"].as_array().expect("commands is not an array");
+    let commands = json["commands"]
+        .as_array()
+        .expect("commands is not an array");
     for cmd in commands {
         assert!(
             cmd.get("subcommands").is_none(),
@@ -2379,15 +2394,21 @@ fn caps_json_does_not_have_key(world: &mut CapabilitiesWorld, key: String) {
 #[then(expr = "\"global_flags\" includes {string}")]
 fn caps_global_flags_includes(world: &mut CapabilitiesWorld, flag_name: String) {
     let json = world.parsed_json.as_ref().expect("No parsed JSON");
-    let flags = json["global_flags"].as_array().expect("global_flags is not an array");
-    let found = flags.iter().any(|f| f["name"].as_str() == Some(flag_name.as_str()));
+    let flags = json["global_flags"]
+        .as_array()
+        .expect("global_flags is not an array");
+    let found = flags
+        .iter()
+        .any(|f| f["name"].as_str() == Some(flag_name.as_str()));
     assert!(found, "global_flags does not include '{flag_name}'");
 }
 
 #[then(expr = "\"exit_codes\" contains code {int} named {string}")]
 fn caps_exit_codes_contains(world: &mut CapabilitiesWorld, code: u8, name: String) {
     let json = world.parsed_json.as_ref().expect("No parsed JSON");
-    let codes = json["exit_codes"].as_array().expect("exit_codes is not an array");
+    let codes = json["exit_codes"]
+        .as_array()
+        .expect("exit_codes is not an array");
     let found = codes.iter().any(|c| {
         c["code"].as_u64() == Some(u64::from(code)) && c["name"].as_str() == Some(name.as_str())
     });
@@ -2400,7 +2421,9 @@ fn caps_exit_codes_contains(world: &mut CapabilitiesWorld, code: u8, name: Strin
 #[then(expr = "a subcommand has flag {string} with type {string}")]
 fn caps_subcommand_has_flag(world: &mut CapabilitiesWorld, flag_name: String, type_name: String) {
     let json = world.parsed_json.as_ref().expect("No parsed JSON");
-    let commands = json["commands"].as_array().expect("commands is not an array");
+    let commands = json["commands"]
+        .as_array()
+        .expect("commands is not an array");
     let mut found = false;
     for cmd in commands {
         if let Some(subs) = cmd.get("subcommands").and_then(|s| s.as_array()) {
@@ -2433,7 +2456,9 @@ fn caps_flag_has_four_values(
     v4: String,
 ) {
     let json = world.parsed_json.as_ref().expect("No parsed JSON");
-    let commands = json["commands"].as_array().expect("commands is not an array");
+    let commands = json["commands"]
+        .as_array()
+        .expect("commands is not an array");
     let expected = vec![v1, v2, v3, v4];
     for cmd in commands {
         if let Some(subs) = cmd.get("subcommands").and_then(|s| s.as_array()) {
@@ -2482,14 +2507,18 @@ fn caps_stderr_contains(world: &mut CapabilitiesWorld, expected: String) {
 fn caps_array_contains_entry(world: &mut CapabilitiesWorld, key: String, name: String) {
     let json = world.parsed_json.as_ref().expect("No parsed JSON");
     let arr = json.get(&key).unwrap().as_array().unwrap();
-    let found = arr.iter().any(|e| e["name"].as_str() == Some(name.as_str()));
+    let found = arr
+        .iter()
+        .any(|e| e["name"].as_str() == Some(name.as_str()));
     assert!(found, "'{key}' array does not contain entry '{name}'");
 }
 
 #[then("the first command has subcommands")]
 fn caps_first_command_has_subcommands(world: &mut CapabilitiesWorld) {
     let json = world.parsed_json.as_ref().expect("No parsed JSON");
-    let commands = json["commands"].as_array().expect("commands is not an array");
+    let commands = json["commands"]
+        .as_array()
+        .expect("commands is not an array");
     let first = &commands[0];
     let subs = first.get("subcommands").and_then(|s| s.as_array());
     assert!(
@@ -2598,6 +2627,7 @@ fn has_ci_badge(world: &mut ReadmeWorld) {
 }
 
 #[then(expr = "it contains a license badge showing {string} and {string}")]
+#[allow(clippy::used_underscore_binding)]
 fn has_license_badge(world: &mut ReadmeWorld, lic1: String, _lic2: String) {
     let content = &world.readme_content;
     assert!(

@@ -82,10 +82,7 @@ pub fn build_manifest(cmd: &clap::Command, compact: bool) -> CapabilitiesManifes
 
     CapabilitiesManifest {
         name: cmd.get_name().to_string(),
-        version: cmd
-            .get_version()
-            .unwrap_or("unknown")
-            .to_string(),
+        version: cmd.get_version().unwrap_or("unknown").to_string(),
         commands,
         global_flags: if compact {
             None
@@ -111,10 +108,7 @@ fn visit_command(cmd: &clap::Command, compact: bool) -> CommandDescriptor {
         };
     }
 
-    let subs: Vec<&clap::Command> = cmd
-        .get_subcommands()
-        .filter(|s| !s.is_hide_set())
-        .collect();
+    let subs: Vec<&clap::Command> = cmd.get_subcommands().filter(|s| !s.is_hide_set()).collect();
 
     let parent_name = cmd.get_name();
 
@@ -122,7 +116,9 @@ fn visit_command(cmd: &clap::Command, compact: bool) -> CommandDescriptor {
 
     // If the command has positional args at its own level (hybrid like navigate),
     // create an implicit subcommand for the direct usage.
-    let has_positional = cmd.get_arguments().any(|a| a.is_positional() && !is_internal_arg(a));
+    let has_positional = cmd
+        .get_arguments()
+        .any(|a| a.is_positional() && !is_internal_arg(a));
     if has_positional {
         subcommands.push(visit_subcommand(parent_name, cmd));
     }
@@ -198,7 +194,10 @@ fn extract_args(cmd: &clap::Command) -> Vec<ArgDescriptor> {
                 name: a.get_id().as_str().to_string(),
                 type_name,
                 required: a.is_required_set(),
-                description: a.get_help().map(std::string::ToString::to_string).unwrap_or_default(),
+                description: a
+                    .get_help()
+                    .map(std::string::ToString::to_string)
+                    .unwrap_or_default(),
             }
         })
         .collect()
@@ -229,7 +228,10 @@ fn extract_flags(cmd: &clap::Command) -> Vec<FlagDescriptor> {
                 required: Some(a.is_required_set()),
                 default: extract_default(a),
                 values,
-                description: a.get_help().map(std::string::ToString::to_string).unwrap_or_default(),
+                description: a
+                    .get_help()
+                    .map(std::string::ToString::to_string)
+                    .unwrap_or_default(),
             })
         })
         .collect()
@@ -275,14 +277,29 @@ fn infer_type(arg: &clap::Arg) -> String {
 
     let id = arg.get_id().as_str().to_uppercase();
 
-    let all_names: Vec<&str> = value_names.iter().copied().chain(std::iter::once(id.as_str())).collect();
+    let all_names: Vec<&str> = value_names
+        .iter()
+        .copied()
+        .chain(std::iter::once(id.as_str()))
+        .collect();
 
     for name in &all_names {
         let upper = name.to_uppercase();
         if matches!(
             upper.as_str(),
-            "PORT" | "TIMEOUT" | "LIMIT" | "PAGE" | "QUALITY" | "REPEAT"
-                | "AMOUNT" | "DELAY" | "CPU" | "X" | "Y" | "REQ_ID" | "MSG_ID"
+            "PORT"
+                | "TIMEOUT"
+                | "LIMIT"
+                | "PAGE"
+                | "QUALITY"
+                | "REPEAT"
+                | "AMOUNT"
+                | "DELAY"
+                | "CPU"
+                | "X"
+                | "Y"
+                | "REQ_ID"
+                | "MSG_ID"
                 | "MAX_SIZE"
         ) {
             return "integer".to_string();
@@ -352,7 +369,10 @@ fn global_flags(cmd: &clap::Command) -> Vec<FlagDescriptor> {
                 required: None,
                 default: extract_default(a),
                 values,
-                description: a.get_help().map(std::string::ToString::to_string).unwrap_or_default(),
+                description: a
+                    .get_help()
+                    .map(std::string::ToString::to_string)
+                    .unwrap_or_default(),
             })
         })
         .collect()
@@ -530,7 +550,9 @@ mod tests {
 
     #[test]
     fn infer_type_returns_bool_for_set_true() {
-        let arg = clap::Arg::new("test").long("test").action(clap::ArgAction::SetTrue);
+        let arg = clap::Arg::new("test")
+            .long("test")
+            .action(clap::ArgAction::SetTrue);
         assert_eq!(infer_type(&arg), "bool");
     }
 
@@ -575,8 +597,11 @@ mod tests {
     fn command_filter_returns_single_command() {
         let cmd = root_cmd();
         let manifest = build_manifest(&cmd, false);
-        let filtered: Vec<&CommandDescriptor> =
-            manifest.commands.iter().filter(|c| c.name == "navigate").collect();
+        let filtered: Vec<&CommandDescriptor> = manifest
+            .commands
+            .iter()
+            .filter(|c| c.name == "navigate")
+            .collect();
         assert_eq!(filtered.len(), 1);
         assert_eq!(filtered[0].name, "navigate");
     }
