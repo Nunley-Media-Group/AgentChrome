@@ -1,0 +1,230 @@
+# File: tests/features/config/config.feature
+#
+# Generated from: .claude/specs/24-configuration-file-support/requirements.md
+# Issue: #24
+
+Feature: Configuration file support
+  As a developer or automation engineer
+  I want to set default values in a configuration file
+  So that I don't repeat common flags on every invocation
+
+  # --- Config File Loading ---
+
+  Scenario: Load config from explicit --config path
+    Given a config file at "/tmp/chrome-cli-test-config.toml" with content:
+      """
+      [connection]
+      port = 9333
+      """
+    When I run "chrome-cli --config /tmp/chrome-cli-test-config.toml config show"
+    Then the exit code should be 0
+    And the JSON output field "connection.port" should be 9333
+
+  Scenario: Load config from CHROME_CLI_CONFIG environment variable
+    Given a config file at "/tmp/chrome-cli-env-config.toml" with content:
+      """
+      [connection]
+      port = 9444
+      """
+    And the environment variable "CHROME_CLI_CONFIG" is set to "/tmp/chrome-cli-env-config.toml"
+    When I run "chrome-cli config show"
+    Then the exit code should be 0
+    And the JSON output field "config_path" should be "/tmp/chrome-cli-env-config.toml"
+    And the JSON output field "connection.port" should be 9444
+
+  Scenario: Load config from project-local file
+    Given a config file at "./.chrome-cli.toml" in the working directory with content:
+      """
+      [connection]
+      port = 9555
+      """
+    And no "--config" flag or "CHROME_CLI_CONFIG" env var is set
+    When I run "chrome-cli config show"
+    Then the exit code should be 0
+    And the JSON output field "connection.port" should be 9555
+
+  Scenario: Load config from XDG standard path
+    Given a config file at the XDG config path "chrome-cli/config.toml" with content:
+      """
+      [connection]
+      host = "10.0.0.1"
+      """
+    And no higher-priority config source is present
+    When I run "chrome-cli config show"
+    Then the exit code should be 0
+    And the JSON output field "connection.host" should be "10.0.0.1"
+
+  Scenario: Load config from home directory fallback
+    Given a config file at "~/.chrome-cli.toml" with content:
+      """
+      [output]
+      format = "pretty"
+      """
+    And no higher-priority config source is present
+    When I run "chrome-cli config show"
+    Then the exit code should be 0
+    And the JSON output field "output.format" should be "pretty"
+
+  # --- Priority Order ---
+
+  Scenario: Config file priority - project-local wins over home directory
+    Given a config file at "./.chrome-cli.toml" with content:
+      """
+      [connection]
+      port = 1111
+      """
+    And a config file at "~/.chrome-cli.toml" with content:
+      """
+      [connection]
+      port = 2222
+      """
+    When I run "chrome-cli config show"
+    Then the exit code should be 0
+    And the JSON output field "connection.port" should be 1111
+
+  Scenario: CLI flags override config file values
+    Given a config file with content:
+      """
+      [connection]
+      port = 9333
+      """
+    When I run "chrome-cli --port 9444 config show"
+    Then the exit code should be 0
+    And the JSON output field "connection.port" should be 9444
+
+  Scenario: Environment variables override config file values
+    Given a config file with content:
+      """
+      [connection]
+      port = 9333
+      """
+    And the environment variable "CHROME_CLI_PORT" is set to "9555"
+    When I run "chrome-cli config show"
+    Then the exit code should be 0
+    And the JSON output field "connection.port" should be 9555
+
+  # --- Config Sections ---
+
+  Scenario: Connection defaults from config file
+    Given a config file with content:
+      """
+      [connection]
+      host = "192.168.1.100"
+      port = 9333
+      timeout_ms = 60000
+      """
+    When I run "chrome-cli config show"
+    Then the exit code should be 0
+    And the JSON output field "connection.host" should be "192.168.1.100"
+    And the JSON output field "connection.port" should be 9333
+    And the JSON output field "connection.timeout_ms" should be 60000
+
+  Scenario: Chrome launch defaults from config file
+    Given a config file with content:
+      """
+      [launch]
+      executable = "/usr/bin/chromium"
+      channel = "beta"
+      headless = true
+      extra_args = ["--disable-gpu", "--no-sandbox"]
+      """
+    When I run "chrome-cli config show"
+    Then the exit code should be 0
+    And the JSON output field "launch.executable" should be "/usr/bin/chromium"
+    And the JSON output field "launch.channel" should be "beta"
+    And the JSON output field "launch.headless" should be true
+    And the JSON output array "launch.extra_args" should contain "--disable-gpu"
+
+  Scenario: Output format defaults from config file
+    Given a config file with content:
+      """
+      [output]
+      format = "json"
+      """
+    When I run "chrome-cli config show"
+    Then the exit code should be 0
+    And the JSON output field "output.format" should be "json"
+
+  Scenario: Tab behavior defaults from config file
+    Given a config file with content:
+      """
+      [tabs]
+      auto_activate = false
+      filter_internal = true
+      """
+    When I run "chrome-cli config show"
+    Then the exit code should be 0
+    And the JSON output field "tabs.auto_activate" should be false
+    And the JSON output field "tabs.filter_internal" should be true
+
+  # --- Config Subcommands ---
+
+  Scenario: config show displays resolved configuration
+    Given a config file with content:
+      """
+      [connection]
+      port = 9333
+
+      [output]
+      format = "pretty"
+      """
+    When I run "chrome-cli config show"
+    Then the exit code should be 0
+    And the JSON output should contain "config_path"
+    And the JSON output should contain "connection"
+    And the JSON output should contain "launch"
+    And the JSON output should contain "output"
+    And the JSON output should contain "tabs"
+
+  Scenario: config init creates a default config file
+    Given no config file exists at the default XDG path
+    When I run "chrome-cli config init"
+    Then the exit code should be 0
+    And a config file should exist at the default XDG path
+    And the JSON output field "created" should contain "config.toml"
+
+  Scenario: config init refuses to overwrite existing file
+    Given a config file already exists at the default XDG path
+    When I run "chrome-cli config init"
+    Then the exit code should be non-zero
+    And stderr should contain "already exists"
+
+  Scenario: config path shows active config file
+    Given a config file at "~/.chrome-cli.toml" with content:
+      """
+      [connection]
+      port = 9222
+      """
+    When I run "chrome-cli config path"
+    Then the exit code should be 0
+    And the JSON output field "config_path" should contain ".chrome-cli.toml"
+
+  Scenario: config path when no config file exists
+    Given no config file exists at any search location
+    When I run "chrome-cli config path"
+    Then the exit code should be 0
+    And the JSON output field "config_path" should be null
+
+  # --- Error Handling ---
+
+  Scenario: Invalid TOML config file - graceful degradation
+    Given a config file with content:
+      """
+      this is not valid toml [[[
+      """
+    When I run "chrome-cli config show"
+    Then the exit code should be 0
+    And stderr should contain "warning"
+    And the JSON output field "connection.port" should be 9222
+
+  Scenario: Config file with unknown keys - warn and continue
+    Given a config file with content:
+      """
+      [connection]
+      port = 9333
+      unknown_key = "hello"
+      """
+    When I run "chrome-cli config show"
+    Then the exit code should be 0
+    And stderr should contain "unknown"
+    And the JSON output field "connection.port" should be 9333

@@ -92,7 +92,10 @@ fn print_clear_plain(result: &ClearResult) {
 
 fn print_upload_plain(result: &UploadResult) {
     let file_list = result.files.join(", ");
-    println!("Uploaded {} ({} bytes): {}", result.uploaded, result.size, file_list);
+    println!(
+        "Uploaded {} ({} bytes): {}",
+        result.uploaded, result.size, file_list
+    );
 }
 
 // =============================================================================
@@ -549,9 +552,8 @@ async fn execute_upload(global: &GlobalOpts, args: &FormUploadArgs) -> Result<()
         if !path.is_file() {
             return Err(AppError::file_not_found(&path.display().to_string()));
         }
-        let metadata = std::fs::metadata(path).map_err(|_| {
-            AppError::file_not_readable(&path.display().to_string())
-        })?;
+        let metadata = std::fs::metadata(path)
+            .map_err(|_| AppError::file_not_readable(&path.display().to_string()))?;
         let file_size = metadata.len();
         if file_size > LARGE_FILE_THRESHOLD {
             eprintln!(
@@ -563,9 +565,9 @@ async fn execute_upload(global: &GlobalOpts, args: &FormUploadArgs) -> Result<()
         total_size += file_size;
 
         // Canonicalize the path for CDP
-        let canonical = path.canonicalize().map_err(|_| {
-            AppError::file_not_readable(&path.display().to_string())
-        })?;
+        let canonical = path
+            .canonicalize()
+            .map_err(|_| AppError::file_not_readable(&path.display().to_string()))?;
         resolved_paths.push(canonical.to_string_lossy().to_string());
     }
 
@@ -920,10 +922,7 @@ mod tests {
     fn upload_result_multiple_files() {
         let result = UploadResult {
             uploaded: "s3".to_string(),
-            files: vec![
-                "/tmp/doc1.pdf".to_string(),
-                "/tmp/doc2.pdf".to_string(),
-            ],
+            files: vec!["/tmp/doc1.pdf".to_string(), "/tmp/doc2.pdf".to_string()],
             size: 102400,
             snapshot: None,
         };

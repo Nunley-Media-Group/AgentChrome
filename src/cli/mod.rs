@@ -30,11 +30,16 @@ pub struct Cli {
 #[derive(Args)]
 pub struct GlobalOpts {
     /// Chrome DevTools Protocol port number [default: 9222]
-    #[arg(long, global = true)]
+    #[arg(long, global = true, env = "CHROME_CLI_PORT")]
     pub port: Option<u16>,
 
     /// Chrome DevTools Protocol host address
-    #[arg(long, default_value = "127.0.0.1", global = true)]
+    #[arg(
+        long,
+        default_value = "127.0.0.1",
+        global = true,
+        env = "CHROME_CLI_HOST"
+    )]
     pub host: String,
 
     /// Direct WebSocket URL (overrides --host and --port)
@@ -42,7 +47,7 @@ pub struct GlobalOpts {
     pub ws_url: Option<String>,
 
     /// Command timeout in milliseconds
-    #[arg(long, global = true)]
+    #[arg(long, global = true, env = "CHROME_CLI_TIMEOUT")]
     pub timeout: Option<u64>,
 
     /// Target tab ID (defaults to the active tab)
@@ -52,6 +57,10 @@ pub struct GlobalOpts {
     /// Automatically dismiss any dialogs that appear during command execution
     #[arg(long, global = true)]
     pub auto_dismiss_dialogs: bool,
+
+    /// Path to configuration file (overrides default search)
+    #[arg(long, global = true, env = "CHROME_CLI_CONFIG")]
+    pub config: Option<PathBuf>,
 
     #[command(flatten)]
     pub output: OutputFormat,
@@ -183,6 +192,15 @@ pub enum Command {
             programmatically."
     )]
     Dialog(DialogArgs),
+
+    /// Configuration file management (show, init, path)
+    #[command(
+        long_about = "Manage the chrome-cli configuration file. Show the resolved configuration \
+            from all sources, create a default config file, or display the active config file path. \
+            Config files use TOML format and are searched in priority order: --config flag, \
+            $CHROME_CLI_CONFIG env var, project-local, XDG config dir, home directory."
+    )]
+    Config(ConfigArgs),
 }
 
 /// Chrome release channel to use when launching.
@@ -1115,4 +1133,32 @@ pub enum ColorScheme {
     Light,
     /// Reset to browser default
     Auto,
+}
+
+/// Arguments for the `config` subcommand group.
+#[derive(Args)]
+pub struct ConfigArgs {
+    #[command(subcommand)]
+    pub command: ConfigCommand,
+}
+
+/// Config management subcommands.
+#[derive(Subcommand)]
+pub enum ConfigCommand {
+    /// Display the resolved configuration from all sources
+    Show,
+
+    /// Create a default config file with commented example values
+    Init(ConfigInitArgs),
+
+    /// Show the active config file path (or null if none)
+    Path,
+}
+
+/// Arguments for `config init`.
+#[derive(Args)]
+pub struct ConfigInitArgs {
+    /// Create config file at a custom path instead of the default XDG location
+    #[arg(long)]
+    pub path: Option<PathBuf>,
 }

@@ -3,6 +3,7 @@
 
 pub mod cdp;
 pub mod chrome;
+pub mod config;
 pub mod connection;
 pub mod error;
 pub mod session;
