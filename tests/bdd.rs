@@ -2100,6 +2100,7 @@ const SCROLL_TESTABLE_SCENARIOS: &[&str] = &[
 async fn main() {
     WorkflowWorld::run("tests/features/release-pipeline.feature").await;
     CliWorld::run("tests/features/cli-skeleton.feature").await;
+    CliWorld::run("tests/features/shell-completions.feature").await;
     CliWorld::run("tests/features/chrome-discovery-launch.feature").await;
     CdpWorld::run("tests/features/cdp-websocket-client.feature").await;
     // TODO: tests/features/tab-management.feature exists but requires a running
