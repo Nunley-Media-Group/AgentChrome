@@ -175,6 +175,9 @@ pub fn parse_geolocation(input: &str) -> Result<(f64, f64), AppError> {
         .trim()
         .parse()
         .map_err(|_| AppError::invalid_geolocation(input))?;
+    if !(-90.0..=90.0).contains(&lat) || !(-180.0..=180.0).contains(&lon) {
+        return Err(AppError::invalid_geolocation(input));
+    }
     Ok((lat, lon))
 }
 
@@ -374,6 +377,14 @@ async fn execute_set(global: &GlobalOpts, args: &EmulateSetArgs) -> Result<(), A
     }
 
     // --- Viewport / Device Metrics ---
+    if let Some(scale) = args.device_scale {
+        if scale <= 0.0 {
+            return Err(AppError::emulation_failed(
+                "device scale factor must be a positive number",
+            ));
+        }
+    }
+
     let viewport_requested = args.viewport.is_some() || args.device_scale.is_some() || args.mobile;
 
     if viewport_requested {
@@ -730,6 +741,18 @@ mod tests {
     #[test]
     fn parse_geolocation_missing_longitude() {
         let err = parse_geolocation("37.7749").unwrap_err();
+        assert!(err.message.contains("LAT,LONG"));
+    }
+
+    #[test]
+    fn parse_geolocation_latitude_out_of_range() {
+        let err = parse_geolocation("91.0,0.0").unwrap_err();
+        assert!(err.message.contains("LAT,LONG"));
+    }
+
+    #[test]
+    fn parse_geolocation_longitude_out_of_range() {
+        let err = parse_geolocation("0.0,181.0").unwrap_err();
         assert!(err.message.contains("LAT,LONG"));
     }
 
