@@ -189,7 +189,7 @@ fn parse_http_response(buf: &[u8]) -> Result<String, ChromeError> {
         .lines()
         .next()
         .ok_or_else(|| ChromeError::HttpError("empty response".into()))?;
-    if !status_line.contains("200") {
+    if !status_line.contains(" 200 ") {
         return Err(ChromeError::HttpError(format!(
             "unexpected HTTP status: {status_line}"
         )));
@@ -391,5 +391,11 @@ mod tests {
     #[test]
     fn is_http_response_complete_no_headers_yet() {
         assert!(!is_http_response_complete(b"HTTP/1.1 200 OK\r\n"));
+    }
+
+    #[test]
+    fn is_http_response_complete_without_content_length() {
+        let response = b"HTTP/1.1 200 OK\r\nConnection: close\r\n\r\nbody";
+        assert!(is_http_response_complete(response));
     }
 }
