@@ -9,7 +9,9 @@ use chrome_cli::cdp::{CdpClient, CdpConfig, CdpEvent};
 use chrome_cli::connection::{ManagedSession, resolve_connection, resolve_target};
 use chrome_cli::error::{AppError, ExitCode};
 
-use crate::cli::{GlobalOpts, PerfAnalyzeArgs, PerfArgs, PerfCommand, PerfRecordArgs, PerfVitalsArgs};
+use crate::cli::{
+    GlobalOpts, PerfAnalyzeArgs, PerfArgs, PerfCommand, PerfRecordArgs, PerfVitalsArgs,
+};
 
 /// Default trace timeout in milliseconds (30 seconds).
 const DEFAULT_TRACE_TIMEOUT_MS: u64 = 30_000;
@@ -190,9 +192,9 @@ async fn execute_record(global: &GlobalOpts, args: &PerfRecordArgs) -> Result<()
     }
 
     // Wait for Ctrl+C or --duration timeout
-    let deadline = args.duration.map(|ms| {
-        tokio::time::Instant::now() + Duration::from_millis(ms)
-    });
+    let deadline = args
+        .duration
+        .map(|ms| tokio::time::Instant::now() + Duration::from_millis(ms));
 
     tokio::select! {
         () = async {
