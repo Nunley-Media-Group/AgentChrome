@@ -953,12 +953,10 @@ async fn execute_status(global: &GlobalOpts) -> Result<(), AppError> {
     let status = EmulateStatusOutput {
         network: persisted.network,
         cpu: persisted.cpu,
-        geolocation: persisted
-            .geolocation
-            .map(|g| GeolocationOutput {
-                latitude: g.latitude,
-                longitude: g.longitude,
-            }),
+        geolocation: persisted.geolocation.map(|g| GeolocationOutput {
+            latitude: g.latitude,
+            longitude: g.longitude,
+        }),
         user_agent: persisted.user_agent.or(user_agent),
         color_scheme: persisted.color_scheme.or(color_scheme),
         viewport: persisted
