@@ -1,7 +1,8 @@
 use std::fmt;
+use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use chrome_cli::cdp::{CdpClient, CdpConfig};
 use chrome_cli::connection::{ManagedSession, resolve_connection, resolve_target};
@@ -55,6 +56,134 @@ pub struct EmulateResetOutput {
 pub struct ResizeOutput {
     pub width: u32,
     pub height: u32,
+}
+
+// =============================================================================
+// Emulation state persistence
+// =============================================================================
+
+/// Persisted emulation state for CDP-only overrides that cannot be queried via
+/// JavaScript. Written by `emulate set`, read by `emulate status`, deleted by
+/// `emulate reset`.
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct EmulateState {
+    pub mobile: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub network: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub cpu: Option<u32>,
+}
+
+/// Returns the path to the emulation state file: `~/.chrome-cli/emulate-state.json`.
+fn emulate_state_path() -> Result<PathBuf, AppError> {
+    #[cfg(unix)]
+    let key = "HOME";
+    #[cfg(windows)]
+    let key = "USERPROFILE";
+
+    let home = std::env::var(key)
+        .map(PathBuf::from)
+        .map_err(|_| AppError {
+            message: "could not determine home directory".to_string(),
+            code: ExitCode::GeneralError,
+        })?;
+    Ok(home.join(".chrome-cli").join("emulate-state.json"))
+}
+
+/// Write emulation state to the given path (atomic write + `0o600` permissions on Unix).
+fn write_emulate_state_to(path: &Path, state: &EmulateState) -> Result<(), AppError> {
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).map_err(|e| AppError {
+            message: format!("emulate state dir error: {e}"),
+            code: ExitCode::GeneralError,
+        })?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            std::fs::set_permissions(parent, std::fs::Permissions::from_mode(0o700)).map_err(
+                |e| AppError {
+                    message: format!("emulate state dir permissions error: {e}"),
+                    code: ExitCode::GeneralError,
+                },
+            )?;
+        }
+    }
+
+    let json = serde_json::to_string_pretty(state).map_err(|e| AppError {
+        message: format!("emulate state serialization error: {e}"),
+        code: ExitCode::GeneralError,
+    })?;
+
+    let tmp_path = path.with_extension("json.tmp");
+    std::fs::write(&tmp_path, &json).map_err(|e| AppError {
+        message: format!("emulate state write error: {e}"),
+        code: ExitCode::GeneralError,
+    })?;
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        std::fs::set_permissions(&tmp_path, std::fs::Permissions::from_mode(0o600)).map_err(
+            |e| AppError {
+                message: format!("emulate state file permissions error: {e}"),
+                code: ExitCode::GeneralError,
+            },
+        )?;
+    }
+
+    std::fs::rename(&tmp_path, path).map_err(|e| AppError {
+        message: format!("emulate state rename error: {e}"),
+        code: ExitCode::GeneralError,
+    })?;
+    Ok(())
+}
+
+/// Write emulation state to the default path.
+fn write_emulate_state(state: &EmulateState) -> Result<(), AppError> {
+    let path = emulate_state_path()?;
+    write_emulate_state_to(&path, state)
+}
+
+/// Read emulation state from the given path. Returns `Ok(None)` if the file does not exist.
+fn read_emulate_state_from(path: &Path) -> Result<Option<EmulateState>, AppError> {
+    match std::fs::read_to_string(path) {
+        Ok(contents) => {
+            let state: EmulateState = serde_json::from_str(&contents).map_err(|e| AppError {
+                message: format!("invalid emulate state file: {e}"),
+                code: ExitCode::GeneralError,
+            })?;
+            Ok(Some(state))
+        }
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
+        Err(e) => Err(AppError {
+            message: format!("emulate state read error: {e}"),
+            code: ExitCode::GeneralError,
+        }),
+    }
+}
+
+/// Read emulation state from the default path.
+fn read_emulate_state() -> Result<Option<EmulateState>, AppError> {
+    let path = emulate_state_path()?;
+    read_emulate_state_from(&path)
+}
+
+/// Delete emulation state at the given path. Returns `Ok(())` if already absent.
+fn delete_emulate_state_from(path: &Path) -> Result<(), AppError> {
+    match std::fs::remove_file(path) {
+        Ok(()) => Ok(()),
+        Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),
+        Err(e) => Err(AppError {
+            message: format!("emulate state delete error: {e}"),
+            code: ExitCode::GeneralError,
+        }),
+    }
+}
+
+/// Delete emulation state from the default path.
+fn delete_emulate_state() -> Result<(), AppError> {
+    let path = emulate_state_path()?;
+    delete_emulate_state_from(&path)
 }
 
 // =============================================================================
@@ -449,6 +578,19 @@ async fn execute_set(global: &GlobalOpts, args: &EmulateSetArgs) -> Result<(), A
         status.mobile = mobile;
     }
 
+    // --- Persist CDP-only state ---
+    let mut persisted = read_emulate_state()?.unwrap_or_default();
+    if args.mobile || args.viewport.is_some() {
+        persisted.mobile = args.mobile;
+    }
+    if args.network.is_some() {
+        persisted.network.clone_from(&status.network);
+    }
+    if args.cpu.is_some() {
+        persisted.cpu = status.cpu;
+    }
+    write_emulate_state(&persisted)?;
+
     // Output
     if global.output.plain {
         print!("{status}");
@@ -529,6 +671,9 @@ async fn execute_reset(global: &GlobalOpts) -> Result<(), AppError> {
         .await
         .map_err(|e| AppError::emulation_failed(&e.to_string()))?;
 
+    // Clear persisted emulation state
+    delete_emulate_state()?;
+
     let output = EmulateResetOutput { reset: true };
 
     if global.output.plain {
@@ -594,15 +739,18 @@ async fn execute_status(global: &GlobalOpts) -> Result<(), AppError> {
 
     let device_scale_factor = data["devicePixelRatio"].as_f64();
 
+    // Read persisted CDP-only state (mobile, network, cpu)
+    let persisted = read_emulate_state()?.unwrap_or_default();
+
     let status = EmulateStatusOutput {
-        network: None,
-        cpu: None,
+        network: persisted.network,
+        cpu: persisted.cpu,
         geolocation: None,
         user_agent,
         color_scheme,
         viewport,
         device_scale_factor,
-        mobile: false,
+        mobile: persisted.mobile,
     };
 
     if global.output.plain {
@@ -929,5 +1077,79 @@ mod tests {
         };
         let text = format!("{output}");
         assert!(text.is_empty());
+    }
+
+    // =========================================================================
+    // EmulateState persistence tests
+    // =========================================================================
+
+    #[test]
+    fn emulate_state_round_trip() {
+        let dir = std::env::temp_dir().join("chrome-cli-test-emstate-rt");
+        let _ = std::fs::remove_dir_all(&dir);
+        let path = dir.join("emulate-state.json");
+
+        let state = EmulateState {
+            mobile: true,
+            network: Some("slow-4g".to_string()),
+            cpu: Some(4),
+        };
+
+        write_emulate_state_to(&path, &state).unwrap();
+        let read = read_emulate_state_from(&path).unwrap().unwrap();
+
+        assert!(read.mobile);
+        assert_eq!(read.network.as_deref(), Some("slow-4g"));
+        assert_eq!(read.cpu, Some(4));
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn emulate_state_read_when_missing_returns_none() {
+        let path = Path::new("/tmp/chrome-cli-test-emstate-missing/emulate-state.json");
+        let result = read_emulate_state_from(path).unwrap();
+        assert!(result.is_none());
+    }
+
+    #[test]
+    fn emulate_state_delete_when_missing_returns_ok() {
+        let path = Path::new("/tmp/chrome-cli-test-emstate-del-missing/emulate-state.json");
+        assert!(delete_emulate_state_from(path).is_ok());
+    }
+
+    #[test]
+    fn emulate_state_delete_existing_removes_file() {
+        let dir = std::env::temp_dir().join("chrome-cli-test-emstate-del");
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("emulate-state.json");
+        std::fs::write(&path, "{}").unwrap();
+        assert!(path.exists());
+
+        delete_emulate_state_from(&path).unwrap();
+        assert!(!path.exists());
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn emulate_state_default_values() {
+        let state = EmulateState::default();
+        assert!(!state.mobile);
+        assert!(state.network.is_none());
+        assert!(state.cpu.is_none());
+    }
+
+    #[test]
+    fn emulate_state_skips_none_fields_in_json() {
+        let state = EmulateState {
+            mobile: false,
+            network: None,
+            cpu: None,
+        };
+        let json = serde_json::to_string(&state).unwrap();
+        assert!(!json.contains("network"));
+        assert!(!json.contains("cpu"));
     }
 }
