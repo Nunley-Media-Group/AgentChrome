@@ -169,7 +169,7 @@ Feature: Form input and filling
   @regression
   Scenario: fill-many accepts inline JSON positional argument without panicking
     Given chrome-cli is built
-    When I run "chrome-cli form fill-many '[{"uid":"s1","value":"test"}]' --pretty"
+    When I run "chrome-cli form fill-many '[{\"uid\":\"s1\",\"value\":\"test\"}]' --pretty"
     Then the exit code should not be 101
 
   @regression
@@ -184,5 +184,5 @@ Feature: Form input and filling
   @regression
   Scenario: fill-many with --json flag does not panic
     Given chrome-cli is built
-    When I run "chrome-cli form fill-many '[{"uid":"s1","value":"test"}]' --json"
+    When I run "chrome-cli form fill-many '[{\"uid\":\"s1\",\"value\":\"test\"}]' --json"
     Then the exit code should not be 101
