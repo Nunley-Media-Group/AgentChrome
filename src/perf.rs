@@ -565,7 +565,7 @@ fn execute_analyze(global: &GlobalOpts, args: &PerfAnalyzeArgs) -> Result<(), Ap
         "LCPBreakdown" => analyze_lcp_breakdown(&trace.trace_events),
         "RenderBlocking" => analyze_render_blocking(&trace.trace_events),
         "LongTasks" => analyze_long_tasks(&trace.trace_events),
-        _ => unreachable!(),
+        _ => return Err(AppError::unknown_insight(&args.insight)),
     };
 
     let result = PerfAnalyzeResult {
