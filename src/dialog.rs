@@ -408,4 +408,32 @@ mod tests {
         // Just verify it doesn't panic
         print_info_plain(&result);
     }
+
+    #[test]
+    fn drain_dialog_event_with_event() {
+        let (tx, rx) = tokio::sync::mpsc::channel(1);
+        tx.try_send(CdpEvent {
+            method: "Page.javascriptDialogOpening".into(),
+            params: serde_json::json!({
+                "type": "confirm",
+                "message": "Delete?",
+                "defaultPrompt": ""
+            }),
+            session_id: None,
+        })
+        .unwrap();
+        let (dtype, msg, default) = drain_dialog_event(rx);
+        assert_eq!(dtype, "confirm");
+        assert_eq!(msg, "Delete?");
+        assert_eq!(default, "");
+    }
+
+    #[test]
+    fn drain_dialog_event_empty_channel() {
+        let (_tx, rx) = tokio::sync::mpsc::channel::<CdpEvent>(1);
+        let (dtype, msg, default) = drain_dialog_event(rx);
+        assert_eq!(dtype, "unknown");
+        assert_eq!(msg, "");
+        assert_eq!(default, "");
+    }
 }
