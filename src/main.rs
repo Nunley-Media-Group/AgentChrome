@@ -335,7 +335,23 @@ async fn execute_connect(global: &GlobalOpts, args: &ConnectArgs) -> Result<(), 
         return execute_launch(args, timeout).await;
     }
 
-    // Strategy 3: Auto-discover, then auto-launch
+    // Strategy 3: Check existing session first, then auto-discover, then auto-launch
+    if let Some(session_data) = session::read_session()? {
+        if connection::health_check(&global.host, session_data.port)
+            .await
+            .is_ok()
+        {
+            let info = ConnectionInfo {
+                ws_url: session_data.ws_url,
+                port: session_data.port,
+                pid: session_data.pid,
+            };
+            save_session(&info);
+            print_json(&info)?;
+            return Ok(());
+        }
+    }
+
     match discover_chrome(&global.host, global.port_or_default()).await {
         Ok((ws_url, port)) => {
             let info = ConnectionInfo {
