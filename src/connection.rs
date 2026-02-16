@@ -156,6 +156,13 @@ pub async fn resolve_target(
     select_target(&targets, tab).cloned()
 }
 
+/// Timeout for `Page.enable` during auto-dismiss setup (milliseconds).
+///
+/// Chrome re-emits `Page.javascriptDialogOpening` to newly-attached sessions
+/// when `Page.enable` is sent, but `Page.enable` itself blocks when a dialog
+/// is already open. We use a short timeout so auto-dismiss can proceed.
+const PAGE_ENABLE_TIMEOUT_MS: u64 = 300;
+
 /// A CDP session wrapper that tracks which domains have been enabled,
 /// ensuring each domain is only enabled once (lazy domain enabling).
 ///
@@ -253,7 +260,7 @@ impl ManagedSession {
         // block. We accept the timeout and proceed.
         let page_enable = self.session.send_command("Page.enable", None);
         let enable_result =
-            tokio::time::timeout(Duration::from_millis(300), page_enable).await;
+            tokio::time::timeout(Duration::from_millis(PAGE_ENABLE_TIMEOUT_MS), page_enable).await;
         if matches!(enable_result, Ok(Ok(_))) {
             self.enabled_domains.insert("Page".to_string());
         }
