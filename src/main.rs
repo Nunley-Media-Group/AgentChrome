@@ -44,14 +44,27 @@ async fn main() {
             }
             // All other clap errors → JSON on stderr with exit code 1
             let msg = e.kind().to_string();
-            let clean = e
-                .to_string()
+            let full = e.to_string();
+            let clean = full
                 .lines()
-                .next()
-                .unwrap_or(&msg)
-                .strip_prefix("error: ")
-                .unwrap_or(&msg)
-                .to_string();
+                .filter(|line| {
+                    let trimmed = line.trim();
+                    !trimmed.is_empty()
+                        && !trimmed.starts_with("For more information")
+                        && !trimmed.starts_with("Usage:")
+                })
+                .map(|line| {
+                    line.strip_prefix("error: ")
+                        .unwrap_or(line)
+                        .trim()
+                })
+                .collect::<Vec<_>>()
+                .join(", ");
+            let clean = if clean.is_empty() {
+                msg
+            } else {
+                clean
+            };
             let app_err = AppError {
                 message: clean,
                 code: ExitCode::GeneralError,
