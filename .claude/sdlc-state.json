@@ -1,10 +1,10 @@
 {
-  "currentStep": 6,
-  "lastCompletedStep": 5,
+  "currentStep": 7,
+  "lastCompletedStep": 6,
   "currentIssue": 114,
   "currentBranch": "114-fix-connect-status-output-flags",
   "featureName": "99-fix-dialog-handle-no-dialog-open",
-  "lastTransitionAt": "2026-02-16T23:56:40.326Z",
+  "lastTransitionAt": "2026-02-16T23:57:05.437Z",
   "retries": {},
   "runnerPid": 20994
 }
