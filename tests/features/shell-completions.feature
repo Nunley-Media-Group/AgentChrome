@@ -75,7 +75,10 @@ Feature: Shell completions generation
   Scenario: Invalid shell argument produces error
     Given chrome-cli is built
     When I run "chrome-cli completions invalid-shell"
-    Then the exit code should be 2
+    Then the exit code should be 1
+    And stderr should be valid JSON
+    And stderr JSON should have key "error"
+    And stderr JSON should have key "code"
     And stderr should contain "invalid value"
 
   # --- Help Text ---

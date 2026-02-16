@@ -71,25 +71,37 @@ Feature: Chrome instance discovery and launch
   Scenario: Headless requires launch flag
     Given chrome-cli is built
     When I run "chrome-cli connect --headless"
-    Then the exit code should be 2
+    Then the exit code should be 1
+    And stderr should be valid JSON
+    And stderr JSON should have key "error"
+    And stderr JSON should have key "code"
     And stderr should contain "required"
 
   Scenario: Channel requires launch flag
     Given chrome-cli is built
     When I run "chrome-cli connect --channel canary"
-    Then the exit code should be 2
+    Then the exit code should be 1
+    And stderr should be valid JSON
+    And stderr JSON should have key "error"
+    And stderr JSON should have key "code"
     And stderr should contain "required"
 
   Scenario: Chrome-path requires launch flag
     Given chrome-cli is built
     When I run "chrome-cli connect --chrome-path /some/path"
-    Then the exit code should be 2
+    Then the exit code should be 1
+    And stderr should be valid JSON
+    And stderr JSON should have key "error"
+    And stderr JSON should have key "code"
     And stderr should contain "required"
 
   Scenario: Chrome-arg requires launch flag
     Given chrome-cli is built
     When I run "chrome-cli connect --chrome-arg=--disable-gpu"
-    Then the exit code should be 2
+    Then the exit code should be 1
+    And stderr should be valid JSON
+    And stderr JSON should have key "error"
+    And stderr JSON should have key "code"
     And stderr should contain "required"
 
   # --- Non-localhost warning (security) ---
