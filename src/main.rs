@@ -16,7 +16,7 @@ mod tabs;
 
 use std::time::Duration;
 
-use clap::{CommandFactory, Parser};
+use clap::{CommandFactory, Parser, error::ErrorKind};
 use serde::Serialize;
 
 use chrome_cli::chrome::{
@@ -34,7 +34,33 @@ use cli::{
 
 #[tokio::main]
 async fn main() {
-    let cli = Cli::parse();
+    let cli = match Cli::try_parse() {
+        Ok(cli) => cli,
+        Err(e) => {
+            // --help and --version are informational, not errors — print as-is
+            if matches!(e.kind(), ErrorKind::DisplayHelp | ErrorKind::DisplayVersion) {
+                e.print().expect("failed to write to stdout");
+                std::process::exit(0);
+            }
+            // All other clap errors → JSON on stderr with exit code 1
+            let msg = e.kind().to_string();
+            let clean = e
+                .to_string()
+                .lines()
+                .next()
+                .unwrap_or(&msg)
+                .strip_prefix("error: ")
+                .unwrap_or(&msg)
+                .to_string();
+            let app_err = AppError {
+                message: clean,
+                code: ExitCode::GeneralError,
+                custom_json: None,
+            };
+            app_err.print_json_stderr();
+            std::process::exit(app_err.code as i32);
+        }
+    };
 
     if let Err(e) = run(&cli).await {
         e.print_json_stderr();

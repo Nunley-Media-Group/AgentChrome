@@ -3441,6 +3441,10 @@ async fn main() {
         )
         .await;
 
+    // Clap validation JSON stderr fix (issue #98) — all scenarios are testable without Chrome
+    // (argument validation errors, help/version, not-implemented stub).
+    CliWorld::run("tests/features/98-fix-clap-validation-json-stderr.feature").await;
+
     // Dialog handling — only CLI-testable scenarios (argument validation) can run without Chrome.
     DialogWorld::cucumber()
         .filter_run_and_exit(

@@ -46,7 +46,10 @@ Feature: CLI skeleton with clap derive macros and top-level help
   Scenario: Conflicting output format flags are rejected
     Given chrome-cli is built
     When I run "chrome-cli --json --plain navigate"
-    Then the exit code should be 2
+    Then the exit code should be 1
+    And stderr should be valid JSON
+    And stderr JSON should have key "error"
+    And stderr JSON should have key "code"
     And stderr should contain "cannot be used with"
 
   # --- Subcommand Stubs ---
