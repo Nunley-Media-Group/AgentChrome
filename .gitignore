@@ -20,3 +20,4 @@ sdlc-config.json
 # OS files
 .DS_Store
 Thumbs.db
+.claude/auto-mode
