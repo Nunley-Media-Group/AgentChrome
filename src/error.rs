@@ -771,7 +771,8 @@ mod tests {
 
     #[test]
     fn js_execution_failed_with_json_carries_custom_json() {
-        let custom = r#"{"error":"Error: test","stack":"Error: test\n    at <anonymous>:1:7","code":1}"#;
+        let custom =
+            r#"{"error":"Error: test","stack":"Error: test\n    at <anonymous>:1:7","code":1}"#;
         let err = AppError::js_execution_failed_with_json("Error: test", custom.to_string());
         assert!(err.message.contains("JavaScript execution failed"));
         assert_eq!(err.custom_json.as_deref(), Some(custom));

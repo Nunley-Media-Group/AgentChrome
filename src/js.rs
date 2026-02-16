@@ -325,7 +325,10 @@ async fn execute_exec(global: &GlobalOpts, args: &JsExecArgs) -> Result<(), AppE
         };
         let err_json = serde_json::to_string(&js_error)
             .unwrap_or_else(|_| format!(r#"{{"error":"{error_desc}","code":1}}"#));
-        return Err(AppError::js_execution_failed_with_json(&error_desc, err_json));
+        return Err(AppError::js_execution_failed_with_json(
+            &error_desc,
+            err_json,
+        ));
     }
 
     // Extract result value and type
