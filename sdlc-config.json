@@ -3,6 +3,9 @@
   "pluginsPath": "/Users/rnunley/.claude/plugins/marketplaces/nmg-plugins",
   "model": "opus",
   "discordChannelId": "",
+  "cleanup": {
+    "processPatterns": ["--remote-debugging-port"]
+  },
   "steps": {
     "startCycle":   { "maxTurns": 5,   "timeoutMin": 5  },
     "startIssue":   { "maxTurns": 15,  "timeoutMin": 5,  "skill": "starting-issues" },

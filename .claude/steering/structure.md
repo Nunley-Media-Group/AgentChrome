@@ -171,6 +171,16 @@ use super::CommandHandler;
 
 ---
 
+## Design Tokens / UI Standards (if applicable)
+
+<!-- Pre-fill if design token files are found -->
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| [token] | [value] | [when to use] |
+
+---
+
 ## Anti-Patterns to Avoid
 
 | Anti-Pattern | Problem | Solution |

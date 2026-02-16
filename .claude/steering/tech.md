@@ -124,6 +124,20 @@ Example Domain
 
 ---
 
+## Database Standards
+
+<!-- Pre-fill if database conventions are discoverable -->
+
+### Naming
+
+| Element | Convention | Example |
+|---------|------------|---------|
+| Tables | [convention] | [example] |
+| Columns | [convention] | [example] |
+| Primary keys | [convention] | [example] |
+
+---
+
 ## Testing Standards
 
 ### Chrome Instance Cleanup (CRITICAL)
