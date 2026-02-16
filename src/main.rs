@@ -500,14 +500,50 @@ fn execute_disconnect() -> Result<(), AppError> {
 fn kill_process(pid: u32) {
     #[cfg(unix)]
     {
-        let _ = std::process::Command::new("kill")
-            .arg(pid.to_string())
-            .output();
+        use std::thread;
+
+        // PID values are always within i32 range on all supported platforms.
+        #[allow(clippy::cast_possible_wrap)]
+        let pid_i32 = pid as i32;
+
+        // Send SIGTERM to the process group (negative PID) to kill Chrome and
+        // all its child processes (renderer, GPU, utility, etc.).
+        // SAFETY: libc::kill with a negative pid targets the process group.
+        let term_result = unsafe { libc::kill(-pid_i32, libc::SIGTERM) };
+        if term_result != 0 {
+            // Process group kill failed — try killing just the main process.
+            // This can happen if Chrome didn't become a process group leader.
+            unsafe { libc::kill(pid_i32, libc::SIGTERM) };
+        }
+
+        // Poll for up to ~2 seconds to see if the process has exited.
+        let poll_interval = Duration::from_millis(100);
+        let max_wait = Duration::from_secs(2);
+        let start = std::time::Instant::now();
+
+        while start.elapsed() < max_wait {
+            // kill(pid, 0) checks if the process exists without sending a signal.
+            // SAFETY: signal 0 is a null signal used only for existence checks.
+            let exists = unsafe { libc::kill(pid_i32, 0) };
+            if exists != 0 {
+                // Process no longer exists — SIGTERM worked.
+                return;
+            }
+            thread::sleep(poll_interval);
+        }
+
+        // SIGTERM didn't terminate the process within the timeout. Escalate to
+        // SIGKILL on the process group, then fall back to the main PID.
+        let kill_result = unsafe { libc::kill(-pid_i32, libc::SIGKILL) };
+        if kill_result != 0 {
+            unsafe { libc::kill(pid_i32, libc::SIGKILL) };
+        }
     }
     #[cfg(windows)]
     {
+        // /T kills the process tree, /F forces termination.
         let _ = std::process::Command::new("taskkill")
-            .args(["/PID", &pid.to_string()])
+            .args(["/T", "/F", "/PID", &pid.to_string()])
             .output();
     }
 }
