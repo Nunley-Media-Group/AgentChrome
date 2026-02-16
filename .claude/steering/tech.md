@@ -113,6 +113,17 @@ Do NOT modify these files during SDLC steps unless the issue explicitly requires
 
 This is a strict configuration. All clippy warnings should be addressed before merging.
 
+### Formatting (rustfmt)
+
+`cargo fmt` **MUST** pass during verification. Before proceeding past any verification gate:
+
+1. Run `cargo fmt --check` to detect formatting violations
+2. If violations are found, run `cargo fmt` to auto-correct them
+3. Stage and include the formatting fixes in the current work (do not create a separate commit)
+4. Re-run `cargo fmt --check` to confirm all violations are resolved
+
+**Do not skip or defer formatting fixes.** Correct them immediately and automatically before continuing.
+
 ---
 
 ## CLI Interface Standards
