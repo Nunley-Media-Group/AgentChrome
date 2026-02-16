@@ -118,6 +118,37 @@ chrome-cli is a standalone CLI tool that provides browser automation and inspect
 
 ---
 
+## UI/UX Requirements
+
+Reference `structure.md` and `product.md` for project-specific design standards.
+
+| Element | Requirement |
+|---------|-------------|
+| **Interaction** | [Touch targets, gesture requirements] |
+| **Typography** | [Minimum text sizes, font requirements] |
+| **Contrast** | [Accessibility contrast requirements] |
+| **Loading States** | [How loading should be displayed] |
+| **Error States** | [How errors should be displayed] |
+| **Empty States** | [How empty data should be displayed] |
+
+---
+
+## Data Requirements
+
+### Input Data
+
+| Field | Type | Validation | Required |
+|-------|------|------------|----------|
+| [field] | [type] | [rules] | Yes/No |
+
+### Output Data
+
+| Field | Type | Description |
+|-------|------|-------------|
+| [field] | [type] | [what it represents] |
+
+---
+
 ## Dependencies
 
 ### Internal Dependencies
@@ -139,6 +170,14 @@ chrome-cli is a standalone CLI tool that provides browser automation and inspect
 - CLI argument parsing beyond `--version` (covered by issue #3)
 - Any CDP/WebSocket functionality
 - Dependency selection beyond what's needed for a minimal binary
+
+---
+
+## Success Metrics
+
+| Metric | Target | Measurement |
+|--------|--------|-------------|
+| [metric] | [target value] | [how to measure] |
 
 ---
 

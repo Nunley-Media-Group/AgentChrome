@@ -384,6 +384,31 @@ This is a sync function (no `async`), since no I/O is needed beyond stdout.
 
 ---
 
+## UI Components
+
+### New Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| [name] | [path per structure.md] | [description] |
+
+### Component Hierarchy
+
+```
+FeatureScreen
+├── Header
+├── Content
+│   ├── LoadingState
+│   ├── ErrorState
+│   ├── EmptyState
+│   └── DataView
+│       ├── ListItem × N
+│       └── DetailView
+└── Actions
+```
+
+---
+
 ## Alternatives Considered
 
 | Option | Description | Pros | Cons | Decision |
@@ -452,6 +477,14 @@ fn manifest_covers_all_commands() {
 | Clap API changes in future versions break introspection | Low | Medium | Pin clap version, wrap introspection in abstraction layer |
 | Manifest schema is too verbose for some consumers | Low | Low | `--compact` mode provides minimal output |
 | Missing return type information limits agent usefulness | Medium | Medium | Document as out-of-scope; plan hybrid approach for future |
+
+---
+
+## Open Questions
+
+- [ ] [Technical question]
+- [ ] [Architecture question]
+- [ ] [Integration question]
 
 ---
 

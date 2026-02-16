@@ -19,6 +19,27 @@
 
 ---
 
+## Task Format
+
+Each task follows this structure:
+
+```
+### T[NNN]: [Task Title]
+
+**File(s)**: `{layer}/path/to/file`
+**Type**: Create | Modify | Delete
+**Depends**: T[NNN], T[NNN] (or None)
+**Acceptance**:
+- [ ] [Verifiable criterion 1]
+- [ ] [Verifiable criterion 2]
+
+**Notes**: [Optional implementation hints]
+```
+
+Map `{layer}/` placeholders to actual project paths using `structure.md`.
+
+---
+
 ## Phase 1: Setup
 
 ### T001: Add `toml` and `dirs` dependencies
@@ -111,6 +132,64 @@
 - [ ] `pub mod config;` added to `src/lib.rs`
 - [ ] Module is accessible from `main.rs` and tests
 - [ ] `cargo check` passes
+
+---
+
+## Phase 3: Frontend Implementation
+
+### T007: [Client-side model]
+
+**File(s)**: `{presentation-layer}/models/...`
+**Type**: Create
+**Depends**: T002
+**Acceptance**:
+- [ ] Model matches API response schema
+- [ ] Serialization/deserialization works
+- [ ] Immutable with update method (if applicable)
+- [ ] Unit tests for serialization
+
+### T008: [Client-side service / API client]
+
+**File(s)**: `{presentation-layer}/services/...`
+**Type**: Create
+**Depends**: T007
+**Acceptance**:
+- [ ] All API calls implemented
+- [ ] Error handling with typed exceptions
+- [ ] Uses project's HTTP client pattern
+- [ ] Unit tests pass
+
+### T009: [State management]
+
+**File(s)**: `{presentation-layer}/state/...` or `{presentation-layer}/providers/...`
+**Type**: Create
+**Depends**: T008
+**Acceptance**:
+- [ ] State class defined (immutable if applicable)
+- [ ] Loading/error states handled
+- [ ] State transitions match design spec
+- [ ] Unit tests for state transitions
+
+### T010: [UI components]
+
+**File(s)**: `{presentation-layer}/components/...` or `{presentation-layer}/widgets/...`
+**Type**: Create
+**Depends**: T009
+**Acceptance**:
+- [ ] Components match design specs
+- [ ] Uses project's design tokens (no hardcoded values)
+- [ ] Loading/error/empty states
+- [ ] Component tests pass
+
+### T011: [Screen / Page]
+
+**File(s)**: `{presentation-layer}/screens/...` or `{presentation-layer}/pages/...`
+**Type**: Create
+**Depends**: T010
+**Acceptance**:
+- [ ] Screen layout matches design
+- [ ] State management integration working
+- [ ] Navigation implemented
 
 ---
 

@@ -65,6 +65,16 @@ The flag should be unconditional (not gated on headed/headless mode) because:
 
 ---
 
+## Alternatives Considered
+
+| Option | Description | Why Not Selected |
+|--------|-------------|------------------|
+| [Alternative fix] | [approach] | [why the chosen approach is better] |
+
+*Omit this section if only one reasonable fix approach exists.*
+
+---
+
 ## Validation Checklist
 
 - [x] Root cause is identified with specific code references

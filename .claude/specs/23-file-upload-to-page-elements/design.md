@@ -185,6 +185,52 @@ function() {
 
 ---
 
+## Database / Storage Changes
+
+### Schema Changes
+
+| Table / Collection | Column / Field | Type | Nullable | Default | Change |
+|--------------------|----------------|------|----------|---------|--------|
+| [name] | [name] | [type] | Yes/No | [value] | Add/Modify/Remove |
+
+### Migration Plan
+
+```
+-- Describe the migration approach
+-- Reference tech.md for migration conventions
+```
+
+### Data Migration
+
+[If existing data needs transformation, describe the approach]
+
+---
+
+## UI Components
+
+### New Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| [name] | [path per structure.md] | [description] |
+
+### Component Hierarchy
+
+```
+FeatureScreen
+├── Header
+├── Content
+│   ├── LoadingState
+│   ├── ErrorState
+│   ├── EmptyState
+│   └── DataView
+│       ├── ListItem × N
+│       └── DetailView
+└── Actions
+```
+
+---
+
 ## Alternatives Considered
 
 | Option | Description | Pros | Cons | Decision |
@@ -234,6 +280,14 @@ function() {
 | Change event not detected by framework | Low | Medium | Dispatch `change` event with `bubbles: true`; same approach as `form fill` |
 | File path encoding on Windows | Low | Low | Use `PathBuf` and `to_string_lossy()` for path conversion |
 | Large file causes Chrome to hang | Low | Medium | Warn on files > 100MB; CDP handles the actual transfer |
+
+---
+
+## Open Questions
+
+- [ ] [Technical question]
+- [ ] [Architecture question]
+- [ ] [Integration question]
 
 ---
 

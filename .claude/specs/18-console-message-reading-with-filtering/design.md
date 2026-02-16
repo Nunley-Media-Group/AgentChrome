@@ -234,6 +234,31 @@ To support `--include-preserved`:
 
 ---
 
+## UI Components
+
+### New Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| [name] | [path per structure.md] | [description] |
+
+### Component Hierarchy
+
+```
+FeatureScreen
+├── Header
+├── Content
+│   ├── LoadingState
+│   ├── ErrorState
+│   ├── EmptyState
+│   └── DataView
+│       ├── ListItem × N
+│       └── DetailView
+└── Actions
+```
+
+---
+
 ## Alternatives Considered
 
 | Option | Description | Pros | Cons | Decision |
@@ -328,6 +353,14 @@ When `console follow` exits (via timeout or signal):
 - Exit 0 if no error-level messages (`error`, `assert`) were seen
 - Exit 1 if any error-level messages were seen
 - This enables CI usage: `chrome-cli console follow --timeout 5000 || echo "Errors detected"`
+
+---
+
+## Open Questions
+
+- [ ] [Technical question]
+- [ ] [Architecture question]
+- [ ] [Integration question]
 
 ---
 

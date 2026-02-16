@@ -250,6 +250,31 @@ This is a sync function (no `async`), since no I/O is needed.
 
 ---
 
+## UI Components
+
+### New Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| [name] | [path per structure.md] | [description] |
+
+### Component Hierarchy
+
+```
+FeatureScreen
+├── Header
+├── Content
+│   ├── LoadingState
+│   ├── ErrorState
+│   ├── EmptyState
+│   └── DataView
+│       ├── ListItem × N
+│       └── DetailView
+└── Actions
+```
+
+---
+
 ## Alternatives Considered
 
 | Option | Description | Pros | Cons | Decision |
@@ -290,6 +315,14 @@ This is a sync function (no `async`), since no I/O is needed.
 |------|------------|--------|------------|
 | Examples become stale when commands change | Medium | Low | Test that example command names match Command enum variants |
 | Duplication between help text and examples | Low | Low | Accept as trade-off; examples module is the canonical structured source |
+
+---
+
+## Open Questions
+
+- [ ] [Technical question]
+- [ ] [Architecture question]
+- [ ] [Integration question]
 
 ---
 

@@ -228,6 +228,52 @@ Navigation changes are tracked by subscribing to `Page.frameNavigated` and incre
 
 ---
 
+## Database / Storage Changes
+
+### Schema Changes
+
+| Table / Collection | Column / Field | Type | Nullable | Default | Change |
+|--------------------|----------------|------|----------|---------|--------|
+| [name] | [name] | [type] | Yes/No | [value] | Add/Modify/Remove |
+
+### Migration Plan
+
+```
+-- Describe the migration approach
+-- Reference tech.md for migration conventions
+```
+
+### Data Migration
+
+[If existing data needs transformation, describe the approach]
+
+---
+
+## UI Components
+
+### New Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| [name] | [path per structure.md] | [description] |
+
+### Component Hierarchy
+
+```
+FeatureScreen
+├── Header
+├── Content
+│   ├── LoadingState
+│   ├── ErrorState
+│   ├── EmptyState
+│   └── DataView
+│       ├── ListItem × N
+│       └── DetailView
+└── Actions
+```
+
+---
+
 ## Alternatives Considered
 
 | Option | Description | Pros | Cons | Decision |
@@ -279,6 +325,14 @@ Navigation changes are tracked by subscribing to `Page.frameNavigated` and incre
 | Very high request volume | Low | Medium | Pagination + limit cap; follow mode has no buffer |
 | Binary body detection | Low | Low | Check MIME type; CDP returns base64 flag |
 | CDP request ID collisions on redirect | Medium | Medium | Track redirect chain; use final request ID |
+
+---
+
+## Open Questions
+
+- [ ] [Technical question]
+- [ ] [Architecture question]
+- [ ] [Integration question]
 
 ---
 

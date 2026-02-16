@@ -175,6 +175,79 @@ Using `returnByValue: true` ensures we get the actual string value rather than a
 
 ---
 
+## Database / Storage Changes
+
+### Schema Changes
+
+| Table / Collection | Column / Field | Type | Nullable | Default | Change |
+|--------------------|----------------|------|----------|---------|--------|
+| [name] | [name] | [type] | Yes/No | [value] | Add/Modify/Remove |
+
+### Migration Plan
+
+```
+-- Describe the migration approach
+-- Reference tech.md for migration conventions
+```
+
+### Data Migration
+
+[If existing data needs transformation, describe the approach]
+
+---
+
+## State Management
+
+Reference `structure.md` and `tech.md` for the project's state management patterns.
+
+### New State Shape
+
+```
+// Pseudocode — use project's actual language/framework
+FeatureState {
+  isLoading: boolean
+  items: List<Item>
+  error: string | null
+  selected: Item | null
+}
+```
+
+### State Transitions
+
+```
+Initial → Loading → Success (with data)
+                  → Error (with message)
+
+User action → Optimistic update → Confirm / Rollback
+```
+
+---
+
+## UI Components
+
+### New Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| [name] | [path per structure.md] | [description] |
+
+### Component Hierarchy
+
+```
+FeatureScreen
+├── Header
+├── Content
+│   ├── LoadingState
+│   ├── ErrorState
+│   ├── EmptyState
+│   └── DataView
+│       ├── ListItem × N
+│       └── DetailView
+└── Actions
+```
+
+---
+
 ## Alternatives Considered
 
 | Option | Description | Pros | Cons | Decision |
@@ -221,6 +294,14 @@ Using `returnByValue: true` ensures we get the actual string value rather than a
 | `innerText` triggers layout, slow on complex pages | Low | Low | Bounded by `--timeout`; acceptable for CLI use |
 | CSS selector with quotes breaks JS expression | Med | Med | Use IIFE with proper escaping (backslash-escape quotes in selector) |
 | Page still loading when text extracted | Low | Med | User can combine with `navigate --wait-until load` first |
+
+---
+
+## Open Questions
+
+- [ ] [Technical question]
+- [ ] [Architecture question]
+- [ ] [Integration question]
 
 ---
 

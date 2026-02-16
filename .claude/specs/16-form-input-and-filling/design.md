@@ -229,6 +229,52 @@ function(value) {
 
 ---
 
+## Database / Storage Changes
+
+### Schema Changes
+
+| Table / Collection | Column / Field | Type | Nullable | Default | Change |
+|--------------------|----------------|------|----------|---------|--------|
+| [name] | [name] | [type] | Yes/No | [value] | Add/Modify/Remove |
+
+### Migration Plan
+
+```
+-- Describe the migration approach
+-- Reference tech.md for migration conventions
+```
+
+### Data Migration
+
+[If existing data needs transformation, describe the approach]
+
+---
+
+## UI Components
+
+### New Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| [name] | [path per structure.md] | [description] |
+
+### Component Hierarchy
+
+```
+FeatureScreen
+├── Header
+├── Content
+│   ├── LoadingState
+│   ├── ErrorState
+│   ├── EmptyState
+│   └── DataView
+│       ├── ListItem × N
+│       └── DetailView
+└── Actions
+```
+
+---
+
 ## Alternatives Considered
 
 | Option | Description | Pros | Cons | Decision |
@@ -276,6 +322,14 @@ function(value) {
 | Framework event dispatch insufficient | Medium | Medium | Dispatch both `input` and `change` with `bubbles: true`; test with React |
 | Select option matching ambiguous | Low | Low | Match by option `value` first, fall back to `textContent` |
 | UID resolution race condition | Low | Low | UIDs are stable within a snapshot; document that re-snapshot is needed after DOM changes |
+
+---
+
+## Open Questions
+
+- [ ] [Technical question]
+- [ ] [Architecture question]
+- [ ] [Integration question]
 
 ---
 

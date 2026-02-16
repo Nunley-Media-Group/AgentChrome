@@ -336,6 +336,79 @@ If Network events are unavailable (e.g., cached page), default to status 0 or om
 
 ---
 
+## Database / Storage Changes
+
+### Schema Changes
+
+| Table / Collection | Column / Field | Type | Nullable | Default | Change |
+|--------------------|----------------|------|----------|---------|--------|
+| [name] | [name] | [type] | Yes/No | [value] | Add/Modify/Remove |
+
+### Migration Plan
+
+```
+-- Describe the migration approach
+-- Reference tech.md for migration conventions
+```
+
+### Data Migration
+
+[If existing data needs transformation, describe the approach]
+
+---
+
+## State Management
+
+Reference `structure.md` and `tech.md` for the project's state management patterns.
+
+### New State Shape
+
+```
+// Pseudocode — use project's actual language/framework
+FeatureState {
+  isLoading: boolean
+  items: List<Item>
+  error: string | null
+  selected: Item | null
+}
+```
+
+### State Transitions
+
+```
+Initial → Loading → Success (with data)
+                  → Error (with message)
+
+User action → Optimistic update → Confirm / Rollback
+```
+
+---
+
+## UI Components
+
+### New Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| [name] | [path per structure.md] | [description] |
+
+### Component Hierarchy
+
+```
+FeatureScreen
+├── Header
+├── Content
+│   ├── LoadingState
+│   ├── ErrorState
+│   ├── EmptyState
+│   └── DataView
+│       ├── ListItem × N
+│       └── DetailView
+└── Actions
+```
+
+---
+
 ## Alternatives Considered
 
 | Option | Description | Pros | Cons | Decision |
@@ -387,6 +460,14 @@ If Network events are unavailable (e.g., cached page), default to status 0 or om
 | `Page.navigate` errorText format changes across Chrome versions | Low | Low | Use substring matching for common errors (net::ERR_*) |
 | History navigation entry IDs not stable | Low | Low | Get fresh history before each back/forward; no caching |
 | `Runtime.evaluate` for title fails if page is error page | Low | Low | Default to empty string on evaluation failure |
+
+---
+
+## Open Questions
+
+- [ ] [Technical question]
+- [ ] [Architecture question]
+- [ ] [Integration question]
 
 ---
 

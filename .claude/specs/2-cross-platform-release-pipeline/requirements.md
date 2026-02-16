@@ -170,6 +170,37 @@ Feature: Cross-platform release pipeline
 
 ---
 
+## UI/UX Requirements
+
+Reference `structure.md` and `product.md` for project-specific design standards.
+
+| Element | Requirement |
+|---------|-------------|
+| **Interaction** | [Touch targets, gesture requirements] |
+| **Typography** | [Minimum text sizes, font requirements] |
+| **Contrast** | [Accessibility contrast requirements] |
+| **Loading States** | [How loading should be displayed] |
+| **Error States** | [How errors should be displayed] |
+| **Empty States** | [How empty data should be displayed] |
+
+---
+
+## Data Requirements
+
+### Input Data
+
+| Field | Type | Validation | Required |
+|-------|------|------------|----------|
+| [field] | [type] | [rules] | Yes/No |
+
+### Output Data
+
+| Field | Type | Description |
+|-------|------|-------------|
+| [field] | [type] | [what it represents] |
+
+---
+
 ## Dependencies
 
 ### Internal Dependencies
@@ -193,6 +224,14 @@ Feature: Cross-platform release pipeline
 - Homebrew formula or other package manager distribution
 - Smoke testing release binaries on each platform
 - Docker image builds
+
+---
+
+## Success Metrics
+
+| Metric | Target | Measurement |
+|--------|--------|-------------|
+| [metric] | [target value] | [how to measure] |
 
 ---
 

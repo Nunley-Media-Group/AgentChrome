@@ -37,6 +37,27 @@ Chrome Browser (DevTools Protocol)
 
 ---
 
+## Versioning
+
+<!-- Pre-fill VERSION from the project root if it exists. -->
+
+The `VERSION` file (plain text semver at project root) is the **single source of truth** for the project's current version. Stack-specific files (e.g., `package.json`, `Cargo.toml`, `pubspec.yaml`) are kept in sync via the mapping table below.
+
+<!-- TODO: Fill in the stack-specific files that contain a version field. -->
+<!-- The /creating-prs skill reads this table to know which files to update when bumping the version. -->
+
+| File | Path | Notes |
+|------|------|-------|
+| [file] | [path-to-version-field] | [e.g., "npm version field"] |
+
+### Path Syntax
+
+- **JSON files**: Use dot-notation (e.g., `version` for a root-level key, `packages.mylib.version` for nested)
+- **TOML files**: Use dot-notation matching TOML keys (e.g., `package.version`)
+- **Plain text files**: Use `line:N` for the line number containing the version, or omit Path if the entire file is the version string
+
+---
+
 ## Technical Constraints
 
 ### Performance

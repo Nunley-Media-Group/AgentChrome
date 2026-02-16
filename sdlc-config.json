@@ -3,6 +3,8 @@
   "pluginsPath": "/Users/rnunley/.claude/plugins/marketplaces/nmg-plugins",
   "model": "opus",
   "discordChannelId": "",
+  "logDir": "",
+  "maxLogDiskUsageMB": 500,
   "cleanup": {
     "processPatterns": ["--remote-debugging-port"]
   },

@@ -224,6 +224,79 @@ All mutating commands use browser-level `CdpClient::send_command()` — no sessi
 
 ---
 
+## Database / Storage Changes
+
+### Schema Changes
+
+| Table / Collection | Column / Field | Type | Nullable | Default | Change |
+|--------------------|----------------|------|----------|---------|--------|
+| [name] | [name] | [type] | Yes/No | [value] | Add/Modify/Remove |
+
+### Migration Plan
+
+```
+-- Describe the migration approach
+-- Reference tech.md for migration conventions
+```
+
+### Data Migration
+
+[If existing data needs transformation, describe the approach]
+
+---
+
+## State Management
+
+Reference `structure.md` and `tech.md` for the project's state management patterns.
+
+### New State Shape
+
+```
+// Pseudocode — use project's actual language/framework
+FeatureState {
+  isLoading: boolean
+  items: List<Item>
+  error: string | null
+  selected: Item | null
+}
+```
+
+### State Transitions
+
+```
+Initial → Loading → Success (with data)
+                  → Error (with message)
+
+User action → Optimistic update → Confirm / Rollback
+```
+
+---
+
+## UI Components
+
+### New Components
+
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| [name] | [path per structure.md] | [description] |
+
+### Component Hierarchy
+
+```
+FeatureScreen
+├── Header
+├── Content
+│   ├── LoadingState
+│   ├── ErrorState
+│   ├── EmptyState
+│   └── DataView
+│       ├── ListItem × N
+│       └── DetailView
+└── Actions
+```
+
+---
+
 ## Alternatives Considered
 
 | Option | Description | Pros | Cons | Decision |
@@ -271,6 +344,14 @@ All mutating commands use browser-level `CdpClient::send_command()` — no sessi
 | `Target.activateTarget` not supported in all Chrome versions | Low | Medium | Fall back to session-based `Page.bringToFront` if needed |
 | Active tab detection is inaccurate | Low | Low | Document that "active" uses `/json/list` ordering (first page target) |
 | Race condition when closing multiple tabs | Low | Low | Close sequentially; re-query count after all closes |
+
+---
+
+## Open Questions
+
+- [ ] [Technical question]
+- [ ] [Architecture question]
+- [ ] [Integration question]
 
 ---
 

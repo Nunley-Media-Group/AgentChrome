@@ -156,6 +156,21 @@ Feature: Built-in Examples Subcommand
 
 ---
 
+## UI/UX Requirements
+
+Reference `structure.md` and `product.md` for project-specific design standards.
+
+| Element | Requirement |
+|---------|-------------|
+| **Interaction** | [Touch targets, gesture requirements] |
+| **Typography** | [Minimum text sizes, font requirements] |
+| **Contrast** | [Accessibility contrast requirements] |
+| **Loading States** | [How loading should be displayed] |
+| **Error States** | [How errors should be displayed] |
+| **Empty States** | [How empty data should be displayed] |
+
+---
+
 ## Data Requirements
 
 ### Input Data

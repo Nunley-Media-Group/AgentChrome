@@ -141,6 +141,21 @@ The current `main.rs` only prints the package name and version. This feature rep
 
 ---
 
+## UI/UX Requirements
+
+Reference `structure.md` and `product.md` for project-specific design standards.
+
+| Element | Requirement |
+|---------|-------------|
+| **Interaction** | [Touch targets, gesture requirements] |
+| **Typography** | [Minimum text sizes, font requirements] |
+| **Contrast** | [Accessibility contrast requirements] |
+| **Loading States** | [How loading should be displayed] |
+| **Error States** | [How errors should be displayed] |
+| **Empty States** | [How empty data should be displayed] |
+
+---
+
 ## Data Requirements
 
 ### Input Data (CLI Arguments)
@@ -183,6 +198,14 @@ The current `main.rs` only prints the package name and version. This feature rep
 - Chrome process discovery/launch
 - Output formatting layer beyond error JSON
 - Any async runtime setup
+
+---
+
+## Success Metrics
+
+| Metric | Target | Measurement |
+|--------|--------|-------------|
+| [metric] | [target value] | [how to measure] |
 
 ---
 

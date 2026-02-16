@@ -18,6 +18,27 @@
 
 ---
 
+## Task Format
+
+Each task follows this structure:
+
+```
+### T[NNN]: [Task Title]
+
+**File(s)**: `{layer}/path/to/file`
+**Type**: Create | Modify | Delete
+**Depends**: T[NNN], T[NNN] (or None)
+**Acceptance**:
+- [ ] [Verifiable criterion 1]
+- [ ] [Verifiable criterion 2]
+
+**Notes**: [Optional implementation hints]
+```
+
+Map `{layer}/` placeholders to actual project paths using `structure.md`.
+
+---
+
 ## Phase 1: Setup
 
 ### T001: Create .gitignore
@@ -86,6 +107,111 @@
 - [ ] Contains one-line description
 - [ ] Contains "under construction" notice
 - [ ] Mentions license
+
+---
+
+## Phase 2: Backend Implementation
+
+### T003: [Data access layer]
+
+**File(s)**: `{data-layer}/repositories/...` or `{data-layer}/data/...`
+**Type**: Create
+**Depends**: T001, T002
+**Acceptance**:
+- [ ] All CRUD operations implemented
+- [ ] Uses parameterized queries (SQL injection safe)
+- [ ] Error handling for data access failures
+- [ ] Unit tests pass
+
+### T004: [Business logic layer]
+
+**File(s)**: `{business-layer}/services/...`
+**Type**: Create
+**Depends**: T003
+**Acceptance**:
+- [ ] Business logic implemented per design
+- [ ] Input validation
+- [ ] Error handling with appropriate error types
+- [ ] Unit tests pass
+
+### T005: [Request handler / Controller]
+
+**File(s)**: `{entry-layer}/controllers/...` or `{entry-layer}/handlers/...`
+**Type**: Create
+**Depends**: T004
+**Acceptance**:
+- [ ] All endpoints/handlers implemented per API spec
+- [ ] Request validation
+- [ ] Proper response codes/formats
+- [ ] Response format matches spec
+
+### T006: [Route registration / Endpoint wiring]
+
+**File(s)**: `{entry-layer}/routes/...`
+**Type**: Create or Modify
+**Depends**: T005
+**Acceptance**:
+- [ ] Routes/endpoints registered with correct paths
+- [ ] Auth/middleware applied where needed
+- [ ] Endpoints accessible and responding
+
+---
+
+## Phase 3: Frontend Implementation
+
+### T007: [Client-side model]
+
+**File(s)**: `{presentation-layer}/models/...`
+**Type**: Create
+**Depends**: T002
+**Acceptance**:
+- [ ] Model matches API response schema
+- [ ] Serialization/deserialization works
+- [ ] Immutable with update method (if applicable)
+- [ ] Unit tests for serialization
+
+### T008: [Client-side service / API client]
+
+**File(s)**: `{presentation-layer}/services/...`
+**Type**: Create
+**Depends**: T007
+**Acceptance**:
+- [ ] All API calls implemented
+- [ ] Error handling with typed exceptions
+- [ ] Uses project's HTTP client pattern
+- [ ] Unit tests pass
+
+### T009: [State management]
+
+**File(s)**: `{presentation-layer}/state/...` or `{presentation-layer}/providers/...`
+**Type**: Create
+**Depends**: T008
+**Acceptance**:
+- [ ] State class defined (immutable if applicable)
+- [ ] Loading/error states handled
+- [ ] State transitions match design spec
+- [ ] Unit tests for state transitions
+
+### T010: [UI components]
+
+**File(s)**: `{presentation-layer}/components/...` or `{presentation-layer}/widgets/...`
+**Type**: Create
+**Depends**: T009
+**Acceptance**:
+- [ ] Components match design specs
+- [ ] Uses project's design tokens (no hardcoded values)
+- [ ] Loading/error/empty states
+- [ ] Component tests pass
+
+### T011: [Screen / Page]
+
+**File(s)**: `{presentation-layer}/screens/...` or `{presentation-layer}/pages/...`
+**Type**: Create
+**Depends**: T010
+**Acceptance**:
+- [ ] Screen layout matches design
+- [ ] State management integration working
+- [ ] Navigation implemented
 
 ---
 

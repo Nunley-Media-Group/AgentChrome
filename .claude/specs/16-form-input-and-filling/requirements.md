@@ -170,6 +170,21 @@ The `form` subcommand provides three operations: `fill` (set a single field's va
 
 ---
 
+## UI/UX Requirements
+
+Reference `structure.md` and `product.md` for project-specific design standards.
+
+| Element | Requirement |
+|---------|-------------|
+| **Interaction** | [Touch targets, gesture requirements] |
+| **Typography** | [Minimum text sizes, font requirements] |
+| **Contrast** | [Accessibility contrast requirements] |
+| **Loading States** | [How loading should be displayed] |
+| **Error States** | [How errors should be displayed] |
+| **Empty States** | [How empty data should be displayed] |
+
+---
+
 ## Data Requirements
 
 ### Input Data
@@ -211,6 +226,14 @@ The `form` subcommand provides three operations: `fill` (set a single field's va
 - ContentEditable / rich text editors — not standard form elements
 - Drag-and-drop into form fields
 - Auto-fill / password manager integration
+
+---
+
+## Success Metrics
+
+| Metric | Target | Measurement |
+|--------|--------|-------------|
+| [metric] | [target value] | [how to measure] |
 
 ---
 
