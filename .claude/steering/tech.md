@@ -126,6 +126,14 @@ Example Domain
 
 ## Testing Standards
 
+### Chrome Instance Cleanup (CRITICAL)
+
+**Always close any headed Chrome instance you open.** During implementation and verification, if you launch a headed (non-headless) Chrome browser for testing or debugging, you MUST ensure it is closed/killed when you are done. Leaving headed Chrome instances running wastes system resources and can interfere with subsequent test runs or CDP connections.
+
+- After running integration/BDD tests that launch headed Chrome, verify the process is terminated
+- If a test or command opens a headed Chrome instance, ensure cleanup happens even on failure (use `Drop` implementations or process cleanup in test teardown)
+- Before finishing any implementation or verification session, check for orphaned Chrome processes and kill them
+
 ### BDD Testing (Required for nmg-sdlc)
 
 **Every acceptance criterion MUST have a Gherkin test.**
