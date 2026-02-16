@@ -131,7 +131,14 @@ const PAGE_ENABLE_TIMEOUT_MS: u64 = 300;
 /// session existed.
 async fn setup_dialog_session(
     global: &GlobalOpts,
-) -> Result<(CdpClient, ManagedSession, tokio::sync::mpsc::Receiver<CdpEvent>), AppError> {
+) -> Result<
+    (
+        CdpClient,
+        ManagedSession,
+        tokio::sync::mpsc::Receiver<CdpEvent>,
+    ),
+    AppError,
+> {
     let conn = resolve_connection(&global.host, global.port, global.ws_url.as_deref()).await?;
     let target = resolve_target(&conn.host, conn.port, global.tab.as_deref()).await?;
 
@@ -148,11 +155,7 @@ async fn setup_dialog_session(
     // Page.javascriptDialogOpening for any open dialog before blocking.
     // The timeout is expected to fire when a dialog is open.
     let page_enable = managed.send_command("Page.enable", None);
-    let _ = tokio::time::timeout(
-        Duration::from_millis(PAGE_ENABLE_TIMEOUT_MS),
-        page_enable,
-    )
-    .await;
+    let _ = tokio::time::timeout(Duration::from_millis(PAGE_ENABLE_TIMEOUT_MS), page_enable).await;
 
     Ok((client, managed, dialog_rx))
 }
