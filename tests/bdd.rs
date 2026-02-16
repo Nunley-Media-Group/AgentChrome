@@ -1372,6 +1372,19 @@ fn session_invalid_json(world: &mut SessionWorld) {
     std::fs::write(world.session_path(), "not valid json {{{").unwrap();
 }
 
+#[given("a session file exists with a PID of an already-exited process")]
+fn session_with_dead_pid(world: &mut SessionWorld) {
+    std::fs::create_dir_all(world.session_dir()).unwrap();
+    // Use PID 999_999_999 which is virtually guaranteed to not exist.
+    let data = json!({
+        "ws_url": "ws://127.0.0.1:19222/devtools/browser/test",
+        "port": 19222,
+        "pid": 999_999_999,
+        "timestamp": "2026-02-15T12:00:00Z"
+    });
+    std::fs::write(world.session_path(), data.to_string()).unwrap();
+}
+
 // --- SessionWorld When steps ---
 
 #[when(expr = "I run {string}")]
@@ -3326,6 +3339,11 @@ const SESSION_TESTABLE_SCENARIOS: &[&str] = &[
     "Corrupted session file handled gracefully",
 ];
 
+/// Disconnect process kill fix (issue #101) — only the already-exited scenario
+/// can be tested without a running Chrome instance.
+const DISCONNECT_KILL_TESTABLE_SCENARIOS: &[&str] =
+    &["Disconnect with already-exited process succeeds cleanly"];
+
 /// JS execution BDD scenarios that can be tested without a running Chrome instance.
 const JS_TESTABLE_SCENARIOS: &[&str] = &["File not found error"];
 
@@ -3485,6 +3503,18 @@ async fn main() {
         .filter_run_and_exit(
             "tests/features/87-fix-connect-auto-discover-overwrites-session-pid.feature",
             |_feature, _rule, _scenario| false, // All scenarios require running Chrome
+        )
+        .await;
+
+    // Disconnect process kill fix (issue #101) — only the already-exited scenario
+    // can be tested without a running Chrome instance. The other scenarios require
+    // launching Chrome to verify the process is actually killed.
+    SessionWorld::cucumber()
+        .filter_run_and_exit(
+            "tests/features/101-fix-disconnect-process-not-killed.feature",
+            |_feature, _rule, scenario| {
+                DISCONNECT_KILL_TESTABLE_SCENARIOS.contains(&scenario.name.as_str())
+            },
         )
         .await;
 

@@ -128,6 +128,7 @@ dependencies = [
  "dirs",
  "futures",
  "futures-util",
+ "libc",
  "serde",
  "serde_json",
  "serde_yaml",

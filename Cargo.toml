@@ -25,6 +25,7 @@ tokio-tungstenite = "0.26"
 base64 = "0.22"
 toml = "0.8"
 dirs = "6"
+libc = "0.2"
 
 [dev-dependencies]
 cucumber = "0.21"
