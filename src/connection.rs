@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::time::Duration;
 
 use crate::cdp::{CdpError, CdpEvent, CdpSession};
 use crate::chrome::{TargetInfo, discover_chrome, query_targets, query_version};
@@ -155,6 +156,13 @@ pub async fn resolve_target(
     select_target(&targets, tab).cloned()
 }
 
+/// Timeout for `Page.enable` during auto-dismiss setup (milliseconds).
+///
+/// Chrome re-emits `Page.javascriptDialogOpening` to newly-attached sessions
+/// when `Page.enable` is sent, but `Page.enable` itself blocks when a dialog
+/// is already open. We use a short timeout so auto-dismiss can proceed.
+const PAGE_ENABLE_TIMEOUT_MS: u64 = 300;
+
 /// A CDP session wrapper that tracks which domains have been enabled,
 /// ensuring each domain is only enabled once (lazy domain enabling).
 ///
@@ -230,22 +238,33 @@ impl ManagedSession {
 
     /// Spawn a background task that automatically dismisses JavaScript dialogs.
     ///
-    /// Enables the Page domain if not already enabled, subscribes to dialog
-    /// events, and dismisses each dialog as it appears. Returns a `JoinHandle`
-    /// whose `abort()` method can be called to stop the task (or it stops
-    /// naturally when the session is dropped).
+    /// Subscribes to dialog events and sends `Page.enable` with a short
+    /// timeout. If a dialog is already open, `Page.enable` will block, but
+    /// Chrome re-emits the `Page.javascriptDialogOpening` event before
+    /// blocking, so the pre-existing dialog is captured and dismissed.
+    /// Returns a `JoinHandle` whose `abort()` method can be called to stop
+    /// the task (or it stops naturally when the session is dropped).
     ///
     /// # Errors
     ///
-    /// Returns `CdpError` if the Page domain cannot be enabled or
-    /// the event subscription fails.
+    /// Returns `CdpError` if the event subscription fails.
     pub async fn spawn_auto_dismiss(&mut self) -> Result<tokio::task::JoinHandle<()>, CdpError> {
-        self.ensure_domain("Page").await?;
-
+        // Subscribe BEFORE Page.enable so we capture re-emitted dialog events.
         let mut dialog_rx = self
             .session
             .subscribe("Page.javascriptDialogOpening")
             .await?;
+
+        // Send Page.enable with a timeout. If a dialog is already open,
+        // Page.enable blocks but the dialog event is delivered before the
+        // block. We accept the timeout and proceed.
+        let page_enable = self.session.send_command("Page.enable", None);
+        let enable_result =
+            tokio::time::timeout(Duration::from_millis(PAGE_ENABLE_TIMEOUT_MS), page_enable).await;
+        if matches!(enable_result, Ok(Ok(_))) {
+            self.enabled_domains.insert("Page".to_string());
+        }
+
         let session = self.session.clone();
 
         Ok(tokio::spawn(async move {

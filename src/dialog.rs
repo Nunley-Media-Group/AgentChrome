@@ -108,6 +108,14 @@ fn cdp_config(global: &GlobalOpts) -> CdpConfig {
 // Session setup
 // =============================================================================
 
+/// Timeout for `Page.enable` during dialog session setup (milliseconds).
+///
+/// Chrome re-emits `Page.javascriptDialogOpening` to newly-attached sessions
+/// when `Page.enable` is sent, but `Page.enable` itself blocks when a dialog
+/// is already open. We use a short timeout: the dialog event arrives before
+/// the block, so we get the metadata we need and can proceed.
+const PAGE_ENABLE_TIMEOUT_MS: u64 = 300;
+
 /// Create a CDP session for dialog commands.
 ///
 /// Unlike the standard `setup_session()` used by other commands, this skips
@@ -115,9 +123,22 @@ fn cdp_config(global: &GlobalOpts) -> CdpConfig {
 /// device scale) are irrelevant for dialog interaction **and** can block when
 /// a dialog is already open (e.g. `Runtime.evaluate` inside
 /// `apply_emulate_state()` hangs until the dialog is dismissed).
+///
+/// After creating the session, subscribes to `Page.javascriptDialogOpening`
+/// and sends `Page.enable` with a short timeout. This triggers Chrome to
+/// re-emit any pending dialog event to this session, allowing `dialog info`
+/// and `dialog handle` to work even when the dialog opened before this
+/// session existed.
 async fn setup_dialog_session(
     global: &GlobalOpts,
-) -> Result<(CdpClient, ManagedSession), AppError> {
+) -> Result<
+    (
+        CdpClient,
+        ManagedSession,
+        tokio::sync::mpsc::Receiver<CdpEvent>,
+    ),
+    AppError,
+> {
     let conn = resolve_connection(&global.host, global.port, global.ws_url.as_deref()).await?;
     let target = resolve_target(&conn.host, conn.port, global.tab.as_deref()).await?;
 
@@ -126,7 +147,17 @@ async fn setup_dialog_session(
     let session = client.create_session(&target.id).await?;
     let managed = ManagedSession::new(session);
 
-    Ok((client, managed))
+    // Subscribe to dialog events BEFORE sending Page.enable, so we capture
+    // the re-emitted event.
+    let dialog_rx = managed.subscribe("Page.javascriptDialogOpening").await?;
+
+    // Send Page.enable with a short timeout. Chrome will re-emit
+    // Page.javascriptDialogOpening for any open dialog before blocking.
+    // The timeout is expected to fire when a dialog is open.
+    let page_enable = managed.send_command("Page.enable", None);
+    let _ = tokio::time::timeout(Duration::from_millis(PAGE_ENABLE_TIMEOUT_MS), page_enable).await;
+
+    Ok((client, managed, dialog_rx))
 }
 
 // =============================================================================
@@ -150,14 +181,7 @@ pub async fn execute_dialog(global: &GlobalOpts, args: &DialogArgs) -> Result<()
 // =============================================================================
 
 async fn execute_handle(global: &GlobalOpts, args: &DialogHandleArgs) -> Result<(), AppError> {
-    let (_client, managed) = setup_dialog_session(global).await?;
-
-    // Subscribe to dialog opening event to capture metadata.
-    // `Page.handleJavaScriptDialog` and event subscriptions work without
-    // `Page.enable` — CDP delivers dialog events at the session level once
-    // attached, so we intentionally skip `ensure_domain("Page")` here to
-    // avoid blocking when a dialog is already open.
-    let dialog_rx = managed.subscribe("Page.javascriptDialogOpening").await?;
+    let (_client, managed, dialog_rx) = setup_dialog_session(global).await?;
 
     // Build CDP params
     let accept = matches!(args.action, DialogAction::Accept);
@@ -216,11 +240,7 @@ async fn execute_handle(global: &GlobalOpts, args: &DialogHandleArgs) -> Result<
 const DIALOG_PROBE_TIMEOUT_MS: u64 = 200;
 
 async fn execute_info(global: &GlobalOpts) -> Result<(), AppError> {
-    let (_client, managed) = setup_dialog_session(global).await?;
-
-    // Subscribe to dialog opening event.
-    // CDP delivers dialog events at the session level without `Page.enable`.
-    let dialog_rx = managed.subscribe("Page.javascriptDialogOpening").await?;
+    let (_client, managed, dialog_rx) = setup_dialog_session(global).await?;
 
     // Probe: try Runtime.evaluate("0") with a short timeout.
     // If a dialog is blocking, this will time out.
