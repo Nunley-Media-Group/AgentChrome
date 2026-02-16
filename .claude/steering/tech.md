@@ -57,6 +57,16 @@ Chrome Browser (DevTools Protocol)
 
 ---
 
+## Off-Limits Files
+
+Do NOT modify these files during SDLC steps unless the issue explicitly requires it:
+
+- `.gitignore` — managed by the project owner
+- `Cargo.lock` — updated only by `cargo` commands, never edited directly
+- `.claude/` contents — managed by the SDLC runner
+
+---
+
 ## Coding Standards
 
 ### Rust
