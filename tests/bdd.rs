@@ -3463,6 +3463,16 @@ async fn main() {
         )
         .await;
 
+    // Dialog handle no-dialog-open fix (issue #99) — all scenarios require a running Chrome
+    // instance with an open dialog, so none can run in CI without Chrome. The feature file
+    // documents regression scenarios for manual/integration testing.
+    DialogWorld::cucumber()
+        .filter_run_and_exit(
+            "tests/features/dialog-handle-no-dialog-open-fix.feature",
+            |_feature, _rule, _scenario| false, // All scenarios require Chrome with open dialog
+        )
+        .await;
+
     // Connect PID preservation fix (issue #87) — all scenarios require a running Chrome instance
     // for auto-discover. The feature file documents regression scenarios; the fix is validated
     // by unit tests in session.rs (pid_preserved_when_ports_match, etc.).
