@@ -1,10 +1,10 @@
 {
-  "currentStep": 4,
-  "lastCompletedStep": 4,
+  "currentStep": 6,
+  "lastCompletedStep": 5,
   "currentIssue": 115,
   "currentBranch": "115-fix-page-screenshot-uid-node-not-found",
   "featureName": "99-fix-dialog-handle-no-dialog-open",
-  "lastTransitionAt": "2026-02-17T00:11:20.212Z",
+  "lastTransitionAt": "2026-02-17T00:15:29.767Z",
   "retries": {},
   "runnerPid": 20994,
   "prNumber": 123
