@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude
 **Severity**: Critical
-**Related Spec**: `.claude/specs/6-session-and-connection-management/`
+**Related Spec**: `.claude/specs/5-chrome-instance-discovery-and-launch/`
 
 ---
 

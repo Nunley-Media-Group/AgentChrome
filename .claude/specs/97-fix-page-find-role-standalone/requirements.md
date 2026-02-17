@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude
 **Severity**: Medium
-**Related Spec**: `.claude/specs/15-element-finding/` *(if exists — covers the original `page find` feature)*
+**Related Spec**: `.claude/specs/11-element-finding/`
 
 ---
 
