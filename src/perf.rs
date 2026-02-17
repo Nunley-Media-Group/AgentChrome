@@ -172,6 +172,9 @@ async fn execute_record(global: &GlobalOpts, args: &PerfRecordArgs) -> Result<()
         managed.ensure_domain("Page").await?;
     }
 
+    // Capture recording start time for accurate duration reporting
+    let start_time = std::time::Instant::now();
+
     // Start tracing
     let start_params = serde_json::json!({
         "categories": TRACE_CATEGORIES,
@@ -216,7 +219,7 @@ async fn execute_record(global: &GlobalOpts, args: &PerfRecordArgs) -> Result<()
     }
 
     // Stop and collect
-    let result = stop_and_collect(&managed, &trace_path).await?;
+    let result = stop_and_collect(&managed, &trace_path, start_time).await?;
 
     let plain = format_record_plain(&result);
     print_output(&result, &global.output, Some(&plain))
@@ -226,9 +229,8 @@ async fn execute_record(global: &GlobalOpts, args: &PerfRecordArgs) -> Result<()
 async fn stop_and_collect(
     managed: &ManagedSession,
     trace_path: &Path,
+    start_time: std::time::Instant,
 ) -> Result<PerfRecordResult, AppError> {
-    let start_time = std::time::Instant::now();
-
     // Subscribe to trace events
     let data_rx = managed.subscribe("Tracing.dataCollected").await?;
     let complete_rx = managed.subscribe("Tracing.tracingComplete").await?;
