@@ -12,6 +12,18 @@ repository = "https://github.com/Nunley-Media-Group/chrome-cli"
 description = "A CLI tool for browser automation via the Chrome DevTools Protocol"
 keywords = ["chrome", "cdp", "browser", "automation", "cli"]
 categories = ["command-line-utilities", "development-tools"]
+exclude = [
+  ".claude/",
+  ".github/",
+  "docs/",
+  "examples/",
+  "tests/",
+  "sdlc-config.json",
+  "VERSION",
+  "CHANGELOG.md",
+  "rust-toolchain.toml",
+  "rustfmt.toml",
+]
 
 [dependencies]
 clap = { version = "4", features = ["derive", "env"] }
