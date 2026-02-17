@@ -78,6 +78,10 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
+      - name: Add cross-compile target
+        if: matrix.target != runner.arch && matrix.target != ''
+        run: rustup target add ${{ matrix.target }}
+
       - uses: Swatinem/rust-cache@779680da715d629ac1d338a641029a2f4372abb5 # v2
         with:
           key: ${{ matrix.target }}
