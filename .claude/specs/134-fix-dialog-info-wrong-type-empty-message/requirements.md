@@ -6,6 +6,7 @@
 **Author**: Claude
 **Severity**: High
 **Related Spec**: `.claude/specs/20-browser-dialog-handling/`
+**Also Fixes**: #135 (`dialog handle` failing with "no dialog open" when dialog is open — verified fixed by the cookie interceptor + navigation fallback introduced here; #135 closed as duplicate)
 
 ---
 

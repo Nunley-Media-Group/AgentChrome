@@ -5,12 +5,15 @@
 # Type: Defect regression
 
 @regression
-Feature: Dialog info returns correct type and message for open dialogs
+Feature: Dialog info and handle work correctly for open dialogs
   The dialog info command previously returned type "unknown" and message ""
-  for open dialogs because drain_dialog_event() used non-blocking try_recv()
-  which raced against event delivery through the WebSocket pipeline.
-  This was fixed by converting drain_dialog_event() to async with a
-  timeout-bounded recv() that waits for the event to arrive.
+  for open dialogs because CDP events are ephemeral and cannot be replayed
+  to new sessions. The dialog handle command failed with "No dialog is
+  currently open" because Page.enable blocks when a dialog is present.
+  Both were fixed by a cookie-based interceptor that stores dialog metadata
+  before calling the native dialog function, plus a Page.navigate fallback
+  for dismissing pre-existing dialogs when Page.handleJavaScriptDialog fails.
+  This fix also resolves #135 (dialog handle no-dialog-open error).
 
   Background:
     Given chrome-cli is built
@@ -43,6 +46,13 @@ Feature: Dialog info returns correct type and message for open dialogs
     And the output JSON should contain "message" equal to "test"
     And the exit code should be 0
 
+  @regression
+  Scenario: AC5 — dialog handle dismisses pre-existing dialogs
+    Given a page has triggered an alert dialog with message "test"
+    And the dialog was opened before the current CLI invocation
+    When I run "chrome-cli dialog handle accept"
+    Then the exit code should be 0
+
   # --- Related Behavior Still Works ---
 
   @regression
@@ -51,3 +61,10 @@ Feature: Dialog info returns correct type and message for open dialogs
     When I run "chrome-cli dialog info"
     Then the output JSON should contain "open" equal to false
     And the exit code should be 0
+
+  @regression
+  Scenario: AC6 — dialog handle returns error when no dialog is open
+    Given no dialog is currently open
+    When I run "chrome-cli dialog handle accept"
+    Then the output should contain "No dialog is currently open"
+    And the exit code should be non-zero
