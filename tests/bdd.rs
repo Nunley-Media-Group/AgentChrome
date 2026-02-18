@@ -3466,6 +3466,68 @@ const SCROLL_TESTABLE_SCENARIOS: &[&str] = &[
     "Invalid direction value",
 ];
 
+// =============================================================================
+// FormSourceWorld — form.rs source-level regression tests (issue #136)
+// =============================================================================
+
+#[derive(Debug, Default, World)]
+struct FormSourceWorld {
+    source_content: String,
+    js_section: String,
+}
+
+#[given("chrome-cli is built")]
+fn form_source_chrome_cli_is_built(world: &mut FormSourceWorld) {
+    let path = project_root().join("src/form.rs");
+    world.source_content = std::fs::read_to_string(&path)
+        .unwrap_or_else(|e| panic!("Failed to read src/form.rs: {e}"));
+}
+
+#[when("I check the form fill JavaScript implementation")]
+fn check_fill_js(world: &mut FormSourceWorld) {
+    let start = world
+        .source_content
+        .find("const FILL_JS")
+        .expect("FILL_JS not found in source");
+    let rest = &world.source_content[start..];
+    let end = rest.find("\";").expect("End of FILL_JS not found") + 2;
+    world.js_section = rest[..end].to_string();
+}
+
+#[when("I check the form clear JavaScript implementation")]
+fn check_clear_js(world: &mut FormSourceWorld) {
+    let start = world
+        .source_content
+        .find("const CLEAR_JS")
+        .expect("CLEAR_JS not found in source");
+    let rest = &world.source_content[start..];
+    let end = rest.find("\";").expect("End of CLEAR_JS not found") + 2;
+    world.js_section = rest[..end].to_string();
+}
+
+#[then("it should select HTMLTextAreaElement prototype for textarea elements")]
+fn selects_textarea_prototype(world: &mut FormSourceWorld) {
+    assert!(
+        world.js_section.contains("HTMLTextAreaElement.prototype"),
+        "Expected JS section to reference HTMLTextAreaElement.prototype:\n{}",
+        world.js_section
+    );
+    assert!(
+        world.js_section.contains("tag === 'textarea'"),
+        "Expected JS section to check tag === 'textarea':\n{}",
+        world.js_section
+    );
+}
+
+#[then("it should select HTMLInputElement prototype for input elements")]
+fn selects_input_prototype(world: &mut FormSourceWorld) {
+    assert!(
+        world.js_section.contains("HTMLInputElement.prototype"),
+        "Expected JS section to reference HTMLInputElement.prototype:\n{}",
+        world.js_section
+    );
+}
+
 /// Run dialog-related BDD features (main dialog, issue #86, issue #99, issue #134).
 async fn run_dialog_features() {
     // Dialog handling — only CLI-testable scenarios (argument validation) can run without Chrome.
@@ -3645,6 +3707,10 @@ async fn main() {
             |_feature, _rule, scenario| FORM_TESTABLE_SCENARIOS.contains(&scenario.name.as_str()),
         )
         .await;
+
+    // Form fill textarea fix (issue #136) — source-level regression tests verify that
+    // FILL_JS and CLEAR_JS select the correct prototype based on element tag name.
+    FormSourceWorld::run("tests/features/136-fix-form-fill-textarea.feature").await;
 
     // Scroll interactions — only CLI-testable scenarios (argument validation, help text, conflicts).
     // Scenarios requiring a running Chrome instance are skipped.

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-02-17
+
+### Fixed
+
+- Form fill and clear not setting value on textarea elements due to incorrect native setter prototype selection (#136)
+
 ## [1.0.1] - 2026-02-17
 
 ### Fixed

@@ -253,11 +253,10 @@ function(value) {
         el.checked = value === 'true' || value === 'checked';
     } else {
         // text, password, email, number, textarea, date, tel, url, etc.
-        const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-            window.HTMLInputElement.prototype, 'value'
-        )?.set || Object.getOwnPropertyDescriptor(
-            window.HTMLTextAreaElement.prototype, 'value'
-        )?.set;
+        const proto = tag === 'textarea'
+            ? window.HTMLTextAreaElement.prototype
+            : window.HTMLInputElement.prototype;
+        const nativeInputValueSetter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
         if (nativeInputValueSetter) {
             nativeInputValueSetter.call(el, value);
         } else {
@@ -281,11 +280,10 @@ function() {
     } else if (tag === 'select') {
         el.selectedIndex = 0;
     } else {
-        const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
-            window.HTMLInputElement.prototype, 'value'
-        )?.set || Object.getOwnPropertyDescriptor(
-            window.HTMLTextAreaElement.prototype, 'value'
-        )?.set;
+        const proto = tag === 'textarea'
+            ? window.HTMLTextAreaElement.prototype
+            : window.HTMLInputElement.prototype;
+        const nativeInputValueSetter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
         if (nativeInputValueSetter) {
             nativeInputValueSetter.call(el, '');
         } else {
