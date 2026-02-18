@@ -382,25 +382,26 @@ pub async fn execute_console(global: &GlobalOpts, args: &ConsoleArgs) -> Result<
 // Read: list and detail modes
 // =============================================================================
 
-/// Default timeout for the reload+drain cycle in milliseconds.
-const DEFAULT_RELOAD_TIMEOUT_MS: u64 = 5000;
+/// Default idle timeout for the replay buffer drain (ms).
+/// CDP replays cached console events when Runtime.enable is called on a new
+/// session.  We collect those replayed events until no new event arrives within
+/// this idle window.
+const DEFAULT_REPLAY_IDLE_MS: u64 = 200;
 
-/// Idle window after page load event to catch trailing console messages from deferred scripts (ms).
-const POST_LOAD_IDLE_MS: u64 = 200;
+/// Absolute upper-bound timeout so we never hang forever (ms).
+const DEFAULT_REPLAY_TIMEOUT_MS: u64 = 5000;
 
 #[allow(clippy::too_many_lines)]
 async fn execute_read(global: &GlobalOpts, args: &ConsoleReadArgs) -> Result<(), AppError> {
     let (_client, mut managed) = setup_session(global).await?;
 
-    let total_timeout = Duration::from_millis(global.timeout.unwrap_or(DEFAULT_RELOAD_TIMEOUT_MS));
+    let total_timeout =
+        Duration::from_millis(global.timeout.unwrap_or(DEFAULT_REPLAY_TIMEOUT_MS));
 
-    // Enable Runtime domain for console events
-    managed.ensure_domain("Runtime").await?;
-
-    // Enable Page domain for reload and navigation tracking
-    managed.ensure_domain("Page").await?;
-
-    // Subscribe to console events
+    // Subscribe to console events BEFORE enabling the Runtime domain.
+    // CDP replays cached consoleAPICalled events immediately when
+    // Runtime.enable is called, so the subscription must already be
+    // in place to capture those replayed events.
     let mut console_rx = managed
         .subscribe("Runtime.consoleAPICalled")
         .await
@@ -410,49 +411,18 @@ async fn execute_read(global: &GlobalOpts, args: &ConsoleReadArgs) -> Result<(),
             custom_json: None,
         })?;
 
-    // Subscribe to navigation events for tracking
-    let mut nav_rx = managed
-        .subscribe("Page.frameNavigated")
-        .await
-        .map_err(|e| AppError {
-            message: format!("Failed to subscribe to navigation events: {e}"),
-            code: ExitCode::GeneralError,
-            custom_json: None,
-        })?;
+    // Now enable Runtime — this triggers the replay buffer.
+    managed.ensure_domain("Runtime").await?;
 
-    // Subscribe to page load event to know when reload completes
-    let mut load_event_rx = managed
-        .subscribe("Page.loadEventFired")
-        .await
-        .map_err(|e| AppError {
-            message: format!("Failed to subscribe to page load events: {e}"),
-            code: ExitCode::GeneralError,
-            custom_json: None,
-        })?;
-
-    // Trigger a page reload to replay page scripts and regenerate console events
-    managed
-        .send_command("Page.reload", Some(serde_json::json!({})))
-        .await
-        .map_err(|e| AppError {
-            message: format!("Failed to reload page: {e}"),
-            code: ExitCode::GeneralError,
-            custom_json: None,
-        })?;
-
-    // Collect events until page load completes + idle window, with total timeout
+    // Drain the replay buffer: collect events until idle timeout or absolute
+    // deadline, whichever comes first.
     let mut raw_events = Vec::new();
-    let mut current_nav_id: u32 = 0;
-    let mut page_loaded = false;
     let absolute_deadline = tokio::time::Instant::now() + total_timeout;
-    let mut idle_deadline: Option<tokio::time::Instant> = None;
+    let idle_duration = Duration::from_millis(DEFAULT_REPLAY_IDLE_MS);
 
     loop {
-        let effective_deadline = match idle_deadline {
-            Some(idle) => idle.min(absolute_deadline),
-            None => absolute_deadline,
-        };
-        let remaining = effective_deadline.saturating_duration_since(tokio::time::Instant::now());
+        let deadline = (tokio::time::Instant::now() + idle_duration).min(absolute_deadline);
+        let remaining = deadline.saturating_duration_since(tokio::time::Instant::now());
         if remaining.is_zero() {
             break;
         }
@@ -463,28 +433,8 @@ async fn execute_read(global: &GlobalOpts, args: &ConsoleReadArgs) -> Result<(),
                     Some(ev) => {
                         raw_events.push(RawConsoleEvent {
                             params: ev.params,
-                            navigation_id: current_nav_id,
+                            navigation_id: 0,
                         });
-                    }
-                    None => break,
-                }
-            }
-            event = nav_rx.recv() => {
-                match event {
-                    Some(_) => current_nav_id += 1,
-                    None => break,
-                }
-            }
-            event = load_event_rx.recv() => {
-                match event {
-                    Some(_) => {
-                        if !page_loaded {
-                            page_loaded = true;
-                            idle_deadline = Some(
-                                tokio::time::Instant::now()
-                                    + tokio::time::Duration::from_millis(POST_LOAD_IDLE_MS),
-                            );
-                        }
                     }
                     None => break,
                 }
@@ -493,21 +443,8 @@ async fn execute_read(global: &GlobalOpts, args: &ConsoleReadArgs) -> Result<(),
         }
     }
 
-    // Navigation-aware filtering: keep events from the last 3 navigations
-    let events_to_process = if args.include_preserved {
-        // Include up to last 3 navigations
-        let min_nav_id = current_nav_id.saturating_sub(2);
-        raw_events
-            .into_iter()
-            .filter(|e| e.navigation_id >= min_nav_id)
-            .collect::<Vec<_>>()
-    } else {
-        // Only current navigation
-        raw_events
-            .into_iter()
-            .filter(|e| e.navigation_id == current_nav_id)
-            .collect::<Vec<_>>()
-    };
+    // All events come from the replay buffer — no navigation filtering needed.
+    let events_to_process = raw_events;
 
     // Handle detail mode (MSG_ID provided)
     if let Some(msg_id) = args.msg_id {
