@@ -3922,4 +3922,14 @@ async fn main() {
             |_feature, _rule, _scenario| false, // All scenarios require running Chrome
         )
         .await;
+
+    // SPA same-document navigate back/forward timeout fix (issue #144) — all scenarios require
+    // a running Chrome instance with SPA history state. The feature file documents acceptance
+    // scenarios; the fix is validated by the code change in navigate.rs.
+    CliWorld::cucumber()
+        .filter_run_and_exit(
+            "tests/features/144-fix-spa-same-document-navigate-timeout.feature",
+            |_feature, _rule, _scenario| false, // All scenarios require running Chrome
+        )
+        .await;
 }

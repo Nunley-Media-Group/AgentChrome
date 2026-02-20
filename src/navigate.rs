@@ -234,8 +234,10 @@ async fn execute_back(global: &GlobalOpts) -> Result<(), AppError> {
     let target_entry = &entries[current_index - 1];
     let entry_id = target_entry["id"].as_i64().unwrap_or(0);
 
-    // Subscribe to frameNavigated before navigating (fires reliably for cross-origin)
+    // Subscribe to both frameNavigated (cross-document) and navigatedWithinDocument
+    // (same-document / SPA pushState) before navigating — whichever fires first wins.
     let nav_rx = managed.subscribe("Page.frameNavigated").await?;
+    let within_doc_rx = managed.subscribe("Page.navigatedWithinDocument").await?;
 
     // Navigate to history entry
     managed
@@ -245,8 +247,8 @@ async fn execute_back(global: &GlobalOpts) -> Result<(), AppError> {
         )
         .await?;
 
-    // Wait for navigation
-    wait_for_event(nav_rx, DEFAULT_NAVIGATE_TIMEOUT_MS, "navigation").await?;
+    // Wait for navigation (cross-document or same-document)
+    wait_for_history_navigation(nav_rx, within_doc_rx, DEFAULT_NAVIGATE_TIMEOUT_MS).await?;
 
     let (page_url, page_title) = get_page_info(&managed).await?;
 
@@ -295,7 +297,10 @@ async fn execute_forward(global: &GlobalOpts) -> Result<(), AppError> {
     let target_entry = &entries[next_index];
     let entry_id = target_entry["id"].as_i64().unwrap_or(0);
 
+    // Subscribe to both frameNavigated (cross-document) and navigatedWithinDocument
+    // (same-document / SPA pushState) before navigating — whichever fires first wins.
     let nav_rx = managed.subscribe("Page.frameNavigated").await?;
+    let within_doc_rx = managed.subscribe("Page.navigatedWithinDocument").await?;
 
     managed
         .send_command(
@@ -304,7 +309,8 @@ async fn execute_forward(global: &GlobalOpts) -> Result<(), AppError> {
         )
         .await?;
 
-    wait_for_event(nav_rx, DEFAULT_NAVIGATE_TIMEOUT_MS, "navigation").await?;
+    // Wait for navigation (cross-document or same-document)
+    wait_for_history_navigation(nav_rx, within_doc_rx, DEFAULT_NAVIGATE_TIMEOUT_MS).await?;
 
     let (page_url, page_title) = get_page_info(&managed).await?;
 
@@ -368,6 +374,43 @@ async fn wait_for_event(
         }
         () = tokio::time::sleep(timeout) => {
             Err(AppError::navigation_timeout(timeout_ms, strategy))
+        }
+    }
+}
+
+/// Wait for either `Page.frameNavigated` (cross-document) or
+/// `Page.navigatedWithinDocument` (same-document / SPA pushState) — whichever
+/// fires first. This prevents timeouts on SPA history navigations where Chrome
+/// only emits the within-document event.
+async fn wait_for_history_navigation(
+    mut frame_rx: tokio::sync::mpsc::Receiver<CdpEvent>,
+    mut within_doc_rx: tokio::sync::mpsc::Receiver<CdpEvent>,
+    timeout_ms: u64,
+) -> Result<(), AppError> {
+    let timeout = Duration::from_millis(timeout_ms);
+    tokio::select! {
+        event = frame_rx.recv() => {
+            match event {
+                Some(_) => Ok(()),
+                None => Err(AppError {
+                    message: "Event channel closed while waiting for navigation".into(),
+                    code: ExitCode::GeneralError,
+                    custom_json: None,
+                }),
+            }
+        }
+        event = within_doc_rx.recv() => {
+            match event {
+                Some(_) => Ok(()),
+                None => Err(AppError {
+                    message: "Event channel closed while waiting for navigation".into(),
+                    code: ExitCode::GeneralError,
+                    custom_json: None,
+                }),
+            }
+        }
+        () = tokio::time::sleep(timeout) => {
+            Err(AppError::navigation_timeout(timeout_ms, "navigation"))
         }
     }
 }
@@ -529,5 +572,75 @@ mod tests {
     fn wait_until_default_is_load() {
         let default = WaitUntil::default();
         assert_eq!(default, WaitUntil::Load);
+    }
+
+    fn mock_cdp_event(method: &str) -> CdpEvent {
+        CdpEvent {
+            method: method.to_string(),
+            params: serde_json::Value::Null,
+            session_id: None,
+        }
+    }
+
+    #[tokio::test]
+    async fn history_navigation_resolves_on_frame_navigated() {
+        let (frame_tx, frame_rx) = tokio::sync::mpsc::channel(1);
+        let (_within_tx, within_rx) = tokio::sync::mpsc::channel(1);
+
+        frame_tx
+            .send(mock_cdp_event("Page.frameNavigated"))
+            .await
+            .unwrap();
+
+        let result = wait_for_history_navigation(frame_rx, within_rx, 1000).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn history_navigation_resolves_on_within_document() {
+        let (_frame_tx, frame_rx) = tokio::sync::mpsc::channel(1);
+        let (within_tx, within_rx) = tokio::sync::mpsc::channel(1);
+
+        within_tx
+            .send(mock_cdp_event("Page.navigatedWithinDocument"))
+            .await
+            .unwrap();
+
+        let result = wait_for_history_navigation(frame_rx, within_rx, 1000).await;
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn history_navigation_times_out_when_no_event() {
+        let (_frame_tx, frame_rx) = tokio::sync::mpsc::channel(1);
+        let (_within_tx, within_rx) = tokio::sync::mpsc::channel(1);
+
+        let result = wait_for_history_navigation(frame_rx, within_rx, 50).await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().message.contains("timed out"));
+    }
+
+    #[tokio::test]
+    async fn history_navigation_errors_on_closed_frame_channel() {
+        let (frame_tx, frame_rx) = tokio::sync::mpsc::channel(1);
+        let (_within_tx, within_rx) = tokio::sync::mpsc::channel(1);
+
+        drop(frame_tx);
+
+        let result = wait_for_history_navigation(frame_rx, within_rx, 1000).await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().message.contains("channel closed"));
+    }
+
+    #[tokio::test]
+    async fn history_navigation_errors_on_closed_within_doc_channel() {
+        let (_frame_tx, frame_rx) = tokio::sync::mpsc::channel(1);
+        let (within_tx, within_rx) = tokio::sync::mpsc::channel(1);
+
+        drop(within_tx);
+
+        let result = wait_for_history_navigation(frame_rx, within_rx, 1000).await;
+        assert!(result.is_err());
+        assert!(result.unwrap_err().message.contains("channel closed"));
     }
 }
