@@ -31,7 +31,7 @@
 - [ ] Bug no longer reproduces: `tabs list` after `tabs create --background` shows the original tab as active
 - [ ] No unrelated changes included in the diff
 
-**Notes**: Follow the fix strategy from design.md. The verification loop should use the existing `query_targets` function (from `chrome_cli::chrome`) and `tokio::time::sleep` for the delay. Keep the loop inside the existing `if let Some(ref active_id)` block.
+**Notes**: Follow the fix strategy from design.md. The verification loop should use the existing `query_targets` function (from `agentchrome::chrome`) and `tokio::time::sleep` for the delay. Keep the loop inside the existing `if let Some(ref active_id)` block.
 
 ### T002: Add Regression Test
 

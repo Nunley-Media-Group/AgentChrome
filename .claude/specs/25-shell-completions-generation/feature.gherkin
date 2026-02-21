@@ -4,47 +4,47 @@
 # Issue: #25
 
 Feature: Shell completions generation
-  As a developer or automation engineer using chrome-cli
+  As a developer or automation engineer using agentchrome
   I want tab-completion for all commands, flags, and enum values in my shell
-  So that I can discover and use chrome-cli features faster without consulting documentation
+  So that I can discover and use agentchrome features faster without consulting documentation
 
   # --- Happy Path: Generate completions for each shell ---
 
   Scenario: Generate bash completion script
-    Given chrome-cli is built
-    When I run "chrome-cli completions bash"
+    Given agentchrome is built
+    When I run "agentchrome completions bash"
     Then the exit code should be 0
-    And stdout should contain "chrome-cli"
+    And stdout should contain "agentchrome"
 
   Scenario: Generate zsh completion script
-    Given chrome-cli is built
-    When I run "chrome-cli completions zsh"
+    Given agentchrome is built
+    When I run "agentchrome completions zsh"
     Then the exit code should be 0
-    And stdout should contain "chrome-cli"
+    And stdout should contain "agentchrome"
 
   Scenario: Generate fish completion script
-    Given chrome-cli is built
-    When I run "chrome-cli completions fish"
+    Given agentchrome is built
+    When I run "agentchrome completions fish"
     Then the exit code should be 0
-    And stdout should contain "chrome-cli"
+    And stdout should contain "agentchrome"
 
   Scenario: Generate powershell completion script
-    Given chrome-cli is built
-    When I run "chrome-cli completions powershell"
+    Given agentchrome is built
+    When I run "agentchrome completions powershell"
     Then the exit code should be 0
-    And stdout should contain "chrome-cli"
+    And stdout should contain "agentchrome"
 
   Scenario: Generate elvish completion script
-    Given chrome-cli is built
-    When I run "chrome-cli completions elvish"
+    Given agentchrome is built
+    When I run "agentchrome completions elvish"
     Then the exit code should be 0
-    And stdout should contain "chrome-cli"
+    And stdout should contain "agentchrome"
 
   # --- Content Validation ---
 
   Scenario: Completions contain top-level subcommands
-    Given chrome-cli is built
-    When I run "chrome-cli completions bash"
+    Given agentchrome is built
+    When I run "agentchrome completions bash"
     Then the exit code should be 0
     And stdout should contain "navigate"
     And stdout should contain "tabs"
@@ -54,8 +54,8 @@ Feature: Shell completions generation
     And stdout should contain "completions"
 
   Scenario: Completions contain nested subcommands
-    Given chrome-cli is built
-    When I run "chrome-cli completions bash"
+    Given agentchrome is built
+    When I run "agentchrome completions bash"
     Then the exit code should be 0
     And stdout should contain "list"
     And stdout should contain "create"
@@ -63,8 +63,8 @@ Feature: Shell completions generation
     And stdout should contain "activate"
 
   Scenario: Completions contain global flags
-    Given chrome-cli is built
-    When I run "chrome-cli completions bash"
+    Given agentchrome is built
+    When I run "agentchrome completions bash"
     Then the exit code should be 0
     And stdout should contain "--port"
     And stdout should contain "--host"
@@ -73,16 +73,16 @@ Feature: Shell completions generation
   # --- Error Handling ---
 
   Scenario: Invalid shell argument produces error
-    Given chrome-cli is built
-    When I run "chrome-cli completions invalid-shell"
+    Given agentchrome is built
+    When I run "agentchrome completions invalid-shell"
     Then the exit code should be 2
     And stderr should contain "invalid value"
 
   # --- Help Text ---
 
   Scenario: Completions help shows installation instructions
-    Given chrome-cli is built
-    When I run "chrome-cli completions --help"
+    Given agentchrome is built
+    When I run "agentchrome completions --help"
     Then the exit code should be 0
     And stdout should contain "bash"
     And stdout should contain "zsh"
@@ -91,7 +91,7 @@ Feature: Shell completions generation
     And stdout should contain "elvish"
 
   Scenario: Completions subcommand appears in top-level help
-    Given chrome-cli is built
-    When I run "chrome-cli --help"
+    Given agentchrome is built
+    When I run "agentchrome --help"
     Then the exit code should be 0
     And stdout should contain "completions"

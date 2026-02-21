@@ -1,4 +1,4 @@
-# chrome-cli Product Steering
+# agentchrome Product Steering
 
 This document defines the product vision, target users, and success metrics.
 All feature development should align with these guidelines.
@@ -7,7 +7,7 @@ All feature development should align with these guidelines.
 
 ## Mission
 
-**chrome-cli provides browser automation for developers and AI agents by exposing the Chrome DevTools Protocol through a fast, ergonomic command-line interface.**
+**agentchrome provides browser automation for developers and AI agents by exposing the Chrome DevTools Protocol through a fast, ergonomic command-line interface.**
 
 ---
 
@@ -34,7 +34,7 @@ All feature development should align with these guidelines.
 ## Core Value Proposition
 
 1. **Speed** — Native Rust binary, sub-50ms startup, no runtime overhead
-2. **Simplicity** — Single binary, no Node.js/Python dependency, just `chrome-cli <command>`
+2. **Simplicity** — Single binary, no Node.js/Python dependency, just `agentchrome <command>`
 3. **Scriptability** — Composable CLI commands with structured JSON output for shell pipelines and AI agents
 4. **AI-native** — Accessibility-tree snapshots, structured output, and session management designed for agent consumption
 
@@ -96,22 +96,22 @@ All feature development should align with these guidelines.
 ### Journey 1: AI Agent Browser Automation
 
 ```
-1. Agent runs: chrome-cli connect --launch --headless
-2. Agent runs: chrome-cli navigate https://example.com
-3. Agent runs: chrome-cli page snapshot
+1. Agent runs: agentchrome connect --launch --headless
+2. Agent runs: agentchrome navigate https://example.com
+3. Agent runs: agentchrome page snapshot
 4. Agent reads accessibility tree, identifies form fields by UID
-5. Agent runs: chrome-cli form fill s5 "value"
-6. Agent runs: chrome-cli page screenshot --file result.png
-7. Agent runs: chrome-cli connect disconnect
+5. Agent runs: agentchrome form fill s5 "value"
+6. Agent runs: agentchrome page screenshot --file result.png
+7. Agent runs: agentchrome connect disconnect
 ```
 
 ### Journey 2: Shell Script Automation
 
 ```
-1. User connects: chrome-cli connect
-2. User navigates: chrome-cli navigate https://example.com
-3. User extracts: chrome-cli js exec "document.title" | jq -r .result
-4. User screenshots: chrome-cli page screenshot --file shot.png
+1. User connects: agentchrome connect
+2. User navigates: agentchrome navigate https://example.com
+3. User extracts: agentchrome js exec "document.title" | jq -r .result
+4. User screenshots: agentchrome page screenshot --file shot.png
 5. Exit code 0 confirms success
 ```
 

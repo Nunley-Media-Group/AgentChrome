@@ -13,9 +13,9 @@
 
 ### Steps to Reproduce
 
-1. `chrome-cli connect --launch --headless`
-2. `chrome-cli navigate https://www.google.com`
-3. `chrome-cli network list --limit 3`
+1. `agentchrome connect --launch --headless`
+2. `agentchrome navigate https://www.google.com`
+3. `agentchrome network list --limit 3`
 4. Observe timestamps: all show `1970-01-01T17:XX:XX`
 
 ### Environment
@@ -43,7 +43,7 @@ Always
 ### Error Output
 
 ```
-$ chrome-cli network list --limit 1
+$ agentchrome network list --limit 1
 [
   {
     "id": "...",
@@ -66,21 +66,21 @@ $ chrome-cli network list --limit 1
 ### AC1: Network timestamps reflect real wall-clock time
 
 **Given** Chrome is connected and a page has been navigated to
-**When** I run `chrome-cli network list`
+**When** I run `agentchrome network list`
 **Then** the `timestamp` fields show dates from the current year (not 1970)
 **And** the timestamps reflect the approximate time the requests were made
 
 ### AC2: Timestamps are valid ISO 8601 in UTC
 
 **Given** Chrome is connected and network requests have been captured
-**When** I run `chrome-cli network list`
+**When** I run `agentchrome network list`
 **Then** all timestamp values match the ISO 8601 format `YYYY-MM-DDTHH:MM:SS.mmmZ`
 **And** timestamps end with `Z` indicating UTC
 
 ### AC3: Console timestamps still work correctly
 
 **Given** Chrome is connected and a page has been navigated to
-**When** I run `chrome-cli console read`
+**When** I run `agentchrome console read`
 **Then** console timestamps still show correct wall-clock times (no regression)
 
 ---

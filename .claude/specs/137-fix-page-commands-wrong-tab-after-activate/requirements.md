@@ -13,12 +13,12 @@
 
 ### Steps to Reproduce
 
-1. `chrome-cli connect --launch --headless`
-2. `chrome-cli navigate https://www.google.com`
-3. `chrome-cli tabs create https://example.com` — creates tab 2
-4. `chrome-cli tabs create https://httpbin.org` — creates tab 3
-5. `chrome-cli tabs activate <tab2_id>` — reports success with example.com URL
-6. `chrome-cli page text` — returns `{"text": "", "url": "about:blank", "title": ""}` instead of example.com content
+1. `agentchrome connect --launch --headless`
+2. `agentchrome navigate https://www.google.com`
+3. `agentchrome tabs create https://example.com` — creates tab 2
+4. `agentchrome tabs create https://httpbin.org` — creates tab 3
+5. `agentchrome tabs activate <tab2_id>` — reports success with example.com URL
+6. `agentchrome page text` — returns `{"text": "", "url": "about:blank", "title": ""}` instead of example.com content
 
 ### Environment
 
@@ -63,7 +63,7 @@ JSON output example: {"text": "", "url": "about:blank", "title": ""}
 
 **Example**:
 - Given: 3 tabs open — google.com, example.com, httpbin.org
-- When: `chrome-cli tabs activate <example_tab_id>`, then `chrome-cli page text`
+- When: `agentchrome tabs activate <example_tab_id>`, then `agentchrome page text`
 - Then: output `url` field contains `example.com`
 
 ### AC2: Page screenshot captures activated tab
@@ -80,7 +80,7 @@ JSON output example: {"text": "", "url": "about:blank", "title": ""}
 
 **Example**:
 - Given: tabs A (activated) and B are open
-- When: `chrome-cli page text --tab <B_id>`
+- When: `agentchrome page text --tab <B_id>`
 - Then: output `url` field is from tab B
 
 ### AC4: Active tab persists across invocations

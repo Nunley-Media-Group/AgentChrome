@@ -9,7 +9,7 @@
 
 ## User Story
 
-**As a** developer/automation engineer using chrome-cli
+**As a** developer/automation engineer using agentchrome
 **I want** a reliable CDP client that communicates with Chrome over WebSocket
 **So that** all CLI commands can send DevTools Protocol messages and receive responses/events from the browser
 
@@ -17,7 +17,7 @@
 
 ## Background
 
-Chrome exposes a debugging protocol (CDP) over WebSocket. This is the foundational communication layer for the entire chrome-cli project — every command (navigate, screenshot, DOM inspection, JS execution, etc.) depends on this client to talk to Chrome. The MCP server ecosystem uses Puppeteer as its CDP client; chrome-cli needs a lightweight, purpose-built Rust implementation that handles CDP's JSON-RPC-like message format, multiplexed sessions, and event subscriptions.
+Chrome exposes a debugging protocol (CDP) over WebSocket. This is the foundational communication layer for the entire agentchrome project — every command (navigate, screenshot, DOM inspection, JS execution, etc.) depends on this client to talk to Chrome. The MCP server ecosystem uses Puppeteer as its CDP client; agentchrome needs a lightweight, purpose-built Rust implementation that handles CDP's JSON-RPC-like message format, multiplexed sessions, and event subscriptions.
 
 The client must be async (tokio-based) since CDP communication is inherently concurrent: commands are sent and correlated by ID, events arrive at any time, and multiple sessions (one per tab) share a single WebSocket connection.
 
@@ -155,7 +155,7 @@ The client must be async (tokio-based) since CDP communication is inherently con
 
 ```gherkin
 Feature: CDP WebSocket Client
-  As a developer using chrome-cli
+  As a developer using agentchrome
   I want a reliable CDP client that communicates with Chrome over WebSocket
   So that CLI commands can send DevTools Protocol messages to the browser
 

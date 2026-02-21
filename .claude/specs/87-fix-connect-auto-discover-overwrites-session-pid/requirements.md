@@ -13,9 +13,9 @@
 
 ### Steps to Reproduce
 
-1. `chrome-cli connect --launch --pretty` — output includes `"pid": 12345`
-2. `chrome-cli --port <PORT> connect --pretty` — auto-discover overwrites session
-3. `chrome-cli connect --disconnect --pretty` — output: `{"disconnected": true}` (no `killed_pid`)
+1. `agentchrome connect --launch --pretty` — output includes `"pid": 12345`
+2. `agentchrome --port <PORT> connect --pretty` — auto-discover overwrites session
+3. `agentchrome connect --disconnect --pretty` — output: `{"disconnected": true}` (no `killed_pid`)
 4. Chrome is still running — the PID was lost in step 2
 
 ### Environment
@@ -23,9 +23,9 @@
 | Factor | Value |
 |--------|-------|
 | **OS / Platform** | macOS (Darwin 25.2.0) |
-| **Version / Commit** | chrome-cli 0.1.0 (commit 01989d5) |
+| **Version / Commit** | agentchrome 0.1.0 (commit 01989d5) |
 | **Browser / Runtime** | Chrome via CDP |
-| **Configuration** | Default (session stored in `~/.chrome-cli/session.json`) |
+| **Configuration** | Default (session stored in `~/.agentchrome/session.json`) |
 
 ### Frequency
 
@@ -63,8 +63,8 @@ Always
 **Then** the session file retains the PID from the original launch
 
 **Example**:
-- Given: `chrome-cli connect --launch --headless` writes session with `pid: 54321`, `port: 9222`
-- When: `chrome-cli --port 9222 connect` reconnects and overwrites session
+- Given: `agentchrome connect --launch --headless` writes session with `pid: 54321`, `port: 9222`
+- When: `agentchrome --port 9222 connect` reconnects and overwrites session
 - Then: session.json still contains `"pid": 54321`
 
 ### AC2: Disconnect kills launched Chrome after reconnection
@@ -75,12 +75,12 @@ Always
 
 **Example**:
 - Given: launch → reconnect (PID preserved)
-- When: `chrome-cli connect --disconnect --pretty`
+- When: `agentchrome connect --disconnect --pretty`
 - Then: output includes `"killed_pid": 54321`
 
 ### AC3: PID is not injected when no prior session exists
 
-**Given** no session file exists (`~/.chrome-cli/session.json` is absent)
+**Given** no session file exists (`~/.agentchrome/session.json` is absent)
 **When** I run `connect` (auto-discover) to a running Chrome
 **Then** the session file is written with `pid: null` (no spurious PID)
 

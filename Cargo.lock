@@ -3,6 +3,28 @@
 version = 4
 
 [[package]]
+name = "agentchrome"
+version = "1.2.2"
+dependencies = [
+ "base64",
+ "clap",
+ "clap_complete",
+ "clap_mangen",
+ "cucumber",
+ "dirs",
+ "futures",
+ "futures-util",
+ "libc",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tokio",
+ "tokio-tungstenite",
+ "toml",
+ "urlencoding",
+]
+
+[[package]]
 name = "aho-corasick"
 version = "1.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -115,28 +137,6 @@ name = "cfg-if"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801"
-
-[[package]]
-name = "chrome-cli"
-version = "1.2.2"
-dependencies = [
- "base64",
- "clap",
- "clap_complete",
- "clap_mangen",
- "cucumber",
- "dirs",
- "futures",
- "futures-util",
- "libc",
- "serde",
- "serde_json",
- "serde_yaml",
- "tokio",
- "tokio-tungstenite",
- "toml",
- "urlencoding",
-]
 
 [[package]]
 name = "clap"
@@ -1614,7 +1614,7 @@ checksum = "f17a85883d4e6d00e8a97c586de764dabcc06133f7f1d55dce5cdc070ad7fe59"
 name = "xtask"
 version = "0.1.0"
 dependencies = [
- "chrome-cli",
+ "agentchrome",
  "clap",
  "clap_mangen",
 ]

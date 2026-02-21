@@ -13,11 +13,11 @@
 
 ### Steps to Reproduce
 
-1. `chrome-cli connect --launch --headless`
-2. `chrome-cli navigate https://www.google.com`
-3. `chrome-cli page snapshot` — assigns UIDs (e.g., s9 = search combobox)
-4. `chrome-cli page screenshot --uid s9 --file /tmp/test.png` — **fails**
-5. `chrome-cli js exec --uid s9 "(el) => el.tagName"` — **succeeds** (returns "TEXTAREA")
+1. `agentchrome connect --launch --headless`
+2. `agentchrome navigate https://www.google.com`
+3. `agentchrome page snapshot` — assigns UIDs (e.g., s9 = search combobox)
+4. `agentchrome page screenshot --uid s9 --file /tmp/test.png` — **fails**
+5. `agentchrome js exec --uid s9 "(el) => el.tagName"` — **succeeds** (returns "TEXTAREA")
 
 ### Environment
 

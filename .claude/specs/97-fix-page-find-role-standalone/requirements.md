@@ -13,9 +13,9 @@
 
 ### Steps to Reproduce
 
-1. `chrome-cli connect --launch --headless`
-2. `chrome-cli navigate https://www.google.com --wait-until load`
-3. `chrome-cli page find --role textbox`
+1. `agentchrome connect --launch --headless`
+2. `agentchrome navigate https://www.google.com --wait-until load`
+3. `agentchrome page find --role textbox`
 4. Error: `{"error":"either a text query or --selector is required","code":1}`
 
 ### Environment

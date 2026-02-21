@@ -17,7 +17,7 @@
 
 ## Background
 
-The `dom` command is listed in `chrome-cli --help` with a full description but returns `{"error":"dom: not yet implemented","code":1}` when invoked. The placeholder was originally defined in the CLI skeleton (spec `.claude/specs/3-cli-skeleton/`) and given help text in spec `.claude/specs/26-comprehensive-help-text/`. The closely related `page find` command (spec `.claude/specs/11-element-finding/`) provides accessibility-tree-based element finding but not raw DOM manipulation.
+The `dom` command is listed in `agentchrome --help` with a full description but returns `{"error":"dom: not yet implemented","code":1}` when invoked. The placeholder was originally defined in the CLI skeleton (spec `.claude/specs/3-cli-skeleton/`) and given help text in spec `.claude/specs/26-comprehensive-help-text/`. The closely related `page find` command (spec `.claude/specs/11-element-finding/`) provides accessibility-tree-based element finding but not raw DOM manipulation.
 
 During hands-on testing of https://www.saucedemo.com/, agents had to use `js exec "document.querySelector(...)"` for all DOM queries. The CDP protocol provides direct DOM methods (`DOM.querySelector`, `DOM.querySelectorAll`, `DOM.getAttributes`, `DOM.getOuterHTML`, `DOM.setAttributeValue`, `DOM.removeNode`, `CSS.getComputedStyleForNode`) that map naturally to CLI subcommands. Implementing the `dom` group fills the gap between the accessibility-tree-based `page find`/`page snapshot` commands and raw `js exec`, giving agents structured, type-safe DOM operations.
 
@@ -38,7 +38,7 @@ During hands-on testing of https://www.saucedemo.com/, agents had to use `js exe
 ### AC1: Select elements by CSS selector
 
 **Given** a connected Chrome session on a page with DOM elements (e.g., `https://example.com`)
-**When** I run `chrome-cli dom select "h1"`
+**When** I run `agentchrome dom select "h1"`
 **Then** the command returns a JSON array of matching elements on stdout
 **And** each element includes `nodeId` (integer), `tag` (string), `attributes` (object), and `textContent` (string)
 **And** the exit code is 0
@@ -46,35 +46,35 @@ During hands-on testing of https://www.saucedemo.com/, agents had to use `js exe
 ### AC2: Select elements by XPath
 
 **Given** a connected Chrome session on a page with DOM elements
-**When** I run `chrome-cli dom select --xpath "//h1"`
+**When** I run `agentchrome dom select --xpath "//h1"`
 **Then** the command returns matching elements in the same structured JSON format as CSS selection
 **And** the exit code is 0
 
 ### AC3: Get element attribute
 
 **Given** a connected Chrome session on a page with a link element `<a href="https://www.iana.org/domains/example">More information...</a>`
-**When** I run `chrome-cli dom get-attribute <nodeId> href`
+**When** I run `agentchrome dom get-attribute <nodeId> href`
 **Then** the command returns `{"attribute":"href","value":"https://www.iana.org/domains/example"}` on stdout
 **And** the exit code is 0
 
 ### AC4: Get element text content
 
 **Given** a connected Chrome session on a page with heading `<h1>Example Domain</h1>`
-**When** I run `chrome-cli dom get-text <nodeId>`
+**When** I run `agentchrome dom get-text <nodeId>`
 **Then** the command returns `{"textContent":"Example Domain"}` on stdout
 **And** the exit code is 0
 
 ### AC5: Get element HTML
 
 **Given** a connected Chrome session on a page with elements
-**When** I run `chrome-cli dom get-html <nodeId>`
+**When** I run `agentchrome dom get-html <nodeId>`
 **Then** the command returns `{"outerHTML":"<h1>Example Domain</h1>"}` on stdout
 **And** the exit code is 0
 
 ### AC6: Set element attribute
 
 **Given** a connected Chrome session on a page with an element
-**When** I run `chrome-cli dom set-attribute <nodeId> class "new-class"`
+**When** I run `agentchrome dom set-attribute <nodeId> class "new-class"`
 **Then** the element's attribute is updated in the DOM
 **And** the command returns `{"success":true,"nodeId":<nodeId>,"attribute":"class","value":"new-class"}` on stdout
 **And** a subsequent `dom get-attribute <nodeId> class` confirms the change
@@ -82,7 +82,7 @@ During hands-on testing of https://www.saucedemo.com/, agents had to use `js exe
 ### AC7: Set element text content
 
 **Given** a connected Chrome session on a page with a text element
-**When** I run `chrome-cli dom set-text <nodeId> "new text"`
+**When** I run `agentchrome dom set-text <nodeId> "new text"`
 **Then** the element's text content is updated in the DOM
 **And** the command returns `{"success":true,"nodeId":<nodeId>,"textContent":"new text"}` on stdout
 **And** a subsequent `dom get-text <nodeId>` confirms the change
@@ -90,7 +90,7 @@ During hands-on testing of https://www.saucedemo.com/, agents had to use `js exe
 ### AC8: Remove element
 
 **Given** a connected Chrome session on a page with an element
-**When** I run `chrome-cli dom remove <nodeId>`
+**When** I run `agentchrome dom remove <nodeId>`
 **Then** the element is removed from the DOM
 **And** the command returns `{"success":true,"nodeId":<nodeId>,"removed":true}` on stdout
 **And** a subsequent `dom select` for that element returns an empty array
@@ -98,34 +98,34 @@ During hands-on testing of https://www.saucedemo.com/, agents had to use `js exe
 ### AC9: Select with no matches returns empty array
 
 **Given** a connected Chrome session on a page
-**When** I run `chrome-cli dom select ".nonexistent-class"`
+**When** I run `agentchrome dom select ".nonexistent-class"`
 **Then** the command returns `[]` on stdout (empty JSON array)
 **And** the exit code is 0 (not an error)
 
 ### AC10: Invalid nodeId returns target error
 
 **Given** a connected Chrome session
-**When** I run `chrome-cli dom get-attribute 999999 href`
+**When** I run `agentchrome dom get-attribute 999999 href`
 **Then** the command returns a descriptive error on stderr with exit code 3 (target error)
 
 ### AC11: UID-based targeting
 
 **Given** a connected Chrome session on a page where `page snapshot` has been run, assigning UIDs to interactive elements
-**When** I run `chrome-cli dom get-text s1` (using a snapshot UID instead of a raw nodeId)
+**When** I run `agentchrome dom get-text s1` (using a snapshot UID instead of a raw nodeId)
 **Then** the UID is resolved to its backend DOM node and the text content is returned
 **And** the behavior is identical to using a raw nodeId
 
 ### AC12: Cross-validate mutation via independent read
 
 **Given** a connected Chrome session on a page with an element
-**When** I run `chrome-cli dom set-attribute <nodeId> data-test "hello"`
-**And** I then run `chrome-cli dom get-attribute <nodeId> data-test`
+**When** I run `agentchrome dom set-attribute <nodeId> data-test "hello"`
+**And** I then run `agentchrome dom get-attribute <nodeId> data-test`
 **Then** the get-attribute command returns `{"attribute":"data-test","value":"hello"}`
 
 ### AC13: Get computed CSS styles
 
 **Given** a connected Chrome session on a page with a styled element (e.g., `<h1>` on `https://example.com`)
-**When** I run `chrome-cli dom get-style <nodeId>`
+**When** I run `agentchrome dom get-style <nodeId>`
 **Then** the command returns a JSON object with computed CSS property key-value pairs on stdout
 **And** the output includes common properties such as `color`, `font-size`, `display`
 **And** the exit code is 0
@@ -133,14 +133,14 @@ During hands-on testing of https://www.saucedemo.com/, agents had to use `js exe
 ### AC14: Get specific CSS property
 
 **Given** a connected Chrome session on a page with a styled element
-**When** I run `chrome-cli dom get-style <nodeId> display`
+**When** I run `agentchrome dom get-style <nodeId> display`
 **Then** the command returns only the requested property: `{"property":"display","value":"block"}` on stdout
 **And** the exit code is 0
 
 ### AC15: Set inline CSS style
 
 **Given** a connected Chrome session on a page with an element
-**When** I run `chrome-cli dom set-style <nodeId> "color: red; font-weight: bold"`
+**When** I run `agentchrome dom set-style <nodeId> "color: red; font-weight: bold"`
 **Then** the element's inline style is updated in the DOM
 **And** the command returns `{"success":true,"nodeId":<nodeId>,"style":"color: red; font-weight: bold"}` on stdout
 **And** a subsequent `dom get-style <nodeId> color` reflects the change
@@ -148,14 +148,14 @@ During hands-on testing of https://www.saucedemo.com/, agents had to use `js exe
 ### AC16: Get parent element
 
 **Given** a connected Chrome session on a page where `<h1>` is a child of `<div><h1>Example Domain</h1></div>`
-**When** I run `chrome-cli dom parent <nodeId>` (where nodeId refers to the `<h1>`)
+**When** I run `agentchrome dom parent <nodeId>` (where nodeId refers to the `<h1>`)
 **Then** the command returns the parent element in the same structured format as `dom select` (nodeId, tag, attributes, textContent)
 **And** the exit code is 0
 
 ### AC17: Get child elements
 
 **Given** a connected Chrome session on a page with a `<div>` containing multiple child elements
-**When** I run `chrome-cli dom children <nodeId>` (where nodeId refers to the `<div>`)
+**When** I run `agentchrome dom children <nodeId>` (where nodeId refers to the `<div>`)
 **Then** the command returns a JSON array of direct child elements in document order
 **And** each child includes `nodeId`, `tag`, `attributes`, and `textContent`
 **And** the exit code is 0
@@ -163,7 +163,7 @@ During hands-on testing of https://www.saucedemo.com/, agents had to use `js exe
 ### AC18: Get sibling elements
 
 **Given** a connected Chrome session on a page with an element that has siblings
-**When** I run `chrome-cli dom siblings <nodeId>`
+**When** I run `agentchrome dom siblings <nodeId>`
 **Then** the command returns a JSON array of sibling elements (same parent, excluding the target element itself)
 **And** each sibling includes `nodeId`, `tag`, `attributes`, and `textContent`
 **And** the exit code is 0
@@ -171,7 +171,7 @@ During hands-on testing of https://www.saucedemo.com/, agents had to use `js exe
 ### AC19: DOM tree visualization
 
 **Given** a connected Chrome session on a page loaded at `https://example.com`
-**When** I run `chrome-cli dom tree`
+**When** I run `agentchrome dom tree`
 **Then** the command returns an indented text representation of the DOM tree on stdout
 **And** each node shows its tag name, key attributes (id, class), and a truncated text preview
 **And** the tree is indented to reflect nesting depth
@@ -180,21 +180,21 @@ During hands-on testing of https://www.saucedemo.com/, agents had to use `js exe
 ### AC20: DOM tree with depth limit
 
 **Given** a connected Chrome session on a page
-**When** I run `chrome-cli dom tree --depth 2`
+**When** I run `agentchrome dom tree --depth 2`
 **Then** the tree output includes only nodes up to 2 levels deep from the root
 **And** deeper subtrees are indicated with an ellipsis marker (e.g., `...`)
 
 ### AC21: DOM tree rooted at a specific element
 
 **Given** a connected Chrome session on a page
-**When** I run `chrome-cli dom tree --root <nodeId>` (or `--root "div.container"` as a CSS selector)
+**When** I run `agentchrome dom tree --root <nodeId>` (or `--root "div.container"` as a CSS selector)
 **Then** the tree output starts from the specified element instead of `<html>`
 **And** the output structure is identical to a full tree but scoped to that subtree
 
 ### AC22: Parent of root element returns error
 
 **Given** a connected Chrome session on a page
-**When** I run `chrome-cli dom parent <nodeId>` where nodeId is the `<html>` root element
+**When** I run `agentchrome dom parent <nodeId>` where nodeId is the `<html>` root element
 **Then** the command returns a descriptive error on stderr indicating the element has no parent
 **And** the exit code is 3 (target error)
 
@@ -210,12 +210,12 @@ Feature: DOM command group
     Given Chrome is connected with a page loaded
 
   Scenario: Select elements by CSS selector
-    When I run "chrome-cli dom select \"h1\""
+    When I run "agentchrome dom select \"h1\""
     Then stdout is a JSON array of matching elements
     And each element has nodeId, tag, attributes, and textContent
 
   Scenario: Select elements by XPath
-    When I run "chrome-cli dom select --xpath \"//h1\""
+    When I run "agentchrome dom select --xpath \"//h1\""
     Then stdout is a JSON array in the same format as CSS selection
 
   # ... all 22 ACs become scenarios

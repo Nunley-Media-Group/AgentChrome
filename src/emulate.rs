@@ -4,9 +4,9 @@ use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
 
-use chrome_cli::cdp::{CdpClient, CdpConfig};
-use chrome_cli::connection::{ManagedSession, resolve_connection, resolve_target};
-use chrome_cli::error::{AppError, ExitCode};
+use agentchrome::cdp::{CdpClient, CdpConfig};
+use agentchrome::connection::{ManagedSession, resolve_connection, resolve_target};
+use agentchrome::error::{AppError, ExitCode};
 
 use crate::cli::{
     ColorScheme, EmulateArgs, EmulateCommand, EmulateSetArgs, GlobalOpts, NetworkProfile,
@@ -101,7 +101,7 @@ pub struct EmulateState {
     pub baseline_viewport: Option<ViewportState>,
 }
 
-/// Returns the path to the emulation state file: `~/.chrome-cli/emulate-state.json`.
+/// Returns the path to the emulation state file: `~/.agentchrome/emulate-state.json`.
 fn emulate_state_path() -> Result<PathBuf, AppError> {
     #[cfg(unix)]
     let key = "HOME";
@@ -115,7 +115,7 @@ fn emulate_state_path() -> Result<PathBuf, AppError> {
             code: ExitCode::GeneralError,
             custom_json: None,
         })?;
-    Ok(home.join(".chrome-cli").join("emulate-state.json"))
+    Ok(home.join(".agentchrome").join("emulate-state.json"))
 }
 
 /// Write emulation state to the given path (atomic write + `0o600` permissions on Unix).
@@ -1367,7 +1367,7 @@ mod tests {
 
     #[test]
     fn emulate_state_round_trip() {
-        let dir = std::env::temp_dir().join("chrome-cli-test-emstate-rt");
+        let dir = std::env::temp_dir().join("agentchrome-test-emstate-rt");
         let _ = std::fs::remove_dir_all(&dir);
         let path = dir.join("emulate-state.json");
 
@@ -1416,20 +1416,20 @@ mod tests {
 
     #[test]
     fn emulate_state_read_when_missing_returns_none() {
-        let path = Path::new("/tmp/chrome-cli-test-emstate-missing/emulate-state.json");
+        let path = Path::new("/tmp/agentchrome-test-emstate-missing/emulate-state.json");
         let result = read_emulate_state_from(path).unwrap();
         assert!(result.is_none());
     }
 
     #[test]
     fn emulate_state_delete_when_missing_returns_ok() {
-        let path = Path::new("/tmp/chrome-cli-test-emstate-del-missing/emulate-state.json");
+        let path = Path::new("/tmp/agentchrome-test-emstate-del-missing/emulate-state.json");
         assert!(delete_emulate_state_from(path).is_ok());
     }
 
     #[test]
     fn emulate_state_delete_existing_removes_file() {
-        let dir = std::env::temp_dir().join("chrome-cli-test-emstate-del");
+        let dir = std::env::temp_dir().join("agentchrome-test-emstate-del");
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("emulate-state.json");

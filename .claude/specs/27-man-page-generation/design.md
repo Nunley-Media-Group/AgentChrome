@@ -9,13 +9,13 @@
 
 ## Overview
 
-This feature adds man page generation for chrome-cli using the `clap_mangen` crate. It has two delivery mechanisms:
+This feature adds man page generation for agentchrome using the `clap_mangen` crate. It has two delivery mechanisms:
 
-1. **Runtime inline display** — A `chrome-cli man [COMMAND]` subcommand that generates and renders man pages to stdout at runtime, for systems without `man` installed or for quick reference.
+1. **Runtime inline display** — A `agentchrome man [COMMAND]` subcommand that generates and renders man pages to stdout at runtime, for systems without `man` installed or for quick reference.
 
 2. **Build-time file generation** — A `cargo xtask man` command that generates `.1` man page files to the `man/` directory for packaging in release archives and system installation.
 
-Both mechanisms use `clap_mangen::Man::new()` with `Cli::command()` to introspect the clap definition, exactly paralleling how `chrome-cli completions` uses `clap_complete::generate()`. The comprehensive help text added in #26 flows directly into the man pages' DESCRIPTION and OPTIONS sections.
+Both mechanisms use `clap_mangen::Man::new()` with `Cli::command()` to introspect the clap definition, exactly paralleling how `agentchrome completions` uses `clap_complete::generate()`. The comprehensive help text added in #26 flows directly into the man pages' DESCRIPTION and OPTIONS sections.
 
 ---
 
@@ -24,7 +24,7 @@ Both mechanisms use `clap_mangen::Man::new()` with `Cli::command()` to introspec
 ### Component Diagram
 
 ```
-Runtime path: `chrome-cli man [connect]`
+Runtime path: `agentchrome man [connect]`
     ↓
 ┌─────────────────┐
 │   CLI Layer      │ ← Parse args, match Command::Man(ManArgs)
@@ -55,10 +55,10 @@ Build-time path: `cargo xtask man`
 
 No CDP connection, Chrome process, or async runtime is needed. Both paths are entirely local and synchronous.
 
-### Data Flow — Runtime (`chrome-cli man connect`)
+### Data Flow — Runtime (`agentchrome man connect`)
 
 ```
-1. User runs `chrome-cli man connect`
+1. User runs `agentchrome man connect`
 2. Clap parses args → Command::Man(ManArgs { command: Some("connect") })
 3. main.rs matches Command::Man, calls execute_man()
 4. execute_man() calls Cli::command() to get clap Command builder
@@ -75,7 +75,7 @@ No CDP connection, Chrome process, or async runtime is needed. Both paths are en
 2. xtask binary calls Cli::command() to get clap Command builder
 3. Iterates over all subcommands recursively
 4. For each command, generates man page via clap_mangen::Man::new(cmd)
-5. Writes to man/chrome-cli.1, man/chrome-cli-connect.1, etc.
+5. Writes to man/agentchrome.1, man/agentchrome-connect.1, etc.
 6. Prints summary of generated files
 ```
 
@@ -87,7 +87,7 @@ No CDP connection, Chrome process, or async runtime is needed. Both paths are en
 
 | Subcommand | Argument | Type | Purpose |
 |------------|----------|------|---------|
-| `man` | `[COMMAND]` | Optional string (positional) | Display the man page for chrome-cli or a subcommand |
+| `man` | `[COMMAND]` | Optional string (positional) | Display the man page for agentchrome or a subcommand |
 
 ### ManArgs Struct
 
@@ -102,25 +102,25 @@ pub struct ManArgs {
 ### Command Help Text
 
 ```
-chrome-cli man [COMMAND]
+agentchrome man [COMMAND]
 
-Display man pages for chrome-cli commands.
+Display man pages for agentchrome commands.
 
-Without arguments, displays the main chrome-cli man page. With a subcommand
+Without arguments, displays the main agentchrome man page. With a subcommand
 name, displays the man page for that specific command.
 
 EXAMPLES:
-  # Display the main chrome-cli man page
-  chrome-cli man
+  # Display the main agentchrome man page
+  agentchrome man
 
   # Display the man page for the connect command
-  chrome-cli man connect
+  agentchrome man connect
 
   # Display the man page for the tabs command
-  chrome-cli man tabs
+  agentchrome man tabs
 
   # Pipe to a pager
-  chrome-cli man navigate | less
+  agentchrome man navigate | less
 ```
 
 ### New xtask Command
@@ -128,17 +128,17 @@ EXAMPLES:
 ```
 cargo xtask man
 
-Generates man pages for all chrome-cli commands and writes them to man/.
+Generates man pages for all agentchrome commands and writes them to man/.
 ```
 
 ### Generated Man Page File Naming
 
 | Command | Man Page File |
 |---------|---------------|
-| `chrome-cli` | `man/chrome-cli.1` |
-| `chrome-cli connect` | `man/chrome-cli-connect.1` |
-| `chrome-cli tabs` | `man/chrome-cli-tabs.1` |
-| `chrome-cli tabs list` | `man/chrome-cli-tabs-list.1` |
+| `agentchrome` | `man/agentchrome.1` |
+| `agentchrome connect` | `man/agentchrome-connect.1` |
+| `agentchrome tabs` | `man/agentchrome-tabs.1` |
+| `agentchrome tabs list` | `man/agentchrome-tabs-list.1` |
 
 ---
 
@@ -165,16 +165,16 @@ None — CLI-only, stdout output.
 ### New Files
 
 ```
-chrome-cli/
+agentchrome/
 ├── xtask/                    # NEW: workspace member for dev tasks
-│   ├── Cargo.toml            # Dependencies: clap, clap_mangen, chrome-cli (path)
+│   ├── Cargo.toml            # Dependencies: clap, clap_mangen, agentchrome (path)
 │   └── src/
 │       └── main.rs           # xtask entry point with `man` subcommand
 ├── man/                      # NEW: generated man page output directory
-│   ├── chrome-cli.1
-│   ├── chrome-cli-connect.1
-│   ├── chrome-cli-tabs.1
-│   ├── chrome-cli-tabs-list.1
+│   ├── agentchrome.1
+│   ├── agentchrome-connect.1
+│   ├── agentchrome-tabs.1
+│   ├── agentchrome-tabs-list.1
 │   └── ...                   # One .1 file per command/subcommand
 └── .cargo/
     └── config.toml           # NEW: alias `cargo xtask` → `cargo run -p xtask --`
@@ -195,7 +195,7 @@ chrome-cli/
 
 | Option | Description | Pros | Cons | Decision |
 |--------|-------------|------|------|----------|
-| **A: Runtime-only (`chrome-cli man`)** | Generate man pages only at runtime | Simplest implementation, no generated files to manage | Can't ship pre-built man pages in releases; no `man chrome-cli` integration | Rejected — doesn't satisfy distribution requirement |
+| **A: Runtime-only (`agentchrome man`)** | Generate man pages only at runtime | Simplest implementation, no generated files to manage | Can't ship pre-built man pages in releases; no `man agentchrome` integration | Rejected — doesn't satisfy distribution requirement |
 | **B: build.rs generation** | Generate man pages during `cargo build` in build.rs | Automatic, always fresh | Adds build-time dependency; complicates build; generated files end up in OUT_DIR not easily packageable | Rejected — xtask is cleaner for artifact generation |
 | **C: xtask + runtime hybrid** | xtask for file generation, runtime subcommand for inline display | Best of both worlds: distributable files + instant access | Two implementations (but share same clap_mangen core) | **Selected** |
 
@@ -223,11 +223,11 @@ chrome-cli/
 | Layer | Type | Coverage |
 |-------|------|----------|
 | CLI parsing | Unit | `Command::Man` variant parsed correctly |
-| Top-level man page | Integration (BDD) | `chrome-cli man` outputs non-empty man page with exit code 0 |
-| Subcommand man pages | Integration (BDD) | `chrome-cli man <cmd>` for each subcommand |
+| Top-level man page | Integration (BDD) | `agentchrome man` outputs non-empty man page with exit code 0 |
+| Subcommand man pages | Integration (BDD) | `agentchrome man <cmd>` for each subcommand |
 | Content validation | Integration (BDD) | Output contains command name and standard man page sections |
 | Error case | Integration (BDD) | Invalid subcommand name produces error |
-| Help text | Integration (BDD) | `chrome-cli man --help` shows usage information |
+| Help text | Integration (BDD) | `agentchrome man --help` shows usage information |
 
 ---
 

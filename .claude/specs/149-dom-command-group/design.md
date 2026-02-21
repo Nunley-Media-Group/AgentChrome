@@ -75,7 +75,7 @@ Key architectural decisions: (1) node targeting supports raw `nodeId` integers, 
 ### Data Flow
 
 ```
-1. User runs: chrome-cli dom select "h1"
+1. User runs: agentchrome dom select "h1"
 2. CLI layer parses args → DomArgs { command: Select(DomSelectArgs { selector: "h1" }) }
 3. main.rs dispatches → dom::execute_dom(&global, args)
 4. execute_dom matches Select → execute_select(global, select_args)
@@ -207,8 +207,8 @@ html
 | Condition | Error Message | Exit Code |
 |-----------|--------------|-----------|
 | Invalid/stale nodeId | `"Node not found: <id>"` | 3 (TargetError) |
-| UID not in snapshot | `"UID 's5' not found. Run 'chrome-cli page snapshot' first."` | 1 (GeneralError) |
-| No snapshot state | `"No snapshot state found. Run 'chrome-cli page snapshot' first..."` | 1 (GeneralError) |
+| UID not in snapshot | `"UID 's5' not found. Run 'agentchrome page snapshot' first."` | 1 (GeneralError) |
+| No snapshot state | `"No snapshot state found. Run 'agentchrome page snapshot' first..."` | 1 (GeneralError) |
 | CSS selector no match | `"Element not found for selector: <sel>"` | 1 (GeneralError) |
 | Attribute not found | `"Attribute '<name>' not found on node <id>"` | 1 (GeneralError) |
 | Parent of root | `"Element has no parent (document root)"` | 3 (TargetError) |

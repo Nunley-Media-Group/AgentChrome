@@ -293,7 +293,7 @@ struct CliWorld {
 }
 
 fn binary_path() -> PathBuf {
-    let mut path = PathBuf::from(env!("CARGO_BIN_EXE_chrome-cli"));
+    let mut path = PathBuf::from(env!("CARGO_BIN_EXE_agentchrome"));
     // Resolve the path to handle any symlinks
     if let Ok(canonical) = path.canonicalize() {
         path = canonical;
@@ -301,8 +301,8 @@ fn binary_path() -> PathBuf {
     path
 }
 
-#[given("chrome-cli is built")]
-fn chrome_cli_is_built(world: &mut CliWorld) {
+#[given("agentchrome is built")]
+fn agentchrome_is_built(world: &mut CliWorld) {
     let path = binary_path();
     assert!(path.exists(), "Binary not found at {}", path.display());
     world.binary_path = Some(path);
@@ -313,11 +313,11 @@ fn i_run_command(world: &mut CliWorld, command_line: String) {
     let binary = world
         .binary_path
         .as_ref()
-        .expect("Binary path not set — did you forget 'Given chrome-cli is built'?");
+        .expect("Binary path not set — did you forget 'Given agentchrome is built'?");
 
     let parts: Vec<&str> = command_line.split_whitespace().collect();
-    // Skip the first part ("chrome-cli") and use our binary path
-    let args = if parts.first().is_some_and(|&p| p == "chrome-cli") {
+    // Skip the first part ("agentchrome") and use our binary path
+    let args = if parts.first().is_some_and(|&p| p == "agentchrome") {
         &parts[1..]
     } else {
         &parts[..]
@@ -434,7 +434,7 @@ fn exit_code_should_not_be(world: &mut CliWorld, rejected: i32) {
 // CdpWorld — CDP WebSocket client BDD tests
 // =============================================================================
 
-use chrome_cli::cdp::{CdpClient, CdpConfig, CdpError, CdpEvent, ReconnectConfig};
+use agentchrome::cdp::{CdpClient, CdpConfig, CdpError, CdpEvent, ReconnectConfig};
 use futures_util::{SinkExt, StreamExt};
 use serde_json::json;
 use std::collections::HashMap;
@@ -456,7 +456,7 @@ struct CdpWorld {
 
     // Client
     client: Option<CdpClient>,
-    sessions: HashMap<String, chrome_cli::cdp::CdpSession>,
+    sessions: HashMap<String, agentchrome::cdp::CdpSession>,
 
     // Event subscription
     event_rx: Option<mpsc::Receiver<CdpEvent>>,
@@ -1308,7 +1308,7 @@ impl Default for SessionWorld {
         static COUNTER: AtomicU64 = AtomicU64::new(0);
         let id = COUNTER.fetch_add(1, Ordering::Relaxed);
         let temp_dir = std::env::temp_dir().join(format!(
-            "chrome-cli-bdd-session-{}-{id}",
+            "agentchrome-bdd-session-{}-{id}",
             std::process::id()
         ));
         let _ = std::fs::create_dir_all(&temp_dir);
@@ -1323,7 +1323,7 @@ impl Default for SessionWorld {
 
 impl SessionWorld {
     fn session_dir(&self) -> PathBuf {
-        self.temp_dir.join(".chrome-cli")
+        self.temp_dir.join(".agentchrome")
     }
 
     fn session_path(&self) -> PathBuf {
@@ -1335,7 +1335,7 @@ impl SessionWorld {
 
 #[given("no session file exists")]
 fn session_no_file(_world: &mut SessionWorld) {
-    // Default state — temp dir has no .chrome-cli/ directory
+    // Default state — temp dir has no .agentchrome/ directory
 }
 
 #[given("a valid session file exists")]
@@ -1351,7 +1351,7 @@ fn session_valid_file(world: &mut SessionWorld) {
 
 #[given(expr = "a valid session file exists with ws_url {string}")]
 fn session_valid_with_ws_url(world: &mut SessionWorld, ws_url: String) {
-    let port = chrome_cli::connection::extract_port_from_ws_url(&ws_url).unwrap_or(9222);
+    let port = agentchrome::connection::extract_port_from_ws_url(&ws_url).unwrap_or(9222);
     std::fs::create_dir_all(world.session_dir()).unwrap();
     let data = json!({
         "ws_url": ws_url,
@@ -1391,7 +1391,7 @@ fn session_with_dead_pid(world: &mut SessionWorld) {
 fn session_run_command(world: &mut SessionWorld, command_line: String) {
     let binary = binary_path();
     let parts: Vec<&str> = command_line.split_whitespace().collect();
-    let args = if parts.first().is_some_and(|&p| p == "chrome-cli") {
+    let args = if parts.first().is_some_and(|&p| p == "agentchrome") {
         &parts[1..]
     } else {
         &parts[..]
@@ -1569,10 +1569,10 @@ fn js_run_command(world: &mut JsWorld, command_line: String) {
     let binary = world
         .binary_path
         .as_ref()
-        .expect("Binary path not set — did you forget 'Given chrome-cli is built'?");
+        .expect("Binary path not set — did you forget 'Given agentchrome is built'?");
 
     let parts: Vec<&str> = command_line.split_whitespace().collect();
-    let args = if parts.first().is_some_and(|&p| p == "chrome-cli") {
+    let args = if parts.first().is_some_and(|&p| p == "agentchrome") {
         &parts[1..]
     } else {
         &parts[..]
@@ -1637,8 +1637,8 @@ struct DialogWorld {
     exit_code: Option<i32>,
 }
 
-#[given("chrome-cli is built")]
-fn dialog_chrome_cli_built(world: &mut DialogWorld) {
+#[given("agentchrome is built")]
+fn dialog_agentchrome_built(world: &mut DialogWorld) {
     let path = binary_path();
     assert!(path.exists(), "Binary not found at {}", path.display());
     world.binary_path = Some(path);
@@ -1649,10 +1649,10 @@ fn dialog_run_command(world: &mut DialogWorld, command_line: String) {
     let binary = world
         .binary_path
         .as_ref()
-        .expect("Binary path not set — did you forget 'Given chrome-cli is built'?");
+        .expect("Binary path not set — did you forget 'Given agentchrome is built'?");
 
     let parts: Vec<&str> = command_line.split_whitespace().collect();
-    let args = if parts.first().is_some_and(|&p| p == "chrome-cli") {
+    let args = if parts.first().is_some_and(|&p| p == "agentchrome") {
         &parts[1..]
     } else {
         &parts[..]
@@ -1702,8 +1702,8 @@ struct KeyboardWorld {
     exit_code: Option<i32>,
 }
 
-#[given("chrome-cli is built")]
-fn keyboard_chrome_cli_built(world: &mut KeyboardWorld) {
+#[given("agentchrome is built")]
+fn keyboard_agentchrome_built(world: &mut KeyboardWorld) {
     let path = binary_path();
     assert!(path.exists(), "Binary not found at {}", path.display());
     world.binary_path = Some(path);
@@ -1714,10 +1714,10 @@ fn keyboard_run_command(world: &mut KeyboardWorld, command_line: String) {
     let binary = world
         .binary_path
         .as_ref()
-        .expect("Binary path not set — did you forget 'Given chrome-cli is built'?");
+        .expect("Binary path not set — did you forget 'Given agentchrome is built'?");
 
     let parts: Vec<&str> = command_line.split_whitespace().collect();
-    let args = if parts.first().is_some_and(|&p| p == "chrome-cli") {
+    let args = if parts.first().is_some_and(|&p| p == "agentchrome") {
         &parts[1..]
     } else {
         &parts[..]
@@ -1792,7 +1792,7 @@ impl Default for ConfigWorld {
         static COUNTER: AtomicU64 = AtomicU64::new(0);
         let id = COUNTER.fetch_add(1, Ordering::Relaxed);
         let temp_dir =
-            std::env::temp_dir().join(format!("chrome-cli-bdd-config-{}-{id}", std::process::id()));
+            std::env::temp_dir().join(format!("agentchrome-bdd-config-{}-{id}", std::process::id()));
         let _ = std::fs::create_dir_all(&temp_dir);
         Self {
             temp_dir,
@@ -1807,11 +1807,11 @@ impl Default for ConfigWorld {
 }
 
 impl ConfigWorld {
-    fn run_chrome_cli(&mut self, args: &[&str]) {
-        self.run_chrome_cli_with_env(args, &[]);
+    fn run_agentchrome(&mut self, args: &[&str]) {
+        self.run_agentchrome_with_env(args, &[]);
     }
 
-    fn run_chrome_cli_with_env(&mut self, args: &[&str], env_pairs: &[(&str, &str)]) {
+    fn run_agentchrome_with_env(&mut self, args: &[&str], env_pairs: &[(&str, &str)]) {
         let binary = binary_path();
         // Use a fake HOME to prevent picking up the user's real config files
         let fake_home = self.temp_dir.join("fake-home");
@@ -1825,10 +1825,10 @@ impl ConfigWorld {
             .env("HOME", &fake_home)
             .env("USERPROFILE", &fake_home)
             // Clear config-related env vars to avoid interference
-            .env_remove("CHROME_CLI_CONFIG")
-            .env_remove("CHROME_CLI_PORT")
-            .env_remove("CHROME_CLI_HOST")
-            .env_remove("CHROME_CLI_TIMEOUT")
+            .env_remove("AGENTCHROME_CONFIG")
+            .env_remove("AGENTCHROME_PORT")
+            .env_remove("AGENTCHROME_HOST")
+            .env_remove("AGENTCHROME_TIMEOUT")
             // Clear XDG vars so dirs::config_dir() falls back to $HOME/.config
             .env_remove("XDG_CONFIG_HOME")
             .env_remove("XDG_DATA_HOME")
@@ -1921,14 +1921,14 @@ fn config_existing_init_target(world: &mut ConfigWorld) {
 
 // --- ConfigWorld When steps ---
 
-#[when(regex = r#"^I run chrome-cli with "([^"]*)"$"#)]
+#[when(regex = r#"^I run agentchrome with "([^"]*)"$"#)]
 fn config_run_command(world: &mut ConfigWorld, args_template: String) {
     let args_str = resolve_config_template(world, &args_template);
     let args: Vec<&str> = args_str.split_whitespace().collect();
-    world.run_chrome_cli(&args);
+    world.run_agentchrome(&args);
 }
 
-#[when(regex = r#"^I run chrome-cli with env ([A-Z_]+)="([^"]*)" and args "([^"]*)"$"#)]
+#[when(regex = r#"^I run agentchrome with env ([A-Z_]+)="([^"]*)" and args "([^"]*)"$"#)]
 fn config_run_with_env(
     world: &mut ConfigWorld,
     env_key: String,
@@ -1938,7 +1938,7 @@ fn config_run_with_env(
     let env_val = resolve_config_template(world, &env_val_template);
     let args_str = resolve_config_template(world, &args_template);
     let args: Vec<&str> = args_str.split_whitespace().collect();
-    world.run_chrome_cli_with_env(&args, &[(&env_key, &env_val)]);
+    world.run_agentchrome_with_env(&args, &[(&env_key, &env_val)]);
 }
 
 fn resolve_config_template(world: &ConfigWorld, template: &str) -> String {
@@ -2099,7 +2099,7 @@ struct ExamplesWorld {
     parsed_json: Option<serde_json::Value>,
 }
 
-#[given("the chrome-cli binary is available")]
+#[given("the agentchrome binary is available")]
 fn examples_binary_available(world: &mut ExamplesWorld) {
     let path = binary_path();
     assert!(path.exists(), "Binary not found at {}", path.display());
@@ -2111,10 +2111,10 @@ fn examples_run_command(world: &mut ExamplesWorld, command_line: String) {
     let binary = world
         .binary_path
         .as_ref()
-        .expect("Binary path not set — did you forget 'Given the chrome-cli binary is available'?");
+        .expect("Binary path not set — did you forget 'Given the agentchrome binary is available'?");
 
     let parts: Vec<&str> = command_line.split_whitespace().collect();
-    let args = if parts.first().is_some_and(|&p| p == "chrome-cli") {
+    let args = if parts.first().is_some_and(|&p| p == "agentchrome") {
         &parts[1..]
     } else {
         &parts[..]
@@ -2175,7 +2175,7 @@ fn examples_at_least_3_commands(world: &mut ExamplesWorld) {
         .lines()
         .filter(|line| {
             let trimmed = line.trim();
-            trimmed.starts_with("chrome-cli ")
+            trimmed.starts_with("agentchrome ")
         })
         .count();
     assert!(
@@ -2295,7 +2295,7 @@ struct CapabilitiesWorld {
     parsed_json: Option<serde_json::Value>,
 }
 
-#[given("chrome-cli is installed")]
+#[given("agentchrome is installed")]
 fn caps_binary_installed(world: &mut CapabilitiesWorld) {
     let path = binary_path();
     assert!(path.exists(), "Binary not found at {}", path.display());
@@ -2307,10 +2307,10 @@ fn caps_run_command(world: &mut CapabilitiesWorld, command_line: String) {
     let binary = world
         .binary_path
         .as_ref()
-        .expect("Binary path not set — did you forget 'Given chrome-cli is installed'?");
+        .expect("Binary path not set — did you forget 'Given agentchrome is installed'?");
 
     let parts: Vec<&str> = command_line.split_whitespace().collect();
-    let args = if parts.first().is_some_and(|&p| p == "chrome-cli") {
+    let args = if parts.first().is_some_and(|&p| p == "agentchrome") {
         &parts[1..]
     } else {
         &parts[..]
@@ -2741,10 +2741,10 @@ fn capabilities_include(world: &mut ReadmeWorld, capability: String) {
     );
 }
 
-#[then("it contains a Markdown table comparing chrome-cli with alternatives")]
+#[then("it contains a Markdown table comparing agentchrome with alternatives")]
 fn has_comparison_table(world: &mut ReadmeWorld) {
     assert!(
-        world.current_section.contains("chrome-cli") && world.current_section.contains('|'),
+        world.current_section.contains("agentchrome") && world.current_section.contains('|'),
         "Features section does not contain a comparison table"
     );
 }
@@ -2819,8 +2819,8 @@ fn readme_section_includes(world: &mut ReadmeWorld, text: String) {
 #[then("it includes a page inspection command")]
 fn has_page_inspection(world: &mut ReadmeWorld) {
     assert!(
-        world.current_section.contains("chrome-cli page snapshot")
-            || world.current_section.contains("chrome-cli page text"),
+        world.current_section.contains("agentchrome page snapshot")
+            || world.current_section.contains("agentchrome page text"),
         "Quick Start does not include a page inspection command"
     );
 }
@@ -2946,7 +2946,7 @@ fn mentions_performance_context(world: &mut ReadmeWorld, term1: String, term2: S
     );
 }
 
-#[then("it explains how to use chrome-cli with Claude Code")]
+#[then("it explains how to use agentchrome with Claude Code")]
 fn explains_claude_code(world: &mut ReadmeWorld) {
     let lower = world.current_section.to_lowercase();
     assert!(
@@ -3476,8 +3476,8 @@ struct FormSourceWorld {
     js_section: String,
 }
 
-#[given("chrome-cli is built")]
-fn form_source_chrome_cli_is_built(world: &mut FormSourceWorld) {
+#[given("agentchrome is built")]
+fn form_source_agentchrome_is_built(world: &mut FormSourceWorld) {
     let path = project_root().join("src/form.rs");
     world.source_content = std::fs::read_to_string(&path)
         .unwrap_or_else(|e| panic!("Failed to read src/form.rs: {e}"));
@@ -3538,8 +3538,8 @@ struct PageSourceWorld {
     function_body: String,
 }
 
-#[given("chrome-cli is built")]
-fn page_source_chrome_cli_is_built(world: &mut PageSourceWorld) {
+#[given("agentchrome is built")]
+fn page_source_agentchrome_is_built(world: &mut PageSourceWorld) {
     let path = project_root().join("src/page.rs");
     world.source_content = std::fs::read_to_string(&path)
         .unwrap_or_else(|e| panic!("Failed to read src/page.rs: {e}"));

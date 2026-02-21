@@ -16,7 +16,7 @@ The design builds on the existing architecture: `execute_connect` in `main.rs` c
 Key architectural decisions:
 1. **New `session` module** at `src/session.rs` for session file I/O (read/write/delete/status)
 2. **New `connection` module** at `src/connection.rs` for the reusable connection resolution chain and tab targeting
-3. **Session file location** at `~/.chrome-cli/session.json` on Unix, `%USERPROFILE%\.chrome-cli\session.json` on Windows — using `std::env` for home directory (no new dependency)
+3. **Session file location** at `~/.agentchrome/session.json` on Unix, `%USERPROFILE%\.agentchrome\session.json` on Windows — using `std::env` for home directory (no new dependency)
 4. **Lazy domain enabling** tracked by a `DomainSet` that wraps `CdpSession`
 5. **Health check via existing `query_version`** — fast HTTP GET to `/json/version`
 
@@ -59,19 +59,19 @@ Key architectural decisions:
 ### Data Flow: Connect Command
 
 ```
-1. User runs: chrome-cli connect [--launch|--status|--disconnect|...]
+1. User runs: agentchrome connect [--launch|--status|--disconnect|...]
 2. CLI parses ConnectArgs (including new --status, --disconnect flags)
 3. Command layer dispatches to appropriate handler:
    a. --status → read session file, health-check, output status
    b. --disconnect → read session file, kill PID if present, delete file
    c. Default → discover/launch Chrome, write session file, output info
-4. Session file written to ~/.chrome-cli/session.json
+4. Session file written to ~/.agentchrome/session.json
 ```
 
 ### Data Flow: Future Commands (e.g., tabs list)
 
 ```
-1. User runs: chrome-cli tabs list [--tab ID]
+1. User runs: agentchrome tabs list [--tab ID]
 2. CLI parses command + GlobalOpts
 3. resolve_connection(global_opts):
    a. If --ws-url → use directly
@@ -159,7 +159,7 @@ pub struct ConnectArgs {
 **connect --status with no session (stderr):**
 ```json
 {
-  "error": "No active session. Run 'chrome-cli connect' to establish a connection.",
+  "error": "No active session. Run 'agentchrome connect' to establish a connection.",
   "code": 2
 }
 ```
@@ -205,10 +205,10 @@ pub struct SessionData {
     pub timestamp: String,
 }
 
-/// Returns the path to the session file: ~/.chrome-cli/session.json
+/// Returns the path to the session file: ~/.agentchrome/session.json
 pub fn session_file_path() -> Result<PathBuf, SessionError>;
 
-/// Write session data to the session file. Creates ~/.chrome-cli/ if needed.
+/// Write session data to the session file. Creates ~/.agentchrome/ if needed.
 /// Sets file permissions to 0o600 on Unix.
 pub fn write_session(data: &SessionData) -> Result<(), SessionError>;
 
@@ -232,8 +232,8 @@ pub enum SessionError {
 ```
 
 **Session file path resolution:**
-- Unix: `$HOME/.chrome-cli/session.json`
-- Windows: `%USERPROFILE%\.chrome-cli\session.json`
+- Unix: `$HOME/.agentchrome/session.json`
+- Windows: `%USERPROFILE%\.agentchrome\session.json`
 - Uses `std::env::var("HOME")` on Unix, `std::env::var("USERPROFILE")` on Windows
 - No new crate dependency needed
 
@@ -288,7 +288,7 @@ pub async fn resolve_target(
 2. **`--port` provided and non-default (not 9222)**: Discover on that specific port via `query_version`. This indicates explicit user intent to target a specific port, skipping session file.
 3. **Session file exists**: Read session data, run `health_check` against stored host:port. If reachable, use stored `ws_url`. If not reachable, return stale session error.
 4. **Auto-discover**: Call `discover_chrome("127.0.0.1", 9222)` which tries DevToolsActivePort then port 9222.
-5. **Error**: Return `AppError` with message: `"No Chrome instance found. Run 'chrome-cli connect' or 'chrome-cli connect --launch' to establish a connection."`
+5. **Error**: Return `AppError` with message: `"No Chrome instance found. Run 'agentchrome connect' or 'agentchrome connect --launch' to establish a connection."`
 
 **Tab resolution details:**
 
@@ -297,7 +297,7 @@ The `resolve_target` function calls `query_targets(host, port)` to get the targe
 1. If `tab` is `None`: Find the first target with `target_type == "page"`. If none found, return error.
 2. If `tab` is `Some(value)`:
    a. Try to parse as `usize` (numeric index). If valid and in range, use that target.
-   b. Otherwise, search for a target with matching `id`. If not found, return error with suggestion to run `chrome-cli tabs list`.
+   b. Otherwise, search for a target with matching `id`. If not found, return error with suggestion to run `agentchrome tabs list`.
 
 ---
 
@@ -337,7 +337,7 @@ async fn execute_connect(global: &GlobalOpts, args: &ConnectArgs) -> Result<(), 
 async fn execute_status(global: &GlobalOpts) -> Result<(), AppError> {
     let session = session::read_session()?
         .ok_or_else(|| AppError {
-            message: "No active session. Run 'chrome-cli connect' to establish a connection.".into(),
+            message: "No active session. Run 'agentchrome connect' to establish a connection.".into(),
             code: ExitCode::ConnectionError,
         })?;
 
@@ -425,15 +425,15 @@ impl AppError {
     pub fn stale_session() -> Self {
         Self {
             message: "Session is stale: Chrome is not reachable at the stored address. \
-                      Run 'chrome-cli connect' to establish a new connection.".into(),
+                      Run 'agentchrome connect' to establish a new connection.".into(),
             code: ExitCode::ConnectionError,
         }
     }
 
     pub fn no_session() -> Self {
         Self {
-            message: "No active session. Run 'chrome-cli connect' or \
-                      'chrome-cli connect --launch' to establish a connection.".into(),
+            message: "No active session. Run 'agentchrome connect' or \
+                      'agentchrome connect --launch' to establish a connection.".into(),
             code: ExitCode::ConnectionError,
         }
     }
@@ -441,7 +441,7 @@ impl AppError {
     pub fn target_not_found(tab: &str) -> Self {
         Self {
             message: format!(
-                "Tab '{tab}' not found. Run 'chrome-cli tabs list' to see available tabs."
+                "Tab '{tab}' not found. Run 'agentchrome tabs list' to see available tabs."
             ),
             code: ExitCode::TargetError,
         }
@@ -535,8 +535,8 @@ FeatureScreen
 
 | Option | Description | Pros | Cons | Decision |
 |--------|-------------|------|------|----------|
-| **A: XDG dirs crate** | Use `dirs` or `directories` crate for session path | Standards-compliant XDG paths on Linux | New dependency, over-engineering for a single file | Rejected — `~/.chrome-cli/` is fine, matches `kubectl`, `docker` |
-| **B: /tmp session file** | Store at `/tmp/chrome-cli-session.json` | No dir creation needed, auto-cleaned on reboot | Not cross-platform, not user-scoped, stale across reboots | Rejected — home dir is more reliable |
+| **A: XDG dirs crate** | Use `dirs` or `directories` crate for session path | Standards-compliant XDG paths on Linux | New dependency, over-engineering for a single file | Rejected — `~/.agentchrome/` is fine, matches `kubectl`, `docker` |
+| **B: /tmp session file** | Store at `/tmp/agentchrome-session.json` | No dir creation needed, auto-cleaned on reboot | Not cross-platform, not user-scoped, stale across reboots | Rejected — home dir is more reliable |
 | **C: chrono for timestamps** | Use `chrono` crate for ISO 8601 | Full datetime support, DST handling | Heavy dependency for one format string | Rejected — manual formatting is sufficient |
 | **D: File locking** | flock/LockFile for concurrent access | Race-condition-free for concurrent invocations | Complexity, rare use case for CLI tool | Rejected — defer to future issue if needed |
 | **E: Separate session module crate** | Extract session to workspace crate | Clean separation | Over-engineering for current scope | Rejected — YAGNI |
@@ -548,7 +548,7 @@ FeatureScreen
 - [x] **File permissions**: Session file created with mode `0o600` (owner-only), directory with `0o700`
 - [x] **No secrets**: Session file contains only connection metadata (URL, port, PID, timestamp)
 - [x] **Localhost only**: Session file stores localhost WebSocket URLs; `warn_if_remote_host` already warns for non-localhost
-- [x] **Process kill safety**: Only kills PID stored by chrome-cli (from `--launch`), not arbitrary processes. PID reuse risk is minimal for CLI tool usage patterns.
+- [x] **Process kill safety**: Only kills PID stored by agentchrome (from `--launch`), not arbitrary processes. PID reuse risk is minimal for CLI tool usage patterns.
 
 ---
 
@@ -572,7 +572,7 @@ FeatureScreen
 | `connect --disconnect` | Integration | With PID, without PID, no session |
 | Feature | BDD (cucumber) | End-to-end scenarios from requirements |
 
-Session module tests will use temp directories to avoid touching the real `~/.chrome-cli/` directory.
+Session module tests will use temp directories to avoid touching the real `~/.agentchrome/` directory.
 
 ---
 

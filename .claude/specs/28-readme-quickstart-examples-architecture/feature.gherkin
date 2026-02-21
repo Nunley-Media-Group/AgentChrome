@@ -4,7 +4,7 @@
 # Issue: #28
 
 Feature: README documentation
-  As a developer discovering chrome-cli for the first time
+  As a developer discovering agentchrome for the first time
   I want a comprehensive README with installation, quick-start, examples, and architecture
   So that I can quickly understand, install, and start using the tool
 
@@ -15,7 +15,7 @@ Feature: README documentation
 
   Scenario: Header with project name and description
     When I read the README content
-    Then it starts with a level-1 heading containing "chrome-cli"
+    Then it starts with a level-1 heading containing "agentchrome"
     And it contains the text "browser automation via the Chrome DevTools Protocol"
 
   Scenario: Badges are present
@@ -34,14 +34,14 @@ Feature: README documentation
 
   Scenario: Features section includes comparison table
     When I read the "Features" section
-    Then it contains a Markdown table comparing chrome-cli with alternatives
+    Then it contains a Markdown table comparing agentchrome with alternatives
     And the table mentions "No Node.js" or "standalone binary"
 
   # --- Installation ---
 
   Scenario: Installation via cargo install
     When I read the "Installation" section
-    Then it contains "cargo install chrome-cli"
+    Then it contains "cargo install agentchrome"
 
   Scenario: Installation via pre-built binaries
     When I read the "Installation" section
@@ -57,22 +57,22 @@ Feature: README documentation
   Scenario: Quick Start provides a step-by-step guide
     When I read the "Quick Start" section
     Then it contains at least 5 numbered steps
-    And it includes "chrome-cli connect"
-    And it includes "chrome-cli navigate"
+    And it includes "agentchrome connect"
+    And it includes "agentchrome navigate"
     And it includes a page inspection command
 
   # --- Usage Examples ---
 
   Scenario: Usage examples cover common workflows
     When I read the "Usage" section
-    Then it contains a screenshot example with "chrome-cli page screenshot"
-    And it contains a text extraction example with "chrome-cli page text"
-    And it contains a JavaScript execution example with "chrome-cli js exec"
+    Then it contains a screenshot example with "agentchrome page screenshot"
+    And it contains a text extraction example with "agentchrome page text"
+    And it contains a JavaScript execution example with "agentchrome js exec"
 
   Scenario: Usage examples include form and network workflows
     When I read the "Usage" section
-    Then it contains a form filling example with "chrome-cli form"
-    And it contains a network monitoring example with "chrome-cli network"
+    Then it contains a form filling example with "agentchrome form"
+    And it contains a network monitoring example with "agentchrome network"
 
   Scenario: Lengthy examples use collapsible sections
     When I read the "Usage" section
@@ -101,7 +101,7 @@ Feature: README documentation
 
   Scenario: Command reference directs to detailed help
     When I read the "Command Reference" section
-    Then it mentions "chrome-cli <command> --help" or "man" for detailed usage
+    Then it mentions "agentchrome <command> --help" or "man" for detailed usage
 
   # --- Architecture ---
 
@@ -123,7 +123,7 @@ Feature: README documentation
 
   Scenario: Claude Code integration guide
     When I read the "Claude Code" section
-    Then it explains how to use chrome-cli with Claude Code
+    Then it explains how to use agentchrome with Claude Code
     And it contains a CLAUDE.md example snippet in a code block
 
   # --- Contributing ---

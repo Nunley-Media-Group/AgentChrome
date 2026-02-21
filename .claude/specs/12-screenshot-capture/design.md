@@ -11,7 +11,7 @@
 
 This feature adds the `page screenshot` subcommand to capture visual screenshots of browser pages. It uses CDP's `Page.captureScreenshot` method directly, supporting viewport, full-page, element-targeted (via CSS selector or accessibility UID), and region-clipped captures in PNG, JPEG, and WebP formats.
 
-The implementation follows the established command patterns from `page.rs`: resolve connection, create CDP session via `setup_session()`, enable required domains, execute CDP commands, and format output. Element screenshots reuse `DOM.getBoxModel` (already used by `page find`) to compute clip regions. Full-page screenshots temporarily resize the viewport to the full document dimensions, capture, then restore. The `--uid` option resolves backend DOM node IDs from the persisted snapshot state (`~/.chrome-cli/snapshot.json`).
+The implementation follows the established command patterns from `page.rs`: resolve connection, create CDP session via `setup_session()`, enable required domains, execute CDP commands, and format output. Element screenshots reuse `DOM.getBoxModel` (already used by `page find`) to compute clip regions. Full-page screenshots temporarily resize the viewport to the full document dimensions, capture, then restore. The `--uid` option resolves backend DOM node IDs from the persisted snapshot state (`~/.agentchrome/snapshot.json`).
 
 No new external dependencies are needed — base64 encoding is handled by CDP itself (`Page.captureScreenshot` returns base64 data). Image dimensions are obtained from the CDP response metadata or computed from the clip region.
 
@@ -56,7 +56,7 @@ Output Layer
 ### Data Flow
 
 ```
-1. User runs: chrome-cli page screenshot [OPTIONS]
+1. User runs: agentchrome page screenshot [OPTIONS]
 2. CLI parses args into PageScreenshotArgs
 3. Validates mutual exclusion (--full-page vs --selector/--uid)
 4. Resolves connection and target tab via setup_session()
@@ -94,7 +94,7 @@ Output Layer
 ### New CLI Subcommand
 
 ```
-chrome-cli page screenshot [OPTIONS]
+agentchrome page screenshot [OPTIONS]
 
 Options:
   --full-page           Capture the entire scrollable page
@@ -138,8 +138,8 @@ Global flags `--tab`, `--json`, `--pretty`, `--timeout` all apply as usual.
 |-----------|---------------|-----------|
 | `--full-page` with `--selector`/`--uid` | `Cannot combine --full-page with --selector or --uid` | `GeneralError` (1) |
 | Selector not found | `Element not found for selector: {selector}` | `GeneralError` (1) |
-| UID not found | `UID '{uid}' not found. Run 'chrome-cli page snapshot' first.` | `GeneralError` (1) |
-| No snapshot state | `No snapshot state found. Run 'chrome-cli page snapshot' first.` | `GeneralError` (1) |
+| UID not found | `UID '{uid}' not found. Run 'agentchrome page snapshot' first.` | `GeneralError` (1) |
+| No snapshot state | `No snapshot state found. Run 'agentchrome page snapshot' first.` | `GeneralError` (1) |
 | Invalid --clip format | `Invalid clip format: expected X,Y,WIDTH,HEIGHT (e.g. 10,20,200,100)` | `GeneralError` (1) |
 | File write failure | `Failed to write screenshot to file: {path}: {error}` | `GeneralError` (1) |
 | No connection | Existing `no_session` / `no_chrome_found` | `ConnectionError` (2) |

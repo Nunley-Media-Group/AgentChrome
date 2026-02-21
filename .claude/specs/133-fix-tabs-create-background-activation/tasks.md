@@ -105,13 +105,13 @@
 **Depends**: T004
 **Acceptance**:
 - [x] Build: `cargo build`
-- [x] Connect: `./target/debug/chrome-cli connect --launch --headless`
-- [x] Create foreground tab: `./target/debug/chrome-cli tabs create https://www.google.com`
-- [x] Verify active: `./target/debug/chrome-cli tabs list --pretty` shows google.com as `active: true`
-- [x] Create background tab: `./target/debug/chrome-cli tabs create https://example.com --background`
-- [x] Verify background: `./target/debug/chrome-cli tabs list --pretty` shows google.com still `active: true` and example.com as `active: false`
-- [x] Non-background still works: `./target/debug/chrome-cli tabs create https://github.com` — github.com becomes active
-- [x] SauceDemo smoke: `./target/debug/chrome-cli navigate https://www.saucedemo.com/` + `./target/debug/chrome-cli page snapshot` succeeds
+- [x] Connect: `./target/debug/agentchrome connect --launch --headless`
+- [x] Create foreground tab: `./target/debug/agentchrome tabs create https://www.google.com`
+- [x] Verify active: `./target/debug/agentchrome tabs list --pretty` shows google.com as `active: true`
+- [x] Create background tab: `./target/debug/agentchrome tabs create https://example.com --background`
+- [x] Verify background: `./target/debug/agentchrome tabs list --pretty` shows google.com still `active: true` and example.com as `active: false`
+- [x] Non-background still works: `./target/debug/agentchrome tabs create https://github.com` — github.com becomes active
+- [x] SauceDemo smoke: `./target/debug/agentchrome navigate https://www.saucedemo.com/` + `./target/debug/agentchrome page snapshot` succeeds
 - [x] Kill orphaned Chrome processes: `pkill -f 'chrome.*--remote-debugging' || true`
 
 ---

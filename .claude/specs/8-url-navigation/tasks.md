@@ -58,7 +58,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] `WaitUntil` enum has `Load`, `Domcontentloaded`, `Networkidle`, `None` variants with `#[derive(Clone, Copy, ValueEnum)]`
 - [ ] Note: `--tab` is already a global option on `GlobalOpts`, no need to add per-subcommand
 - [ ] `cargo check` passes with no errors
-- [ ] `chrome-cli navigate --help` shows URL arg and subcommands
+- [ ] `agentchrome navigate --help` shows URL arg and subcommands
 
 **Notes**: Use clap `args_conflicts_with_subcommands` so that `navigate <URL>` works without a subcommand keyword, while `navigate back/forward/reload` are subcommands. The global `--tab` and `--timeout` flags already exist; `--timeout` on `NavigateUrlArgs` is a navigate-specific override (for the wait strategy timeout, distinct from the global CDP command timeout). If the user provides `--timeout` on the navigate URL args, use it as the navigation wait timeout; otherwise default to 30000ms.
 
@@ -237,9 +237,9 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] `ManagedSession` in `src/connection.rs` gets a new `subscribe(&self, method: &str)` method that delegates to `self.session.subscribe(method)`
 - [ ] `cargo build` succeeds with no warnings
 - [ ] `cargo clippy` passes with project's lint settings (all=deny, pedantic=warn)
-- [ ] Running `chrome-cli navigate --help` shows URL positional arg and back/forward/reload subcommands
-- [ ] Running `chrome-cli navigate back --help` works
-- [ ] Running `chrome-cli navigate reload --help` shows --ignore-cache flag
+- [ ] Running `agentchrome navigate --help` shows URL positional arg and back/forward/reload subcommands
+- [ ] Running `agentchrome navigate back --help` works
+- [ ] Running `agentchrome navigate reload --help` shows --ignore-cache flag
 
 ---
 

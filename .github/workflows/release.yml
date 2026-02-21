@@ -91,15 +91,15 @@ jobs:
 
       - name: Strip binary
         if: matrix.ext == ''
-        run: strip target/${{ matrix.target }}/release/chrome-cli
+        run: strip target/${{ matrix.target }}/release/agentchrome
 
       - name: Create archive
         shell: bash
         run: |
           VERSION="${{ needs.create-release.outputs.version }}"
-          STAGING="chrome-cli-${VERSION}-${{ matrix.target }}"
+          STAGING="agentchrome-${VERSION}-${{ matrix.target }}"
           mkdir "$STAGING"
-          cp "target/${{ matrix.target }}/release/chrome-cli${{ matrix.ext }}" "$STAGING/"
+          cp "target/${{ matrix.target }}/release/agentchrome${{ matrix.ext }}" "$STAGING/"
           cp README.md LICENSE-MIT LICENSE-APACHE "$STAGING/"
           if [ "${{ matrix.archive }}" = "zip" ]; then
             7z a "${STAGING}.zip" "$STAGING"
@@ -110,8 +110,8 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
-          name: chrome-cli-${{ needs.create-release.outputs.version }}-${{ matrix.target }}
-          path: chrome-cli-${{ needs.create-release.outputs.version }}-${{ matrix.target }}.${{ matrix.archive }}
+          name: agentchrome-${{ needs.create-release.outputs.version }}-${{ matrix.target }}
+          path: agentchrome-${{ needs.create-release.outputs.version }}-${{ matrix.target }}.${{ matrix.archive }}
 
   publish-release:
     name: Publish Release
@@ -123,13 +123,13 @@ jobs:
           merge-multiple: true
 
       - name: Generate checksums
-        run: shasum -a 256 chrome-cli-* > checksums.sha256
+        run: shasum -a 256 agentchrome-* > checksums.sha256
 
       - name: Upload release assets
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ needs.create-release.outputs.tag }}
-        run: gh release upload "$TAG" chrome-cli-* checksums.sha256 --repo "$GITHUB_REPOSITORY"
+        run: gh release upload "$TAG" agentchrome-* checksums.sha256 --repo "$GITHUB_REPOSITORY"
 
       - name: Publish release
         env:

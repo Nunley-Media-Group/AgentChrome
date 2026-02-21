@@ -1,4 +1,4 @@
-# chrome-cli Technical Steering
+# agentchrome Technical Steering
 
 This document defines the technology stack, constraints, and integration standards.
 All technical decisions should align with these guidelines.
@@ -131,15 +131,15 @@ This is a strict configuration. All clippy warnings should be addressed before m
 ### Command Structure
 
 ```
-chrome-cli <command> [subcommand] [options] [arguments]
+agentchrome <command> [subcommand] [options] [arguments]
 
 # Examples:
-chrome-cli connect --launch --headless
-chrome-cli navigate <url>
-chrome-cli page screenshot --full-page --file shot.png
-chrome-cli js exec "document.title"
-chrome-cli tabs list
-chrome-cli form fill <uid> <value>
+agentchrome connect --launch --headless
+agentchrome navigate <url>
+agentchrome page screenshot --full-page --file shot.png
+agentchrome js exec "document.title"
+agentchrome tabs list
+agentchrome form fill <uid> <value>
 ```
 
 ### Output Format
@@ -158,10 +158,10 @@ chrome-cli form fill <uid> <value>
 
 | Variable | Description |
 |----------|-------------|
-| `CHROME_CLI_PORT` | CDP port number (default: 9222) |
-| `CHROME_CLI_HOST` | CDP host address (default: 127.0.0.1) |
-| `CHROME_CLI_TIMEOUT` | Default command timeout in milliseconds |
-| `CHROME_CLI_CONFIG` | Path to configuration file |
+| `AGENTCHROME_PORT` | CDP port number (default: 9222) |
+| `AGENTCHROME_HOST` | CDP host address (default: 127.0.0.1) |
+| `AGENTCHROME_TIMEOUT` | Default command timeout in milliseconds |
+| `AGENTCHROME_CONFIG` | Path to configuration file |
 | `NO_COLOR` | Disable colored output (standard convention) |
 
 ---
@@ -183,11 +183,11 @@ chrome-cli form fill <uid> <value>
 #### Procedure
 
 1. Build in debug mode: `cargo build`
-2. Launch headless Chrome: `./target/debug/chrome-cli connect --launch --headless`
+2. Launch headless Chrome: `./target/debug/agentchrome connect --launch --headless`
 3. Exercise the feature/fix using the reproduction steps from `requirements.md` or the acceptance criteria
 4. Verify each AC produces the expected output against the real browser
 5. **Run the SauceDemo smoke test** (see below)
-6. Disconnect: `./target/debug/chrome-cli connect disconnect`
+6. Disconnect: `./target/debug/agentchrome connect disconnect`
 7. Kill any orphaned Chrome processes: `pkill -f 'chrome.*--remote-debugging' || true`
 
 #### SauceDemo Smoke Test (Required)
@@ -196,8 +196,8 @@ chrome-cli form fill <uid> <value>
 
 Minimum steps:
 
-1. Navigate to the site: `./target/debug/chrome-cli navigate https://www.saucedemo.com/`
-2. Take a snapshot: `./target/debug/chrome-cli page snapshot`
+1. Navigate to the site: `./target/debug/agentchrome navigate https://www.saucedemo.com/`
+2. Take a snapshot: `./target/debug/agentchrome page snapshot`
 3. Exercise the feature/fix against the site where applicable (e.g., form fill on the login page, screenshot, element finding, dialog handling)
 4. Verify the command output is correct and the page responds as expected
 

@@ -14,11 +14,11 @@
 
 ### Steps to Reproduce
 
-1. `chrome-cli connect --launch --headless`
-2. `chrome-cli navigate https://www.google.com`
-3. `chrome-cli js exec "setTimeout(()=>alert('test'),100)" --no-await`
+1. `agentchrome connect --launch --headless`
+2. `agentchrome navigate https://www.google.com`
+3. `agentchrome js exec "setTimeout(()=>alert('test'),100)" --no-await`
 4. `sleep 2`
-5. `chrome-cli dialog info --pretty`
+5. `agentchrome dialog info --pretty`
 
 ### Environment
 
@@ -59,39 +59,39 @@ The dialog is correctly detected as open (the `Runtime.evaluate` probe times out
 ### AC1: Dialog info returns correct type and message for alert
 
 **Given** a JavaScript `alert('hello')` dialog is open
-**When** I run `chrome-cli dialog info`
+**When** I run `agentchrome dialog info`
 **Then** the output includes `"open": true`, `"type": "alert"`, and `"message": "hello"`
 
 ### AC2: Dialog info reports confirm dialogs correctly
 
 **Given** a JavaScript `confirm('proceed?')` dialog is open
-**When** I run `chrome-cli dialog info`
+**When** I run `agentchrome dialog info`
 **Then** the output includes `"open": true`, `"type": "confirm"`, and `"message": "proceed?"`
 
 ### AC3: Dialog info still works when no dialog is open
 
 **Given** no dialog is open on the page
-**When** I run `chrome-cli dialog info`
+**When** I run `agentchrome dialog info`
 **Then** the output includes `"open": false`
 **And** the exit code is 0
 
 ### AC4: Dialog handle returns correct type and message
 
 **Given** a JavaScript `alert('test')` dialog is open
-**When** I run `chrome-cli dialog handle accept`
+**When** I run `agentchrome dialog handle accept`
 **Then** the output includes `"dialog_type": "alert"` and `"message": "test"` (not `"unknown"` and `""`)
 
 ### AC5: Dialog handle dismisses pre-existing dialogs
 
 **Given** a JavaScript `alert('test')` dialog was opened before the current CLI invocation
-**When** I run `chrome-cli dialog handle accept`
+**When** I run `agentchrome dialog handle accept`
 **Then** the dialog is dismissed (the page may reload as a side effect)
 **And** the exit code is 0
 
 ### AC6: Dialog handle returns error when no dialog is open
 
 **Given** no dialog is open on the page
-**When** I run `chrome-cli dialog handle accept`
+**When** I run `agentchrome dialog handle accept`
 **Then** the output includes an error message "No dialog is currently open"
 **And** the exit code is non-zero
 
@@ -102,7 +102,7 @@ The dialog is correctly detected as open (the `Runtime.evaluate` probe times out
 | ID | Requirement | Priority |
 |----|-------------|----------|
 | FR1 | Use a cookie-based interceptor mechanism to store dialog metadata (type, message, defaultValue) before calling the native dialog function, since CDP events are ephemeral and cannot be replayed | Must |
-| FR2 | Both `execute_info()` and `execute_handle()` read dialog metadata from the `__chrome_cli_dialog` cookie via `Network.getCookies`, which works while a dialog is blocking the renderer | Must |
+| FR2 | Both `execute_info()` and `execute_handle()` read dialog metadata from the `__agentchrome_dialog` cookie via `Network.getCookies`, which works while a dialog is blocking the renderer | Must |
 | FR3 | `dialog handle` uses `Page.handleJavaScriptDialog` as the primary mechanism, with a `Page.navigate` navigation-based fallback for pre-existing dialogs where the Page domain wasn't enabled | Must |
 | FR4 | The no-dialog-open path must not be slowed down — the Runtime.evaluate probe timeout (200ms) only fires when no dialog is blocking | Should |
 | FR5 | The cookie interceptor's `document.cookie` assignment is wrapped in `try/catch` to handle `data:` URLs and other restricted contexts gracefully | Must |

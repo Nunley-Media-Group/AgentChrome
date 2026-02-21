@@ -16,7 +16,7 @@ Feature: Browser Dialog Handling
 
   Scenario: Accept an alert dialog
     Given the page has triggered an alert dialog with message "Hello"
-    When I run "chrome-cli dialog handle accept"
+    When I run "agentchrome dialog handle accept"
     Then the output JSON should contain "action" equal to "accept"
     And the output JSON should contain "dialog_type" equal to "alert"
     And the output JSON should contain "message" equal to "Hello"
@@ -24,7 +24,7 @@ Feature: Browser Dialog Handling
 
   Scenario: Dismiss a confirm dialog
     Given the page has triggered a confirm dialog with message "Are you sure?"
-    When I run "chrome-cli dialog handle dismiss"
+    When I run "agentchrome dialog handle dismiss"
     Then the output JSON should contain "action" equal to "dismiss"
     And the output JSON should contain "dialog_type" equal to "confirm"
     And the output JSON should contain "message" equal to "Are you sure?"
@@ -32,7 +32,7 @@ Feature: Browser Dialog Handling
 
   Scenario: Accept a prompt dialog with text
     Given the page has triggered a prompt dialog with message "Enter name:" and default "default"
-    When I run "chrome-cli dialog handle accept --text Alice"
+    When I run "agentchrome dialog handle accept --text Alice"
     Then the output JSON should contain "action" equal to "accept"
     And the output JSON should contain "dialog_type" equal to "prompt"
     And the output JSON should contain "message" equal to "Enter name:"
@@ -42,7 +42,7 @@ Feature: Browser Dialog Handling
   Scenario: Handle a beforeunload dialog
     Given the page has registered a beforeunload handler
     And a navigation has been triggered causing a beforeunload dialog
-    When I run "chrome-cli dialog handle accept"
+    When I run "agentchrome dialog handle accept"
     Then the output JSON should contain "action" equal to "accept"
     And the output JSON should contain "dialog_type" equal to "beforeunload"
     And the exit code should be 0
@@ -51,7 +51,7 @@ Feature: Browser Dialog Handling
 
   Scenario: Query dialog info when a dialog is open
     Given the page has triggered a prompt dialog with message "Enter name:" and default "default"
-    When I run "chrome-cli dialog info"
+    When I run "agentchrome dialog info"
     Then the output JSON should contain "open" equal to true
     And the output JSON should contain "type" equal to "prompt"
     And the output JSON should contain "message" equal to "Enter name:"
@@ -60,7 +60,7 @@ Feature: Browser Dialog Handling
 
   Scenario: Query dialog info when no dialog is open
     Given no dialog is currently open
-    When I run "chrome-cli dialog info"
+    When I run "agentchrome dialog info"
     Then the output JSON should contain "open" equal to false
     And the exit code should be 0
 
@@ -68,7 +68,7 @@ Feature: Browser Dialog Handling
 
   Scenario: Handle dialog with tab targeting
     Given a dialog is open on a specific tab
-    When I run "chrome-cli dialog handle accept --tab {tab_id}"
+    When I run "agentchrome dialog handle accept --tab {tab_id}"
     Then the dialog on that tab is accepted
     And the output JSON should contain "action" equal to "accept"
     And the exit code should be 0
@@ -77,7 +77,7 @@ Feature: Browser Dialog Handling
 
   Scenario: Auto-dismiss dialogs during navigation
     Given the page will trigger an alert dialog during navigation
-    When I run "chrome-cli navigate https://example.com --auto-dismiss-dialogs"
+    When I run "agentchrome navigate https://example.com --auto-dismiss-dialogs"
     Then the navigation completes without blocking on the dialog
     And the exit code should be 0
 
@@ -85,7 +85,7 @@ Feature: Browser Dialog Handling
 
   Scenario: Handle dialog when no dialog is open
     Given no dialog is currently open
-    When I run "chrome-cli dialog handle accept"
+    When I run "agentchrome dialog handle accept"
     Then stderr should contain a JSON error with message about no dialog being open
     And the exit code should be non-zero
 
@@ -93,14 +93,14 @@ Feature: Browser Dialog Handling
 
   Scenario: Plain text output for dialog handle
     Given the page has triggered an alert dialog with message "Hello"
-    When I run "chrome-cli dialog handle accept --plain"
+    When I run "agentchrome dialog handle accept --plain"
     Then the output should contain "Accepted alert"
     And the output should contain "Hello"
     And the exit code should be 0
 
   Scenario: Plain text output for dialog info when open
     Given the page has triggered a confirm dialog with message "Continue?"
-    When I run "chrome-cli dialog info --plain"
+    When I run "agentchrome dialog info --plain"
     Then the output should contain "confirm"
     And the output should contain "Continue?"
     And the exit code should be 0
@@ -109,7 +109,7 @@ Feature: Browser Dialog Handling
 
   Scenario Outline: Handle different dialog types
     Given the page has triggered a <type> dialog with message "<message>"
-    When I run "chrome-cli dialog handle accept"
+    When I run "agentchrome dialog handle accept"
     Then the output JSON should contain "dialog_type" equal to "<type>"
     And the output JSON should contain "message" equal to "<message>"
     And the exit code should be 0
@@ -122,7 +122,7 @@ Feature: Browser Dialog Handling
 
   Scenario Outline: Accept and dismiss actions
     Given the page has triggered a confirm dialog with message "Confirm?"
-    When I run "chrome-cli dialog handle <action>"
+    When I run "agentchrome dialog handle <action>"
     Then the output JSON should contain "action" equal to "<action>"
     And the exit code should be 0
 

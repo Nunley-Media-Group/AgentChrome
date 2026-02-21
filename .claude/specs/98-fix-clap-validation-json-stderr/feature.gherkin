@@ -15,8 +15,8 @@ Feature: Clap validation errors produce JSON on stderr with exit code 1
 
   @regression
   Scenario: Mutually exclusive flags produce JSON error
-    Given chrome-cli is built
-    When I run "chrome-cli interact scroll --to-top --to-bottom"
+    Given agentchrome is built
+    When I run "agentchrome interact scroll --to-top --to-bottom"
     Then the exit code should be 1
     And stderr should be valid JSON
     And stderr JSON should have key "error"
@@ -24,8 +24,8 @@ Feature: Clap validation errors produce JSON on stderr with exit code 1
 
   @regression
   Scenario: Invalid enum value produces JSON error
-    Given chrome-cli is built
-    When I run "chrome-cli emulate set --network invalid-profile"
+    Given agentchrome is built
+    When I run "agentchrome emulate set --network invalid-profile"
     Then the exit code should be 1
     And stderr should be valid JSON
     And stderr JSON should have key "error"
@@ -33,8 +33,8 @@ Feature: Clap validation errors produce JSON on stderr with exit code 1
 
   @regression
   Scenario: Out-of-range value produces JSON error
-    Given chrome-cli is built
-    When I run "chrome-cli emulate set --cpu 0"
+    Given agentchrome is built
+    When I run "agentchrome emulate set --cpu 0"
     Then the exit code should be 1
     And stderr should be valid JSON
     And stderr JSON should have key "error"
@@ -44,8 +44,8 @@ Feature: Clap validation errors produce JSON on stderr with exit code 1
 
   @regression
   Scenario: Non-clap application errors still produce JSON on stderr
-    Given chrome-cli is built
-    When I run "chrome-cli dom"
+    Given agentchrome is built
+    When I run "agentchrome dom"
     Then the exit code should be 1
     And stderr should be valid JSON
     And stderr JSON should have key "error"
@@ -53,14 +53,14 @@ Feature: Clap validation errors produce JSON on stderr with exit code 1
 
   @regression
   Scenario: Help flag still works normally
-    Given chrome-cli is built
-    When I run "chrome-cli --help"
+    Given agentchrome is built
+    When I run "agentchrome --help"
     Then the exit code should be 0
-    And stdout should contain "chrome-cli"
+    And stdout should contain "agentchrome"
 
   @regression
   Scenario: Version flag still works normally
-    Given chrome-cli is built
-    When I run "chrome-cli --version"
+    Given agentchrome is built
+    When I run "agentchrome --version"
     Then the exit code should be 0
-    And stdout should contain "chrome-cli"
+    And stdout should contain "agentchrome"

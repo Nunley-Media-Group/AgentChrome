@@ -57,7 +57,7 @@ impl AppError {
     pub fn stale_session() -> Self {
         Self {
             message: "Session is stale: Chrome is not reachable at the stored address. \
-                      Run 'chrome-cli connect' to establish a new connection."
+                      Run 'agentchrome connect' to establish a new connection."
                 .into(),
             code: ExitCode::ConnectionError,
             custom_json: None,
@@ -67,8 +67,8 @@ impl AppError {
     #[must_use]
     pub fn no_session() -> Self {
         Self {
-            message: "No active session. Run 'chrome-cli connect' or \
-                      'chrome-cli connect --launch' to establish a connection."
+            message: "No active session. Run 'agentchrome connect' or \
+                      'agentchrome connect --launch' to establish a connection."
                 .into(),
             code: ExitCode::ConnectionError,
             custom_json: None,
@@ -79,7 +79,7 @@ impl AppError {
     pub fn target_not_found(tab: &str) -> Self {
         Self {
             message: format!(
-                "Tab '{tab}' not found. Run 'chrome-cli tabs list' to see available tabs."
+                "Tab '{tab}' not found. Run 'agentchrome tabs list' to see available tabs."
             ),
             code: ExitCode::TargetError,
             custom_json: None,
@@ -170,7 +170,7 @@ impl AppError {
     #[must_use]
     pub fn uid_not_found(uid: &str) -> Self {
         Self {
-            message: format!("UID '{uid}' not found. Run 'chrome-cli page snapshot' first."),
+            message: format!("UID '{uid}' not found. Run 'agentchrome page snapshot' first."),
             code: ExitCode::GeneralError,
             custom_json: None,
         }
@@ -190,7 +190,7 @@ impl AppError {
     #[must_use]
     pub fn no_active_trace() -> Self {
         Self {
-            message: "No active trace. Use 'chrome-cli perf record' to record a trace.".into(),
+            message: "No active trace. Use 'agentchrome perf record' to record a trace.".into(),
             code: ExitCode::GeneralError,
             custom_json: None,
         }
@@ -304,8 +304,8 @@ impl AppError {
     #[must_use]
     pub fn no_chrome_found() -> Self {
         Self {
-            message: "No Chrome instance found. Run 'chrome-cli connect' or \
-                      'chrome-cli connect --launch' to establish a connection."
+            message: "No Chrome instance found. Run 'agentchrome connect' or \
+                      'agentchrome connect --launch' to establish a connection."
                 .into(),
             code: ExitCode::ConnectionError,
             custom_json: None,
@@ -315,7 +315,7 @@ impl AppError {
     #[must_use]
     pub fn no_snapshot_state() -> Self {
         Self {
-            message: "No snapshot state found. Run 'chrome-cli page snapshot' first to assign \
+            message: "No snapshot state found. Run 'agentchrome page snapshot' first to assign \
                       UIDs to interactive elements."
                 .into(),
             code: ExitCode::GeneralError,
@@ -451,7 +451,7 @@ impl AppError {
         Self {
             message: format!(
                 "UID '{uid}' refers to an element that no longer exists. \
-                 Run 'chrome-cli page snapshot' to refresh."
+                 Run 'agentchrome page snapshot' to refresh."
             ),
             code: ExitCode::GeneralError,
             custom_json: None,
@@ -520,7 +520,7 @@ mod tests {
     fn stale_session_error() {
         let err = AppError::stale_session();
         assert!(err.message.contains("stale"));
-        assert!(err.message.contains("chrome-cli connect"));
+        assert!(err.message.contains("agentchrome connect"));
         assert!(matches!(err.code, ExitCode::ConnectionError));
     }
 

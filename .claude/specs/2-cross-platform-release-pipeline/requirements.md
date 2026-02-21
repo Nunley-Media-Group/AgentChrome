@@ -9,7 +9,7 @@
 
 ## User Story
 
-**As a** developer contributing to chrome-cli
+**As a** developer contributing to agentchrome
 **I want** automated CI/CD pipelines that build, test, lint, and release cross-platform binaries
 **So that** every PR is validated and releases produce optimized standalone binaries for all supported platforms
 
@@ -17,7 +17,7 @@
 
 ## Background
 
-chrome-cli must be distributed as a standalone binary with no runtime dependencies. The project needs two GitHub Actions workflows: a CI workflow that validates every PR and push to main (format, lint, test, build), and a release workflow triggered by version tags that builds optimized binaries for 5 target platforms, archives them, generates checksums, and publishes them as GitHub Releases.
+agentchrome must be distributed as a standalone binary with no runtime dependencies. The project needs two GitHub Actions workflows: a CI workflow that validates every PR and push to main (format, lint, test, build), and a release workflow triggered by version tags that builds optimized binaries for 5 target platforms, archives them, generates checksums, and publishes them as GitHub Releases.
 
 ---
 
@@ -75,7 +75,7 @@ chrome-cli must be distributed as a standalone binary with no runtime dependenci
 **When** they are archived
 **Then** Unix targets (macOS, Linux) are packaged as `.tar.gz`
 **And** Windows targets are packaged as `.zip`
-**And** the archive naming follows: `chrome-cli-{version}-{target}.{ext}`
+**And** the archive naming follows: `agentchrome-{version}-{target}.{ext}`
 
 ### AC8: SHA256 checksums generated
 
@@ -96,12 +96,12 @@ chrome-cli must be distributed as a standalone binary with no runtime dependenci
 
 **Given** a release binary is built for a target
 **When** it is archived
-**Then** the archive name matches the pattern `chrome-cli-{version}-{target}.{ext}`
+**Then** the archive name matches the pattern `agentchrome-{version}-{target}.{ext}`
 
 **Example**:
 - Given: target is `x86_64-unknown-linux-gnu`, version is `v0.1.0`
 - When: archived
-- Then: filename is `chrome-cli-v0.1.0-x86_64-unknown-linux-gnu.tar.gz`
+- Then: filename is `agentchrome-v0.1.0-x86_64-unknown-linux-gnu.tar.gz`
 
 ### AC11: Binaries are statically linked where possible
 
@@ -114,7 +114,7 @@ chrome-cli must be distributed as a standalone binary with no runtime dependenci
 
 ```gherkin
 Feature: Cross-platform release pipeline
-  As a developer contributing to chrome-cli
+  As a developer contributing to agentchrome
   I want automated CI/CD pipelines
   So that every PR is validated and releases produce optimized standalone binaries
 
@@ -153,7 +153,7 @@ Feature: Cross-platform release pipeline
 | FR6 | Platform-appropriate archive format (tar.gz / zip) | Must | |
 | FR7 | SHA256 checksums for all archives | Must | |
 | FR8 | GitHub Release creation with all artifacts | Must | Auto-generated release notes |
-| FR9 | Binary naming convention `chrome-cli-{version}-{target}.{ext}` | Must | |
+| FR9 | Binary naming convention `agentchrome-{version}-{target}.{ext}` | Must | |
 | FR10 | Static linking where possible | Should | Use `rustls` over OpenSSL |
 | FR11 | macOS universal/fat binaries | Won't (this release) | Nice-to-have per issue notes |
 

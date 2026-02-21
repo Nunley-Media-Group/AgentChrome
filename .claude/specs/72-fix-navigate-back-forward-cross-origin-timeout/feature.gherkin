@@ -17,7 +17,7 @@ Feature: Cross-origin back/forward navigation
   Scenario: AC1 - Cross-origin navigate back succeeds
     Given a tab is open with "https://example.com"
     And the tab has navigated to "https://www.iana.org/domains/reserved"
-    When I run "chrome-cli navigate back"
+    When I run "agentchrome navigate back"
     Then the exit code is 0
     And the JSON output has key "url" containing "example.com"
 
@@ -26,7 +26,7 @@ Feature: Cross-origin back/forward navigation
     Given a tab is open with "https://example.com"
     And the tab has navigated to "https://www.iana.org/domains/reserved"
     And the tab has navigated back
-    When I run "chrome-cli navigate forward"
+    When I run "agentchrome navigate forward"
     Then the exit code is 0
     And the JSON output has key "url" containing "iana.org"
 
@@ -36,6 +36,6 @@ Feature: Cross-origin back/forward navigation
   Scenario: AC3 - Same-origin navigate back still works
     Given a tab is open with "https://example.com"
     And the tab has navigated to "https://example.com/about"
-    When I run "chrome-cli navigate back"
+    When I run "agentchrome navigate back"
     Then the exit code is 0
     And the JSON output has key "url" containing "example.com"

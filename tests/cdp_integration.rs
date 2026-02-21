@@ -8,7 +8,7 @@
 use std::net::SocketAddr;
 use std::time::Duration;
 
-use chrome_cli::cdp::{CdpClient, CdpConfig, CdpError, ReconnectConfig};
+use agentchrome::cdp::{CdpClient, CdpConfig, CdpError, ReconnectConfig};
 use futures_util::{SinkExt, StreamExt};
 use serde_json::{Value, json};
 use tokio::net::TcpListener;

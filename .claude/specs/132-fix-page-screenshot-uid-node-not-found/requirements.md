@@ -13,10 +13,10 @@
 
 ### Steps to Reproduce
 
-1. `chrome-cli connect --launch --headless`
-2. `chrome-cli navigate https://www.google.com`
-3. `chrome-cli page snapshot` — assigns UIDs (e.g., s1 = "About" link)
-4. `chrome-cli page screenshot --uid s1 --file /tmp/element.png` — **fails**
+1. `agentchrome connect --launch --headless`
+2. `agentchrome navigate https://www.google.com`
+3. `agentchrome page snapshot` — assigns UIDs (e.g., s1 = "About" link)
+4. `agentchrome page screenshot --uid s1 --file /tmp/element.png` — **fails**
 
 ### Environment
 

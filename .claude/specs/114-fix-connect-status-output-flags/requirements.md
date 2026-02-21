@@ -13,10 +13,10 @@
 
 ### Steps to Reproduce
 
-1. Launch headless Chrome: `chrome-cli connect --launch --headless`
-2. Run `chrome-cli connect --status` — outputs compact JSON (correct)
-3. Run `chrome-cli connect --status --pretty` — outputs compact JSON (incorrect)
-4. Run `chrome-cli connect --status --plain` — outputs compact JSON (incorrect)
+1. Launch headless Chrome: `agentchrome connect --launch --headless`
+2. Run `agentchrome connect --status` — outputs compact JSON (correct)
+3. Run `agentchrome connect --status --pretty` — outputs compact JSON (incorrect)
+4. Run `agentchrome connect --status --plain` — outputs compact JSON (incorrect)
 
 ### Environment
 
@@ -56,19 +56,19 @@ the output format is always compact JSON regardless of the flag.
 ### AC1: Pretty flag produces indented JSON
 
 **Given** a connected Chrome session
-**When** I run `chrome-cli connect --status --pretty`
+**When** I run `agentchrome connect --status --pretty`
 **Then** the output is valid indented JSON with newlines and spaces
 
 ### AC2: Plain flag produces human-readable text
 
 **Given** a connected Chrome session
-**When** I run `chrome-cli connect --status --plain`
+**When** I run `agentchrome connect --status --plain`
 **Then** the output is human-readable text (not JSON) showing connection details as key-value pairs
 
 ### AC3: Default output unchanged
 
 **Given** a connected Chrome session
-**When** I run `chrome-cli connect --status`
+**When** I run `agentchrome connect --status`
 **Then** the output is compact single-line JSON (existing behavior preserved)
 
 ---

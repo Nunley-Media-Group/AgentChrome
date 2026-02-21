@@ -11,62 +11,62 @@ Feature: Configuration file support
       [connection]
       port = 9333
       """
-    When I run chrome-cli with "--config {config_path} config show"
+    When I run agentchrome with "--config {config_path} config show"
     Then the exit code should be 0
     And the JSON output field "connection.port" should be 9333
 
-  Scenario: Load config from CHROME_CLI_CONFIG environment variable
+  Scenario: Load config from AGENTCHROME_CONFIG environment variable
     Given a config file at "env-config.toml" with content:
       """
       [connection]
       port = 9444
       """
-    When I run chrome-cli with env CHROME_CLI_CONFIG="{config_path}" and args "config show"
+    When I run agentchrome with env AGENTCHROME_CONFIG="{config_path}" and args "config show"
     Then the exit code should be 0
     And the JSON output field "connection.port" should be 9444
 
   Scenario: Load config from project-local file
-    Given a project-local config file ".chrome-cli.toml" with content:
+    Given a project-local config file ".agentchrome.toml" with content:
       """
       [connection]
       port = 9555
       """
-    When I run chrome-cli with "config show"
+    When I run agentchrome with "config show"
     Then the exit code should be 0
     And the JSON output field "connection.port" should be 9555
 
   Scenario: Load config from XDG standard path
-    Given an XDG config file "chrome-cli/config.toml" with content:
+    Given an XDG config file "agentchrome/config.toml" with content:
       """
       [connection]
       host = "10.0.0.1"
       """
-    When I run chrome-cli with "config show"
+    When I run agentchrome with "config show"
     Then the exit code should be 0
     And the JSON output field "connection.host" should be "10.0.0.1"
 
   Scenario: Load config from home directory fallback
-    Given a home directory config file ".chrome-cli.toml" with content:
+    Given a home directory config file ".agentchrome.toml" with content:
       """
       [output]
       format = "pretty"
       """
-    When I run chrome-cli with "config show"
+    When I run agentchrome with "config show"
     Then the exit code should be 0
     And the JSON output field "output.format" should be "pretty"
 
   Scenario: Config file priority - project-local wins over home directory
-    Given a project-local config file ".chrome-cli.toml" with content:
+    Given a project-local config file ".agentchrome.toml" with content:
       """
       [connection]
       port = 1111
       """
-    And a home directory config file ".chrome-cli.toml" with content:
+    And a home directory config file ".agentchrome.toml" with content:
       """
       [connection]
       port = 2222
       """
-    When I run chrome-cli with "config show"
+    When I run agentchrome with "config show"
     Then the exit code should be 0
     And the JSON output field "connection.port" should be 1111
 
@@ -76,7 +76,7 @@ Feature: Configuration file support
       [connection]
       port = 9333
       """
-    When I run chrome-cli with "--config {config_path} --port 9444 config show"
+    When I run agentchrome with "--config {config_path} --port 9444 config show"
     Then the exit code should be 0
     And the JSON output field "connection.port" should be 9444
 
@@ -86,7 +86,7 @@ Feature: Configuration file support
       [connection]
       port = 9333
       """
-    When I run chrome-cli with env CHROME_CLI_PORT="9555" and args "--config {config_path} config show"
+    When I run agentchrome with env AGENTCHROME_PORT="9555" and args "--config {config_path} config show"
     Then the exit code should be 0
     And the JSON output field "connection.port" should be 9555
 
@@ -100,7 +100,7 @@ Feature: Configuration file support
       port = 9333
       timeout_ms = 60000
       """
-    When I run chrome-cli with "--config {config_path} config show"
+    When I run agentchrome with "--config {config_path} config show"
     Then the exit code should be 0
     And the JSON output field "connection.host" should be "192.168.1.100"
     And the JSON output field "connection.port" should be 9333
@@ -115,7 +115,7 @@ Feature: Configuration file support
       headless = true
       extra_args = ["--disable-gpu", "--no-sandbox"]
       """
-    When I run chrome-cli with "--config {config_path} config show"
+    When I run agentchrome with "--config {config_path} config show"
     Then the exit code should be 0
     And the JSON output field "launch.executable" should be "/usr/bin/chromium"
     And the JSON output field "launch.channel" should be "beta"
@@ -127,7 +127,7 @@ Feature: Configuration file support
       [output]
       format = "pretty"
       """
-    When I run chrome-cli with "--config {config_path} config show"
+    When I run agentchrome with "--config {config_path} config show"
     Then the exit code should be 0
     And the JSON output field "output.format" should be "pretty"
 
@@ -138,7 +138,7 @@ Feature: Configuration file support
       auto_activate = false
       filter_internal = true
       """
-    When I run chrome-cli with "--config {config_path} config show"
+    When I run agentchrome with "--config {config_path} config show"
     Then the exit code should be 0
     And the JSON output field "tabs.auto_activate" should be false
     And the JSON output field "tabs.filter_internal" should be true
@@ -151,7 +151,7 @@ Feature: Configuration file support
       [connection]
       port = 9333
       """
-    When I run chrome-cli with "--config {config_path} config show"
+    When I run agentchrome with "--config {config_path} config show"
     Then the exit code should be 0
     And the JSON output should contain key "config_path"
     And the JSON output should contain key "connection"
@@ -160,21 +160,21 @@ Feature: Configuration file support
     And the JSON output should contain key "tabs"
 
   Scenario: config show with no config file uses defaults
-    When I run chrome-cli with "config show"
+    When I run agentchrome with "config show"
     Then the exit code should be 0
     And the JSON output field "connection.port" should be 9222
     And the JSON output field "connection.host" should be "127.0.0.1"
 
   Scenario: config init creates a default config file
     Given no config file exists at the init target path
-    When I run chrome-cli with "config init --path {init_path}"
+    When I run agentchrome with "config init --path {init_path}"
     Then the exit code should be 0
     And the JSON output should contain key "created"
     And the init target file should exist
 
   Scenario: config init refuses to overwrite existing file
     Given a config file already exists at the init target path
-    When I run chrome-cli with "config init --path {init_path}"
+    When I run agentchrome with "config init --path {init_path}"
     Then the exit code should be non-zero
     And stderr should contain "already exists"
 
@@ -184,12 +184,12 @@ Feature: Configuration file support
       [connection]
       port = 9222
       """
-    When I run chrome-cli with "--config {config_path} config path"
+    When I run agentchrome with "--config {config_path} config path"
     Then the exit code should be 0
     And the JSON output field "config_path" should contain "path-test.toml"
 
   Scenario: config path when no config file exists
-    When I run chrome-cli with "config path"
+    When I run agentchrome with "config path"
     Then the exit code should be 0
     And the JSON output field "config_path" should be null
 
@@ -200,7 +200,7 @@ Feature: Configuration file support
       """
       this is not valid toml [[[
       """
-    When I run chrome-cli with "--config {config_path} config show"
+    When I run agentchrome with "--config {config_path} config show"
     Then the exit code should be 0
     And stderr should contain "warning"
     And the JSON output field "connection.port" should be 9222
@@ -212,7 +212,7 @@ Feature: Configuration file support
       port = 9333
       unknown_key = "hello"
       """
-    When I run chrome-cli with "--config {config_path} config show"
+    When I run agentchrome with "--config {config_path} config show"
     Then the exit code should be 0
     And stderr should contain "unknown"
     And the JSON output field "connection.port" should be 9333

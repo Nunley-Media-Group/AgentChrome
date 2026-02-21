@@ -26,75 +26,75 @@ The MCP server's `emulate` tool provides comprehensive device emulation includin
 ### AC1: Set network emulation profile
 
 **Given** Chrome is running with CDP enabled and a page is loaded
-**When** I run `chrome-cli emulate set --network slow-4g`
+**When** I run `agentchrome emulate set --network slow-4g`
 **Then** network throttling is applied via CDP
 **And** the command returns JSON with the current emulation settings including the network profile
 
 **Example**:
 - Given: Chrome open on `https://example.com`
-- When: `chrome-cli emulate set --network slow-4g`
+- When: `agentchrome emulate set --network slow-4g`
 - Then: Output includes `"network": "slow-4g"` and exit code 0
 
 ### AC2: Set CPU throttling rate
 
 **Given** Chrome is running with CDP enabled
-**When** I run `chrome-cli emulate set --cpu 4`
+**When** I run `agentchrome emulate set --cpu 4`
 **Then** CPU throttling rate 4 is applied via `Emulation.setCPUThrottlingRate`
 **And** the command returns JSON with the current emulation settings including the CPU rate
 
 ### AC3: Set geolocation override
 
 **Given** Chrome is running with CDP enabled
-**When** I run `chrome-cli emulate set --geolocation 37.7749,-122.4194`
+**When** I run `agentchrome emulate set --geolocation 37.7749,-122.4194`
 **Then** geolocation is overridden via `Emulation.setGeolocationOverride`
 **And** the command returns JSON with current emulation settings including latitude and longitude
 
 ### AC4: Clear geolocation override
 
 **Given** Chrome is running with CDP enabled and geolocation is overridden
-**When** I run `chrome-cli emulate set --no-geolocation`
+**When** I run `agentchrome emulate set --no-geolocation`
 **Then** the geolocation override is cleared
 **And** the command returns JSON confirming geolocation is no longer overridden
 
 ### AC5: Set custom user agent
 
 **Given** Chrome is running with CDP enabled
-**When** I run `chrome-cli emulate set --user-agent "Mozilla/5.0 Custom"`
+**When** I run `agentchrome emulate set --user-agent "Mozilla/5.0 Custom"`
 **Then** the user agent is overridden via `Emulation.setUserAgentOverride`
 **And** the command returns JSON with the current emulation settings
 
 ### AC6: Reset user agent to default
 
 **Given** Chrome is running with CDP enabled and user agent is overridden
-**When** I run `chrome-cli emulate set --no-user-agent`
+**When** I run `agentchrome emulate set --no-user-agent`
 **Then** the user agent override is cleared (reset to browser default)
 **And** the command returns JSON confirming the reset
 
 ### AC7: Set color scheme emulation
 
 **Given** Chrome is running with CDP enabled
-**When** I run `chrome-cli emulate set --color-scheme dark`
+**When** I run `agentchrome emulate set --color-scheme dark`
 **Then** the `prefers-color-scheme` media feature is set to `dark` via `Emulation.setEmulatedMedia`
 **And** the command returns JSON with the current emulation settings
 
 ### AC8: Set viewport dimensions
 
 **Given** Chrome is running with CDP enabled
-**When** I run `chrome-cli emulate set --viewport 375x667`
+**When** I run `agentchrome emulate set --viewport 375x667`
 **Then** the viewport is resized via `Emulation.setDeviceMetricsOverride`
 **And** the command returns JSON with current emulation settings including viewport dimensions
 
 ### AC9: Set device scale factor
 
 **Given** Chrome is running with CDP enabled
-**When** I run `chrome-cli emulate set --device-scale 2`
+**When** I run `agentchrome emulate set --device-scale 2`
 **Then** the device pixel ratio is set to 2 via `Emulation.setDeviceMetricsOverride`
 **And** the command returns JSON with current emulation settings
 
 ### AC10: Enable mobile emulation
 
 **Given** Chrome is running with CDP enabled
-**When** I run `chrome-cli emulate set --mobile --viewport 375x667`
+**When** I run `agentchrome emulate set --mobile --viewport 375x667`
 **Then** mobile emulation is enabled (touch events, mobile viewport meta) via `Emulation.setDeviceMetricsOverride`
 **And** touch emulation is enabled via `Emulation.setTouchEmulationEnabled`
 **And** the command returns JSON with mobile emulation active
@@ -102,77 +102,77 @@ The MCP server's `emulate` tool provides comprehensive device emulation includin
 ### AC11: Combine multiple emulation settings
 
 **Given** Chrome is running with CDP enabled
-**When** I run `chrome-cli emulate set --network slow-4g --viewport 375x667 --mobile --color-scheme dark`
+**When** I run `agentchrome emulate set --network slow-4g --viewport 375x667 --mobile --color-scheme dark`
 **Then** all specified settings are applied together
 **And** the command returns JSON reflecting all active emulation settings
 
 ### AC12: Target specific tab for emulation
 
 **Given** Chrome is running with CDP enabled and multiple tabs are open
-**When** I run `chrome-cli emulate set --network 3g --tab 2`
+**When** I run `agentchrome emulate set --network 3g --tab 2`
 **Then** network throttling is applied only to tab 2
 **And** other tabs are not affected
 
 ### AC13: Reset all emulation overrides
 
 **Given** Chrome is running with CDP enabled and emulation overrides are active
-**When** I run `chrome-cli emulate reset`
+**When** I run `agentchrome emulate reset`
 **Then** all emulation overrides are cleared (network, CPU, geolocation, user agent, color scheme, viewport)
 **And** the command returns JSON confirmation
 
 ### AC14: Show current emulation status
 
 **Given** Chrome is running with CDP enabled and some emulation overrides are active
-**When** I run `chrome-cli emulate status`
+**When** I run `agentchrome emulate status`
 **Then** the command returns JSON with all currently active emulation settings
 **And** settings that are not overridden show their default/inactive state
 
 ### AC15: Page resize shorthand
 
 **Given** Chrome is running with CDP enabled
-**When** I run `chrome-cli page resize 1280x720`
+**When** I run `agentchrome page resize 1280x720`
 **Then** the viewport is resized to 1280x720 via `Emulation.setDeviceMetricsOverride`
 **And** the command returns JSON: `{"width": 1280, "height": 720}`
 
 ### AC16: Invalid network profile produces error
 
 **Given** Chrome is running with CDP enabled
-**When** I run `chrome-cli emulate set --network invalid-profile`
+**When** I run `agentchrome emulate set --network invalid-profile`
 **Then** the command exits with a non-zero exit code
 **And** an error message lists the valid network profiles
 
 ### AC17: Invalid viewport format produces error
 
 **Given** Chrome is running with CDP enabled
-**When** I run `chrome-cli emulate set --viewport badformat`
+**When** I run `agentchrome emulate set --viewport badformat`
 **Then** the command exits with a non-zero exit code
 **And** an error message indicates the expected `WIDTHxHEIGHT` format
 
 ### AC18: Invalid geolocation format produces error
 
 **Given** Chrome is running with CDP enabled
-**When** I run `chrome-cli emulate set --geolocation not-a-coord`
+**When** I run `agentchrome emulate set --geolocation not-a-coord`
 **Then** the command exits with a non-zero exit code
 **And** an error message indicates the expected `LAT,LONG` format
 
 ### AC19: CPU throttling rate out of range produces error
 
 **Given** Chrome is running with CDP enabled
-**When** I run `chrome-cli emulate set --cpu 0`
+**When** I run `agentchrome emulate set --cpu 0`
 **Then** the command exits with a non-zero exit code
 **And** an error message indicates the valid range (1-20)
 
 ### AC20: Set network to offline mode
 
 **Given** Chrome is running with CDP enabled
-**When** I run `chrome-cli emulate set --network offline`
+**When** I run `agentchrome emulate set --network offline`
 **Then** the network is fully offline via `Network.emulateNetworkConditions`
 **And** the command returns JSON with `"network": "offline"`
 
 ### AC21: Disable network throttling
 
 **Given** Chrome is running with CDP enabled and network throttling is active
-**When** I run `chrome-cli emulate set --network none`
+**When** I run `agentchrome emulate set --network none`
 **Then** network throttling is disabled
 **And** the command returns JSON with `"network": "none"`
 
@@ -188,12 +188,12 @@ Feature: Device, network, and viewport emulation
     Given Chrome is running with CDP enabled
 
   Scenario: Set network emulation to slow-4g
-    When I run "chrome-cli emulate set --network slow-4g"
+    When I run "agentchrome emulate set --network slow-4g"
     Then the JSON output should contain "network" set to "slow-4g"
     And the exit code should be 0
 
   Scenario: Set CPU throttling
-    When I run "chrome-cli emulate set --cpu 4"
+    When I run "agentchrome emulate set --cpu 4"
     Then the JSON output should contain "cpu" set to 4
     And the exit code should be 0
 

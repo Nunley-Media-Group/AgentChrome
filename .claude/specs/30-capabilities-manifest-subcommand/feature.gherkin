@@ -4,33 +4,33 @@
 # Issue: #30
 
 Feature: Machine-Readable Capabilities Manifest Subcommand
-  As a developer or AI agent integrating with chrome-cli
+  As a developer or AI agent integrating with agentchrome
   I want a capabilities subcommand that outputs a machine-readable manifest
   So that I can programmatically discover the full CLI surface
 
   # --- Happy Path ---
 
   Scenario: Full capabilities manifest output
-    Given chrome-cli is installed
-    When I run "chrome-cli capabilities"
+    Given agentchrome is installed
+    When I run "agentchrome capabilities"
     Then the output is a valid JSON object
-    And the JSON has a "name" field with value "chrome-cli"
+    And the JSON has a "name" field with value "agentchrome"
     And the JSON has a "version" field
     And the JSON has a "commands" array
     And the "commands" array is not empty
     And the exit code is 0
 
   Scenario: Command entries include full metadata
-    Given chrome-cli is installed
-    When I run "chrome-cli capabilities"
+    Given agentchrome is installed
+    When I run "agentchrome capabilities"
     Then each command entry has a "name" field
     And each command entry has a "description" field
     And commands with subcommands have a "subcommands" array
     And each subcommand has "name", "description", "args", and "flags" fields
 
   Scenario: Args and flags include type information
-    Given chrome-cli is installed
-    When I run "chrome-cli capabilities"
+    Given agentchrome is installed
+    When I run "agentchrome capabilities"
     Then the "navigate" command exists in the manifest
     And its subcommands include args with "name", "type", "required", and "description" fields
     And its subcommands include flags with "name", "type", and "description" fields
@@ -38,16 +38,16 @@ Feature: Machine-Readable Capabilities Manifest Subcommand
   # --- Filtering ---
 
   Scenario: Filter by specific command
-    Given chrome-cli is installed
-    When I run "chrome-cli capabilities --command navigate"
+    Given agentchrome is installed
+    When I run "agentchrome capabilities --command navigate"
     Then the output is a valid JSON object
     And the "commands" array has exactly 1 entry
     And the entry has "name" equal to "navigate"
     And the exit code is 0
 
   Scenario: Compact output mode
-    Given chrome-cli is installed
-    When I run "chrome-cli capabilities --compact"
+    Given agentchrome is installed
+    When I run "agentchrome capabilities --compact"
     Then the output is a valid JSON object
     And each command entry has "name" and "description" fields
     And no command entry has a "subcommands" field
@@ -58,8 +58,8 @@ Feature: Machine-Readable Capabilities Manifest Subcommand
   # --- Global Flags ---
 
   Scenario: Global flags are included
-    Given chrome-cli is installed
-    When I run "chrome-cli capabilities"
+    Given agentchrome is installed
+    When I run "agentchrome capabilities"
     Then the JSON has a "global_flags" array
     And "global_flags" contains an entry with name "--port"
     And "global_flags" contains an entry with name "--host"
@@ -72,8 +72,8 @@ Feature: Machine-Readable Capabilities Manifest Subcommand
   # --- Exit Codes ---
 
   Scenario: Exit codes are documented
-    Given chrome-cli is installed
-    When I run "chrome-cli capabilities"
+    Given agentchrome is installed
+    When I run "agentchrome capabilities"
     Then the JSON has an "exit_codes" array
     And "exit_codes" contains an entry with code 0 and name "Success"
     And "exit_codes" contains an entry with code 1 and name "GeneralError"
@@ -85,8 +85,8 @@ Feature: Machine-Readable Capabilities Manifest Subcommand
   # --- Enum Values ---
 
   Scenario: Enum values are listed for flags
-    Given chrome-cli is installed
-    When I run "chrome-cli capabilities --command navigate"
+    Given agentchrome is installed
+    When I run "agentchrome capabilities --command navigate"
     Then the "navigate" command has a subcommand with a "--wait-until" flag
     And the "--wait-until" flag has type "enum"
     And the "--wait-until" flag has a "values" array
@@ -95,8 +95,8 @@ Feature: Machine-Readable Capabilities Manifest Subcommand
   # --- Output Formats ---
 
   Scenario: Pretty-printed JSON output
-    Given chrome-cli is installed
-    When I run "chrome-cli capabilities --pretty"
+    Given agentchrome is installed
+    When I run "agentchrome capabilities --pretty"
     Then the output is a valid JSON object
     And the output contains indentation (multi-line formatted)
     And the exit code is 0
@@ -104,16 +104,16 @@ Feature: Machine-Readable Capabilities Manifest Subcommand
   # --- Error Handling ---
 
   Scenario: Error on unknown command filter
-    Given chrome-cli is installed
-    When I run "chrome-cli capabilities --command nonexistent"
+    Given agentchrome is installed
+    When I run "agentchrome capabilities --command nonexistent"
     Then the exit code is 1
     And stderr contains an error message about unknown command
 
   # --- Auto-Sync Coverage ---
 
   Scenario: Generated manifest covers all CLI commands
-    Given chrome-cli is installed
-    When I run "chrome-cli capabilities"
+    Given agentchrome is installed
+    When I run "agentchrome capabilities"
     Then the "commands" array contains an entry named "connect"
     And the "commands" array contains an entry named "tabs"
     And the "commands" array contains an entry named "navigate"
@@ -136,8 +136,8 @@ Feature: Machine-Readable Capabilities Manifest Subcommand
   # --- Data-Driven: Per-Command Subcommand Coverage ---
 
   Scenario Outline: Commands with subcommands list them
-    Given chrome-cli is installed
-    When I run "chrome-cli capabilities --command <command>"
+    Given agentchrome is installed
+    When I run "agentchrome capabilities --command <command>"
     Then the output is a valid JSON object
     And the command entry has a "subcommands" array
     And the "subcommands" array is not empty

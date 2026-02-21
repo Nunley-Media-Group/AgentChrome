@@ -9,7 +9,7 @@
 
 ## User Story
 
-**As a** developer or AI agent integrating with chrome-cli
+**As a** developer or AI agent integrating with agentchrome
 **I want** a `capabilities` subcommand that outputs a complete, machine-readable JSON manifest of all commands, parameters, and their types
 **So that** I can programmatically discover the full CLI surface and build correct commands without parsing `--help` output
 
@@ -17,7 +17,7 @@
 
 ## Background
 
-AI agents like Claude Code need to understand what commands are available and what parameters they accept. While `--help` is human-readable and the `examples` subcommand shows usage patterns, neither provides a structured, complete schema of the CLI surface. A `chrome-cli capabilities` command outputs a JSON manifest describing every command, subcommand, flag, argument, and return type — essentially an OpenAPI spec for the CLI.
+AI agents like Claude Code need to understand what commands are available and what parameters they accept. While `--help` is human-readable and the `examples` subcommand shows usage patterns, neither provides a structured, complete schema of the CLI surface. A `agentchrome capabilities` command outputs a JSON manifest describing every command, subcommand, flag, argument, and return type — essentially an OpenAPI spec for the CLI.
 
 This differs from the `examples` command (issue #29) in a key way: `examples` shows *how* to use commands with sample invocations, while `capabilities` describes *what* the commands are — their full parameter signatures, types, defaults, and return schemas. Together they give AI agents complete programmatic access to the CLI.
 
@@ -29,21 +29,21 @@ The manifest must be generated at runtime from the clap command tree (not static
 
 ### AC1: Full capabilities manifest output
 
-**Given** chrome-cli is installed
-**When** I run `chrome-cli capabilities`
+**Given** agentchrome is installed
+**When** I run `agentchrome capabilities`
 **Then** the output is a valid JSON object containing `name`, `version`, and `commands` fields
 **And** every command and subcommand in the CLI is represented
 **And** the exit code is 0
 
 **Example**:
-- Given: chrome-cli binary is on PATH
-- When: `chrome-cli capabilities`
-- Then: JSON output with `name: "chrome-cli"`, `version` matching binary version, and `commands` array covering all command groups
+- Given: agentchrome binary is on PATH
+- When: `agentchrome capabilities`
+- Then: JSON output with `name: "agentchrome"`, `version` matching binary version, and `commands` array covering all command groups
 
 ### AC2: Command entries include full metadata
 
-**Given** chrome-cli is installed
-**When** I run `chrome-cli capabilities`
+**Given** agentchrome is installed
+**When** I run `agentchrome capabilities`
 **Then** each command entry includes `name`, `description`, and `subcommands` (if applicable)
 **And** each subcommand entry includes `name`, `description`, `args`, and `flags`
 **And** each arg/flag includes `name`, `type`, `required`, and `description`
@@ -51,57 +51,57 @@ The manifest must be generated at runtime from the clap command tree (not static
 
 ### AC3: Filter by specific command
 
-**Given** chrome-cli is installed
-**When** I run `chrome-cli capabilities --command navigate`
+**Given** agentchrome is installed
+**When** I run `agentchrome capabilities --command navigate`
 **Then** the output is a valid JSON object describing only the `navigate` command and its subcommands
 **And** the exit code is 0
 
 ### AC4: Compact output mode
 
-**Given** chrome-cli is installed
-**When** I run `chrome-cli capabilities --compact`
+**Given** agentchrome is installed
+**When** I run `agentchrome capabilities --compact`
 **Then** the output is a minimal JSON object containing only command names and brief descriptions
 **And** args, flags, and return types are omitted
 **And** the exit code is 0
 
 ### AC5: Global flags are included
 
-**Given** chrome-cli is installed
-**When** I run `chrome-cli capabilities`
+**Given** agentchrome is installed
+**When** I run `agentchrome capabilities`
 **Then** the output includes a `global_flags` array
 **And** the array contains entries for `--port`, `--host`, `--ws-url`, `--timeout`, `--tab`, `--auto-dismiss-dialogs`, `--config`, `--json`, `--pretty`, and `--plain`
 
 ### AC6: Generated from clap definition at runtime
 
 **Given** the CLI has a new command added to the `Command` enum
-**When** I build and run `chrome-cli capabilities`
+**When** I build and run `agentchrome capabilities`
 **Then** the new command appears automatically in the manifest without manual updates
 **And** all its args and flags are correctly reflected
 
 ### AC7: Exit codes are documented
 
-**Given** chrome-cli is installed
-**When** I run `chrome-cli capabilities`
+**Given** agentchrome is installed
+**When** I run `agentchrome capabilities`
 **Then** the output includes an `exit_codes` section documenting all exit code values and their meanings
 
 ### AC8: Error on unknown command filter
 
-**Given** chrome-cli is installed
-**When** I run `chrome-cli capabilities --command nonexistent`
+**Given** agentchrome is installed
+**When** I run `agentchrome capabilities --command nonexistent`
 **Then** stderr contains an error message indicating the command is not recognized
 **And** the exit code is 1
 
 ### AC9: Pretty-printed JSON output
 
-**Given** chrome-cli is installed
-**When** I run `chrome-cli capabilities --pretty`
+**Given** agentchrome is installed
+**When** I run `agentchrome capabilities --pretty`
 **Then** the output is a pretty-printed (indented) JSON object
 **And** the exit code is 0
 
 ### AC10: Enum values are listed
 
-**Given** chrome-cli is installed
-**When** I run `chrome-cli capabilities`
+**Given** agentchrome is installed
+**When** I run `agentchrome capabilities`
 **Then** flags with enum types (e.g., `--wait-until`, `--format`) include a `values` array listing all possible values
 
 ### Generated Gherkin Preview
@@ -113,28 +113,28 @@ Feature: Capabilities Manifest Subcommand
   So that I can programmatically discover the full CLI surface
 
   Scenario: Full capabilities manifest output
-    Given chrome-cli is installed
-    When I run "chrome-cli capabilities"
+    Given agentchrome is installed
+    When I run "agentchrome capabilities"
     Then the output is a valid JSON object
     And the output has "name", "version", and "commands" fields
     And every command group is represented
     And the exit code is 0
 
   Scenario: Filter by specific command
-    Given chrome-cli is installed
-    When I run "chrome-cli capabilities --command navigate"
+    Given agentchrome is installed
+    When I run "agentchrome capabilities --command navigate"
     Then the output describes only the "navigate" command
     And the exit code is 0
 
   Scenario: Compact output mode
-    Given chrome-cli is installed
-    When I run "chrome-cli capabilities --compact"
+    Given agentchrome is installed
+    When I run "agentchrome capabilities --compact"
     Then the output contains only command names and descriptions
     And args and flags are omitted
 
   Scenario: Error on unknown command
-    Given chrome-cli is installed
-    When I run "chrome-cli capabilities --command nonexistent"
+    Given agentchrome is installed
+    When I run "agentchrome capabilities --command nonexistent"
     Then stderr contains an error message
     And the exit code is 1
 ```
@@ -145,7 +145,7 @@ Feature: Capabilities Manifest Subcommand
 
 | ID | Requirement | Priority | Notes |
 |----|-------------|----------|-------|
-| FR1 | `chrome-cli capabilities` outputs a complete JSON manifest of all commands, subcommands, args, flags, and types | Must | Generated from clap at runtime |
+| FR1 | `agentchrome capabilities` outputs a complete JSON manifest of all commands, subcommands, args, flags, and types | Must | Generated from clap at runtime |
 | FR2 | `--command <CMD>` filters output to a single command group | Must | |
 | FR3 | `--compact` produces minimal output (names + descriptions only) | Must | |
 | FR4 | `--pretty` produces indented JSON output | Must | Follows existing OutputFormat pattern |
@@ -165,7 +165,7 @@ Feature: Capabilities Manifest Subcommand
 |--------|-------------|
 | **Performance** | Command should respond in < 50ms (no Chrome connection needed) |
 | **Security** | No security implications — purely informational, no network/CDP calls |
-| **Platforms** | Same as chrome-cli: macOS, Linux, Windows |
+| **Platforms** | Same as agentchrome: macOS, Linux, Windows |
 | **Reliability** | Deterministic output — always reflects the current binary's command tree |
 | **Maintainability** | Zero manual maintenance — adding commands to the `Command` enum is sufficient |
 
@@ -200,7 +200,7 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 
 | Field | Type | Description |
 |-------|------|-------------|
-| name | String | CLI binary name ("chrome-cli") |
+| name | String | CLI binary name ("agentchrome") |
 | version | String | Binary version from Cargo.toml |
 | commands | Array | Command group descriptors |
 | commands[].name | String | Command name (e.g., "navigate") |

@@ -11,7 +11,7 @@
 
 | AC | Description | Status | Evidence |
 |----|-------------|--------|----------|
-| AC1 | Header with badges and description | PASS | `README.md:1-8` — H1 "chrome-cli", CI badge, license badge, crates.io badge (commented out with TODO) |
+| AC1 | Header with badges and description | PASS | `README.md:1-8` — H1 "agentchrome", CI badge, license badge, crates.io badge (commented out with TODO) |
 | AC2 | Features section with capabilities list | PASS | `README.md:11-37` — 13 bullet items covering all required capabilities + comparison table vs Puppeteer/Playwright/MCP |
 | AC3 | Installation with multiple methods | PASS | `README.md:38-91` — Pre-built binaries with curl one-liners, `cargo install`, build from source, 5-platform table |
 | AC4 | Quick Start with step-by-step guide | PASS | `README.md:92-126` — 5 numbered steps: install, start Chrome, connect, navigate, page snapshot |

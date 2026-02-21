@@ -28,125 +28,125 @@ Browser console messages are critical for debugging and monitoring web applicati
 ### AC1: List console messages from current page
 
 **Given** Chrome is running with CDP enabled and a page has generated console messages
-**When** I run `chrome-cli console read`
+**When** I run `agentchrome console read`
 **Then** the output is a JSON array of console messages
 **And** each message contains `id`, `type`, `text`, `timestamp`, `url`, `line`, and `column` fields
 **And** the exit code is 0
 
 **Example**:
 - Given: a page that has called `console.log("hello")`
-- When: `chrome-cli console read`
+- When: `agentchrome console read`
 - Then: `[{"id": 0, "type": "log", "text": "hello", "timestamp": "...", "url": "...", "line": 1, "column": 1}]`
 
 ### AC2: Filter console messages by type
 
 **Given** Chrome is running with CDP enabled and a page has generated log, warn, and error messages
-**When** I run `chrome-cli console read --type error,warn`
+**When** I run `agentchrome console read --type error,warn`
 **Then** only messages with type "error" or "warn" are returned
 **And** messages with type "log" are excluded
 
 ### AC3: Use errors-only shorthand filter
 
 **Given** Chrome is running with CDP enabled and a page has generated log and error messages
-**When** I run `chrome-cli console read --errors-only`
+**When** I run `agentchrome console read --errors-only`
 **Then** only messages with type "error" or "assert" are returned
 
 ### AC4: Limit number of returned messages
 
 **Given** Chrome is running with CDP enabled and a page has generated more than 10 console messages
-**When** I run `chrome-cli console read --limit 5`
+**When** I run `agentchrome console read --limit 5`
 **Then** at most 5 messages are returned
 **And** the exit code is 0
 
 ### AC5: Paginate through console messages
 
 **Given** Chrome is running with CDP enabled and a page has generated 20 console messages
-**When** I run `chrome-cli console read --limit 10 --page 1`
+**When** I run `agentchrome console read --limit 10 --page 1`
 **Then** messages 10-19 are returned (0-based page indexing)
 
 ### AC6: Include messages from previous navigations
 
 **Given** Chrome is running with CDP enabled and console messages exist from a previous navigation
-**When** I run `chrome-cli console read --include-preserved`
+**When** I run `agentchrome console read --include-preserved`
 **Then** messages from both the current and previous navigations are included
 
 ### AC7: Target a specific tab
 
 **Given** Chrome is running with CDP enabled and multiple tabs are open
-**When** I run `chrome-cli console read --tab 2`
+**When** I run `agentchrome console read --tab 2`
 **Then** console messages from tab 2 are returned
 
 ### AC8: Get detailed information about a specific console message
 
 **Given** Chrome is running with CDP enabled and console messages exist
-**When** I run `chrome-cli console read 0`
+**When** I run `agentchrome console read 0`
 **Then** the output contains detailed information including full args, stack trace, and source location
 **And** the stack trace includes file, line, column, and function name for each frame
 
 ### AC9: Stack traces limited to 50 frames
 
 **Given** Chrome is running with CDP enabled and a console message has a stack trace exceeding 50 frames
-**When** I run `chrome-cli console read <MSG_ID>`
+**When** I run `agentchrome console read <MSG_ID>`
 **Then** the stack trace is truncated to 50 frames
 
 ### AC10: Stream console messages in real-time
 
 **Given** Chrome is running with CDP enabled and a page is loaded
-**When** I run `chrome-cli console follow`
+**When** I run `agentchrome console follow`
 **And** the page generates a console.log("streaming")
 **Then** the message is printed to stdout as it arrives (one per line)
 
 ### AC11: Stream with type filter
 
 **Given** Chrome is running with CDP enabled and a page is loaded
-**When** I run `chrome-cli console follow --type error`
+**When** I run `agentchrome console follow --type error`
 **And** the page generates a console.log and a console.error
 **Then** only the error message is printed to stdout
 
 ### AC12: Stream with errors-only filter
 
 **Given** Chrome is running with CDP enabled and a page is loaded
-**When** I run `chrome-cli console follow --errors-only`
+**When** I run `agentchrome console follow --errors-only`
 **And** the page generates a console.log and a console.error
 **Then** only the error message is printed to stdout
 
 ### AC13: Stream with timeout
 
 **Given** Chrome is running with CDP enabled and a page is loaded
-**When** I run `chrome-cli console follow --timeout 1000`
+**When** I run `agentchrome console follow --timeout 1000`
 **Then** the command exits after 1000ms
 **And** the exit code is 0 if no error-level messages were seen
 
 ### AC14: Stream returns non-zero exit code on errors
 
 **Given** Chrome is running with CDP enabled and a page is loaded
-**When** I run `chrome-cli console follow --timeout 2000`
+**When** I run `agentchrome console follow --timeout 2000`
 **And** the page generates a console.error("failure")
 **Then** the exit code is non-zero (indicating error-level messages were seen)
 
 ### AC15: Error cause chains for uncaught exceptions
 
 **Given** Chrome is running with CDP enabled and a page throws an uncaught exception with a cause chain
-**When** I run `chrome-cli console read`
+**When** I run `agentchrome console read`
 **Then** the error message includes the full cause chain
 
 ### AC16: Default limit is 50 messages
 
 **Given** Chrome is running with CDP enabled and a page has generated 100 console messages
-**When** I run `chrome-cli console read` (without `--limit`)
+**When** I run `agentchrome console read` (without `--limit`)
 **Then** at most 50 messages are returned
 
 ### AC17: Console read with no messages returns empty array
 
 **Given** Chrome is running with CDP enabled and a page has generated no console messages
-**When** I run `chrome-cli console read`
+**When** I run `agentchrome console read`
 **Then** the output is an empty JSON array `[]`
 **And** the exit code is 0
 
 ### AC18: Console read with invalid message ID errors
 
 **Given** Chrome is running with CDP enabled
-**When** I run `chrome-cli console read 9999`
+**When** I run `agentchrome console read 9999`
 **Then** the exit code is nonzero
 **And** stderr contains an error that message ID 9999 was not found
 
@@ -161,18 +161,18 @@ Feature: Console Message Reading with Filtering
   Scenario: List console messages from current page
     Given Chrome is running with CDP enabled
     And a page has generated console messages
-    When I run "chrome-cli console read"
+    When I run "agentchrome console read"
     Then the output is a JSON array of console messages
     And the exit code should be 0
 
   Scenario: Filter by message type
     Given Chrome is running with CDP enabled
-    When I run "chrome-cli console read --type error,warn"
+    When I run "agentchrome console read --type error,warn"
     Then only error and warn messages are returned
 
   Scenario: Stream console messages in real-time
     Given Chrome is running with CDP enabled
-    When I run "chrome-cli console follow --timeout 2000"
+    When I run "agentchrome console follow --timeout 2000"
     Then messages are printed as they arrive
 
   # ... all ACs become scenarios
@@ -209,7 +209,7 @@ Feature: Console Message Reading with Filtering
 | **Performance** | `console follow` should have < 100ms latency from event to output |
 | **Reliability** | Message collection must be navigation-aware (last 3 navigations) |
 | **Reliability** | `console follow` must handle WebSocket disconnection gracefully |
-| **Platforms** | macOS, Linux, Windows (all platforms supported by chrome-cli) |
+| **Platforms** | macOS, Linux, Windows (all platforms supported by agentchrome) |
 
 ---
 

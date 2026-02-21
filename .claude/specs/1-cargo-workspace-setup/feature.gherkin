@@ -4,7 +4,7 @@
 # Issue: #1
 
 Feature: Cargo workspace setup, linting, license, and README scaffold
-  As a developer contributing to chrome-cli
+  As a developer contributing to agentchrome
   I want a properly configured Rust project with workspace setup, linting, and project metadata
   So that I can build, test, and lint the project with zero warnings from day one
 
@@ -14,7 +14,7 @@ Feature: Cargo workspace setup, linting, license, and README scaffold
     Given a freshly cloned repository
     When I inspect "Cargo.toml"
     Then it contains a workspace section with resolver "3"
-    And it contains a package section with name "chrome-cli"
+    And it contains a package section with name "agentchrome"
     And it contains version "0.1.0" and edition "2024"
     And it contains metadata for authors, license, repository, description, keywords, and categories
 
@@ -52,7 +52,7 @@ Feature: Cargo workspace setup, linting, license, and README scaffold
   Scenario: Minimal main.rs compiles and prints version
     Given the project has been set up
     When I run "cargo run"
-    Then it prints "chrome-cli 0.1.0"
+    Then it prints "agentchrome 0.1.0"
     And the process exits with code 0
 
   # --- Documentation ---
@@ -60,7 +60,7 @@ Feature: Cargo workspace setup, linting, license, and README scaffold
   Scenario: Scaffold README exists
     Given a freshly cloned repository
     When I inspect "README.md"
-    Then it contains the project name "chrome-cli"
+    Then it contains the project name "agentchrome"
     And it contains a one-line description
     And it contains an "under construction" notice
 

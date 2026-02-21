@@ -9,7 +9,7 @@
 
 ## Overview
 
-This feature adds TOML-based configuration file support to chrome-cli, allowing users to set persistent defaults for connection, launch, output, and tab behavior settings. A new `src/config.rs` module handles config file discovery, parsing, and merging. A new `Config` command group (`config show`, `config init`, `config path`) is added to the CLI.
+This feature adds TOML-based configuration file support to agentchrome, allowing users to set persistent defaults for connection, launch, output, and tab behavior settings. A new `src/config.rs` module handles config file discovery, parsing, and merging. A new `Config` command group (`config show`, `config init`, `config path`) is added to the CLI.
 
 The config module follows the same patterns as the existing `session.rs` module: standalone file I/O with typed error handling, no external dependencies beyond `toml` and `dirs` crates, and testable `_to`/`_from` variants for path-independent testing.
 
@@ -70,7 +70,7 @@ The precedence chain is: CLI flags > environment variables > config file > built
 ```
 CLI flags (highest)
     ↓  override
-Environment variables (CHROME_CLI_PORT, etc.)
+Environment variables (AGENTCHROME_PORT, etc.)
     ↓  override
 Config file (first found in search order)
     ↓  override
@@ -81,10 +81,10 @@ Built-in defaults (lowest)
 
 ```
 1. --config <PATH>         (explicit flag)
-2. $CHROME_CLI_CONFIG      (environment variable)
-3. ./.chrome-cli.toml      (project-local)
-4. ~/.config/chrome-cli/config.toml  (XDG on Unix, %APPDATA% on Windows)
-5. ~/.chrome-cli.toml      (home directory fallback)
+2. $AGENTCHROME_CONFIG      (environment variable)
+3. ./.agentchrome.toml      (project-local)
+4. ~/.config/agentchrome/config.toml  (XDG on Unix, %APPDATA% on Windows)
+5. ~/.agentchrome.toml      (home directory fallback)
 ```
 
 ---
@@ -111,12 +111,12 @@ Added to `GlobalOpts` as `Option<PathBuf>`, `global = true`.
 
 | Variable | Maps to | Description |
 |----------|---------|-------------|
-| `CHROME_CLI_CONFIG` | `--config` | Path to config file |
-| `CHROME_CLI_HOST` | `--host` | CDP host address |
-| `CHROME_CLI_PORT` | `--port` | CDP port number |
-| `CHROME_CLI_TIMEOUT` | `--timeout` | Command timeout ms |
+| `AGENTCHROME_CONFIG` | `--config` | Path to config file |
+| `AGENTCHROME_HOST` | `--host` | CDP host address |
+| `AGENTCHROME_PORT` | `--port` | CDP port number |
+| `AGENTCHROME_TIMEOUT` | `--timeout` | Command timeout ms |
 
-Note: clap's `env` feature is already enabled in Cargo.toml but not used on any flags. We will add `env = "CHROME_CLI_*"` attributes to the relevant `GlobalOpts` fields.
+Note: clap's `env` feature is already enabled in Cargo.toml but not used on any flags. We will add `env = "AGENTCHROME_*"` attributes to the relevant `GlobalOpts` fields.
 
 ### Request / Response Schemas
 
@@ -125,7 +125,7 @@ Note: clap's `env` feature is already enabled in Cargo.toml but not used on any 
 **Output (JSON):**
 ```json
 {
-  "config_path": "/home/user/.chrome-cli.toml",
+  "config_path": "/home/user/.agentchrome.toml",
   "connection": {
     "host": "127.0.0.1",
     "port": 9222,
@@ -152,14 +152,14 @@ Note: clap's `env` feature is already enabled in Cargo.toml but not used on any 
 **Output (success):**
 ```json
 {
-  "created": "/home/user/.config/chrome-cli/config.toml"
+  "created": "/home/user/.config/agentchrome/config.toml"
 }
 ```
 
 **Output (already exists):**
 ```json
 {
-  "error": "Config file already exists: /home/user/.config/chrome-cli/config.toml",
+  "error": "Config file already exists: /home/user/.config/agentchrome/config.toml",
   "code": 1
 }
 ```
@@ -169,7 +169,7 @@ Note: clap's `env` feature is already enabled in Cargo.toml but not used on any 
 **Output (found):**
 ```json
 {
-  "config_path": "/home/user/.chrome-cli.toml"
+  "config_path": "/home/user/.agentchrome.toml"
 }
 ```
 
@@ -295,7 +295,7 @@ N/A — this is a CLI tool. Output follows the existing JSON/plain output patter
 | **B: Post-parse merge** | Parse CLI first, then merge config values for unset fields | Simple, clap stays unchanged, clear precedence | Config values don't appear in `--help` | **Selected** |
 | **C: Use clap's `env` feature for everything** | Map all config to env vars, use clap `env = "..."` | Zero new code for merging | Can't support file-based config, env-only | Rejected — doesn't satisfy file requirement |
 
-**Decision**: Option B — post-parse merge. After `Cli::parse()`, load the config file and fill in any `GlobalOpts` fields that weren't explicitly set by the user. This is the simplest approach and matches how tools like `cargo`, `gh`, and `rustfmt` handle config. The `env` feature on clap attributes is used for environment variable overrides (CHROME_CLI_PORT, etc.), which composes naturally with Option B.
+**Decision**: Option B — post-parse merge. After `Cli::parse()`, load the config file and fill in any `GlobalOpts` fields that weren't explicitly set by the user. This is the simplest approach and matches how tools like `cargo`, `gh`, and `rustfmt` handle config. The `env` feature on clap attributes is used for environment variable overrides (AGENTCHROME_PORT, etc.), which composes naturally with Option B.
 
 ---
 

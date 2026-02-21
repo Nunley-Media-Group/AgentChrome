@@ -17,14 +17,14 @@ Feature: Form input and filling
   Scenario: Fill a text input field by UID
     Given an accessibility snapshot has been taken with UIDs assigned
     And the page has a text input with UID "s1"
-    When I run "chrome-cli form fill s1 'John Doe'"
+    When I run "agentchrome form fill s1 'John Doe'"
     Then the exit code should be 0
     And the output JSON "filled" should be "s1"
     And the output JSON "value" should be "John Doe"
 
   Scenario: Fill a text input field by CSS selector
     Given the page has a text input with id "email"
-    When I run "chrome-cli form fill css:#email user@example.com"
+    When I run "agentchrome form fill css:#email user@example.com"
     Then the exit code should be 0
     And the output JSON "filled" should be "css:#email"
     And the output JSON "value" should be "user@example.com"
@@ -32,7 +32,7 @@ Feature: Form input and filling
   Scenario: Fill a select dropdown
     Given an accessibility snapshot has been taken with UIDs assigned
     And the page has a select element with UID "s3" and options "option1", "option2", "option3"
-    When I run "chrome-cli form fill s3 option2"
+    When I run "agentchrome form fill s3 option2"
     Then the exit code should be 0
     And the output JSON "filled" should be "s3"
     And the output JSON "value" should be "option2"
@@ -41,7 +41,7 @@ Feature: Form input and filling
   Scenario: Fill a textarea
     Given an accessibility snapshot has been taken with UIDs assigned
     And the page has a textarea with UID "s4"
-    When I run "chrome-cli form fill s4 'Multi-line text content'"
+    When I run "agentchrome form fill s4 'Multi-line text content'"
     Then the exit code should be 0
     And the output JSON "filled" should be "s4"
     And the output JSON "value" should be "Multi-line text content"
@@ -49,7 +49,7 @@ Feature: Form input and filling
   Scenario: Toggle a checkbox to checked
     Given an accessibility snapshot has been taken with UIDs assigned
     And the page has an unchecked checkbox with UID "s5"
-    When I run "chrome-cli form fill s5 true"
+    When I run "agentchrome form fill s5 true"
     Then the exit code should be 0
     And the output JSON "filled" should be "s5"
     And the output JSON "value" should be "true"
@@ -58,7 +58,7 @@ Feature: Form input and filling
   Scenario: Toggle a checkbox to unchecked
     Given an accessibility snapshot has been taken with UIDs assigned
     And the page has a checked checkbox with UID "s5"
-    When I run "chrome-cli form fill s5 false"
+    When I run "agentchrome form fill s5 false"
     Then the exit code should be 0
     And the checkbox should be unchecked
 
@@ -67,7 +67,7 @@ Feature: Form input and filling
   Scenario: Fill with --include-snapshot flag
     Given an accessibility snapshot has been taken with UIDs assigned
     And the page has a text input with UID "s1"
-    When I run "chrome-cli form fill s1 'Jane' --include-snapshot"
+    When I run "agentchrome form fill s1 'Jane' --include-snapshot"
     Then the exit code should be 0
     And the output JSON "filled" should be "s1"
     And the output JSON "value" should be "Jane"
@@ -78,7 +78,7 @@ Feature: Form input and filling
   Scenario: Fill multiple fields at once from inline JSON
     Given an accessibility snapshot has been taken with UIDs assigned
     And the page has text inputs with UIDs "s1" and "s2"
-    When I run "chrome-cli form fill-many '[{\"uid\":\"s1\",\"value\":\"John\"},{\"uid\":\"s2\",\"value\":\"Doe\"}]'"
+    When I run "agentchrome form fill-many '[{\"uid\":\"s1\",\"value\":\"John\"},{\"uid\":\"s2\",\"value\":\"Doe\"}]'"
     Then the exit code should be 0
     And the output should be a JSON array with 2 results
     And the first result "filled" should be "s1"
@@ -90,14 +90,14 @@ Feature: Form input and filling
     Given an accessibility snapshot has been taken with UIDs assigned
     And the page has text inputs with UIDs "s1" and "s2"
     And a JSON file "fields.json" contains '[{"uid":"s1","value":"John"},{"uid":"s2","value":"Doe"}]'
-    When I run "chrome-cli form fill-many --file fields.json"
+    When I run "agentchrome form fill-many --file fields.json"
     Then the exit code should be 0
     And the output should be a JSON array with 2 results
 
   Scenario: Fill many with --include-snapshot flag
     Given an accessibility snapshot has been taken with UIDs assigned
     And the page has text inputs with UIDs "s1" and "s2"
-    When I run "chrome-cli form fill-many '[{\"uid\":\"s1\",\"value\":\"John\"}]' --include-snapshot"
+    When I run "agentchrome form fill-many '[{\"uid\":\"s1\",\"value\":\"John\"}]' --include-snapshot"
     Then the exit code should be 0
     And the output JSON should contain a "snapshot" object
 
@@ -106,7 +106,7 @@ Feature: Form input and filling
   Scenario: Clear a form field
     Given an accessibility snapshot has been taken with UIDs assigned
     And the page has a text input with UID "s1" containing value "old"
-    When I run "chrome-cli form clear s1"
+    When I run "agentchrome form clear s1"
     Then the exit code should be 0
     And the output JSON "cleared" should be "s1"
     And the text input value should be empty
@@ -117,7 +117,7 @@ Feature: Form input and filling
     Given an accessibility snapshot has been taken with UIDs assigned
     And the page has a React-controlled input with UID "s1"
     And an event listener records dispatched events
-    When I run "chrome-cli form fill s1 'test'"
+    When I run "agentchrome form fill s1 'test'"
     Then an "input" event should have been dispatched with bubbles true
     And a "change" event should have been dispatched with bubbles true
 
@@ -126,7 +126,7 @@ Feature: Form input and filling
   Scenario: Fill with --tab flag targets specific tab
     Given multiple tabs are open
     And tab "TAB_ID" has a form with text input UID "s1"
-    When I run "chrome-cli form fill s1 'value' --tab TAB_ID"
+    When I run "agentchrome form fill s1 'value' --tab TAB_ID"
     Then the exit code should be 0
     And the field in the specified tab should be filled
 
@@ -134,12 +134,12 @@ Feature: Form input and filling
 
   Scenario: Fill nonexistent UID returns error
     Given an accessibility snapshot has been taken with UIDs assigned
-    When I run "chrome-cli form fill s999 'value'"
+    When I run "agentchrome form fill s999 'value'"
     Then the exit code should be nonzero
     And stderr should contain "UID not found"
 
   Scenario: Fill without required arguments
-    When I run "chrome-cli form fill"
+    When I run "agentchrome form fill"
     Then the exit code should be nonzero
     And stderr should contain "required"
 
@@ -148,7 +148,7 @@ Feature: Form input and filling
   Scenario Outline: Fill various input types
     Given an accessibility snapshot has been taken with UIDs assigned
     And the page has an input of type "<type>" with UID "s1"
-    When I run "chrome-cli form fill s1 '<value>'"
+    When I run "agentchrome form fill s1 '<value>'"
     Then the exit code should be 0
     And the output JSON "value" should be "<value>"
 

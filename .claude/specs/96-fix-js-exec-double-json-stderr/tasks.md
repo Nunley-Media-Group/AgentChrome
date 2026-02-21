@@ -27,7 +27,7 @@
 - [ ] `AppError::print_json_stderr()` uses `custom_json` when `Some`, falling back to `ErrorOutput` serialization when `None`
 - [ ] A constructor or builder method is added to `AppError` to set `custom_json` (e.g., `AppError::js_execution_failed_with_json()` or a `.with_custom_json()` builder)
 - [ ] `src/js.rs` lines 319-327: remove `eprintln!("{err_json}")`, serialize `JsExecError` to a string, and pass it via the new `AppError` constructor so the global handler emits it
-- [ ] Running `chrome-cli js exec "throw new Error('test')"` produces exactly one JSON object on stderr
+- [ ] Running `agentchrome js exec "throw new Error('test')"` produces exactly one JSON object on stderr
 - [ ] The single JSON object contains `error`, `stack`, and `code` fields (same schema as the current first JSON)
 - [ ] No changes to `src/main.rs`
 

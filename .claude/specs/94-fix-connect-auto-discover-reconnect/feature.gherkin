@@ -8,7 +8,7 @@
 Feature: Connect auto-discover reconnects to existing session
   The connect command's auto-discover path previously skipped the session file
   and called discover_chrome() directly, which could launch a second Chrome
-  instance instead of reconnecting to the one already managed by chrome-cli.
+  instance instead of reconnecting to the one already managed by agentchrome.
   This was fixed by adding a session file check with health verification
   before attempting discovery.
 
@@ -38,7 +38,7 @@ Feature: Connect auto-discover reconnects to existing session
     Given Chrome was launched with "connect --launch --headless"
     When I run "connect" without any flags
     And I run "connect --disconnect"
-    Then exactly zero chrome-cli-managed Chrome processes remain running
+    Then exactly zero agentchrome-managed Chrome processes remain running
 
   # --- PID Preservation Regression Guard ---
 

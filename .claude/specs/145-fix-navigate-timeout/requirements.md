@@ -13,10 +13,10 @@
 
 ### Steps to Reproduce
 
-1. Launch Chrome: `chrome-cli connect --launch`
-2. Navigate to any page: `chrome-cli navigate https://example.com`
-3. Navigate to another: `chrome-cli navigate https://example.com/about`
-4. Run with explicit timeout: `CHROME_CLI_TIMEOUT=5000 chrome-cli navigate back`
+1. Launch Chrome: `agentchrome connect --launch`
+2. Navigate to any page: `agentchrome navigate https://example.com`
+3. Navigate to another: `agentchrome navigate https://example.com/about`
+4. Run with explicit timeout: `AGENTCHROME_TIMEOUT=5000 agentchrome navigate back`
 5. If the navigation event is missed (e.g., SPA), observe the command still waits 30 seconds instead of 5 seconds
 
 ### Environment
@@ -38,7 +38,7 @@ Always
 
 | | Description |
 |---|-------------|
-| **Expected** | `navigate back`, `navigate forward`, and `navigate reload` should respect the `--timeout` flag and `CHROME_CLI_TIMEOUT` environment variable, using the specified timeout instead of the hardcoded 30 seconds |
+| **Expected** | `navigate back`, `navigate forward`, and `navigate reload` should respect the `--timeout` flag and `AGENTCHROME_TIMEOUT` environment variable, using the specified timeout instead of the hardcoded 30 seconds |
 | **Actual** | All three commands hardcode `DEFAULT_NAVIGATE_TIMEOUT_MS` (30,000ms) and ignore `global.timeout` entirely |
 
 ### Error Output
@@ -57,37 +57,37 @@ Always
 ### AC1: navigate back respects --timeout
 
 **Given** a tab with navigation history
-**When** I run `chrome-cli --timeout 5000 navigate back` and the navigation event is not detected
+**When** I run `agentchrome --timeout 5000 navigate back` and the navigation event is not detected
 **Then** the command times out after approximately 5 seconds (not 30 seconds)
 
 ### AC2: navigate forward respects --timeout
 
 **Given** a tab with forward navigation history
-**When** I run `chrome-cli --timeout 5000 navigate forward` and the navigation event is not detected
+**When** I run `agentchrome --timeout 5000 navigate forward` and the navigation event is not detected
 **Then** the command times out after approximately 5 seconds (not 30 seconds)
 
 ### AC3: navigate reload respects --timeout
 
 **Given** a tab with a loaded page
-**When** I run `chrome-cli --timeout 5000 navigate reload` and the load event is not detected
+**When** I run `agentchrome --timeout 5000 navigate reload` and the load event is not detected
 **Then** the command times out after approximately 5 seconds (not 30 seconds)
 
-### AC4: CHROME_CLI_TIMEOUT environment variable works for history navigation
+### AC4: AGENTCHROME_TIMEOUT environment variable works for history navigation
 
-**Given** `CHROME_CLI_TIMEOUT=5000` is set
-**When** I run `chrome-cli navigate back` and the navigation event is not detected
+**Given** `AGENTCHROME_TIMEOUT=5000` is set
+**When** I run `agentchrome navigate back` and the navigation event is not detected
 **Then** the command times out after approximately 5 seconds
 
 ### AC5: Default timeout preserved when no override specified
 
-**Given** no `--timeout` flag or `CHROME_CLI_TIMEOUT` is set
-**When** I run `chrome-cli navigate back`
+**Given** no `--timeout` flag or `AGENTCHROME_TIMEOUT` is set
+**When** I run `agentchrome navigate back`
 **Then** the command uses the default 30-second timeout
 
 ### AC6: navigate URL still respects per-command --timeout
 
 **Given** the `navigate <URL>` subcommand has its own `--timeout` flag
-**When** I run `chrome-cli navigate https://example.com --timeout 5000`
+**When** I run `agentchrome navigate https://example.com --timeout 5000`
 **Then** the per-command timeout is used (existing behavior preserved)
 
 ---

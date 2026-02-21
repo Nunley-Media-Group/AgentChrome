@@ -39,7 +39,7 @@ Build the debug binary, run every CLI command against a real website (google.com
 1. Run `cargo build` (debug mode for richer error output)
 2. Capture and display the build output
 3. If the build fails, **stop immediately** and report the build failure — do not continue
-4. Set `CLI` variable to `./target/debug/chrome-cli` for all subsequent commands
+4. Set `CLI` variable to `./target/debug/agentchrome` for all subsequent commands
 
 ### Step 3: Enter Plan Mode
 
@@ -67,7 +67,7 @@ Present the plan to the user for approval before proceeding.
 
 ### Step 4: Execute Tests Systematically
 
-1. Launch Chrome headless via `chrome-cli connect --launch --headless`
+1. Launch Chrome headless via `agentchrome connect --launch --headless`
 2. For each command group in the approved plan, run the actual CLI binary and capture:
    - **stdout** (JSON output)
    - **stderr** (error output)
@@ -92,7 +92,7 @@ For each failure or unexpected behavior:
 
 ### Step 6: Clean Up Chrome
 
-1. Run `chrome-cli connect --disconnect`
+1. Run `agentchrome connect --disconnect`
 2. Verify no orphan Chrome processes remain using `pgrep -f chrome`
 3. Kill any remaining headless Chrome processes
 

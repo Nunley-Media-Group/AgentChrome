@@ -63,7 +63,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] `PageSnapshotArgs` struct with `--verbose` (`bool`) and `--file` (`Option<PathBuf>`) arguments
 - [ ] `Snapshot(PageSnapshotArgs)` variant added to `PageCommand` enum
 - [ ] `cargo build` compiles without errors
-- [ ] `chrome-cli page snapshot --help` shows the verbose and file options plus global flags
+- [ ] `agentchrome page snapshot --help` shows the verbose and file options plus global flags
 
 **Notes**: Follow the pattern of `PageTextArgs`. The `--json`, `--pretty`, `--plain`, `--tab` flags are already global.
 
@@ -92,11 +92,11 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] Truncation: if node count exceeds 10,000, stops building and appends truncation message
 - [ ] `SnapshotState` struct with `url`, `timestamp`, `uid_map` — derives `Serialize`, `Deserialize`
 - [ ] `write_snapshot_state(state: &SnapshotState) -> Result<(), AppError>`:
-  - Writes to `~/.chrome-cli/snapshot.json`
+  - Writes to `~/.agentchrome/snapshot.json`
   - Uses atomic write pattern (write tmp, rename)
   - Sets `0o600` permissions on Unix
 - [ ] `read_snapshot_state() -> Result<Option<SnapshotState>, AppError>`:
-  - Reads from `~/.chrome-cli/snapshot.json`
+  - Reads from `~/.agentchrome/snapshot.json`
   - Returns `None` if file doesn't exist
 - [ ] Unit tests:
   - `SnapshotNode` serialization (JSON fields, skip_serializing_if)
@@ -218,9 +218,9 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] `cargo fmt --check` passes
 - [ ] `cargo test --lib` passes (all unit tests including new ones)
 - [ ] `cargo build` succeeds
-- [ ] `chrome-cli page snapshot --help` displays expected usage info
-- [ ] `chrome-cli page snapshot --verbose --help` shows verbose flag
-- [ ] `chrome-cli page snapshot --file /tmp/test.txt --help` shows file option
+- [ ] `agentchrome page snapshot --help` displays expected usage info
+- [ ] `agentchrome page snapshot --verbose --help` shows verbose flag
+- [ ] `agentchrome page snapshot --file /tmp/test.txt --help` shows file option
 
 ---
 

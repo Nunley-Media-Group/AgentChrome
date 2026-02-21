@@ -253,7 +253,7 @@ impl ManagedSession {
 
     /// Install dialog interceptor scripts that override `window.alert`,
     /// `window.confirm`, and `window.prompt` to store dialog metadata in a
-    /// cookie named `__chrome_cli_dialog` before calling the original function.
+    /// cookie named `__agentchrome_dialog` before calling the original function.
     ///
     /// This enables `dialog info` and `dialog handle` to retrieve dialog type,
     /// message, and default value via `Network.getCookies` even when the dialog
@@ -263,10 +263,10 @@ impl ManagedSession {
     /// to install interceptors never breaks the calling command.
     pub async fn install_dialog_interceptors(&self) {
         let script = r"(function(){
-if(window.__chrome_cli_intercepted)return;
-window.__chrome_cli_intercepted=true;
+if(window.__agentchrome_intercepted)return;
+window.__agentchrome_intercepted=true;
 var oA=window.alert,oC=window.confirm,oP=window.prompt;
-function s(t,m,d){try{document.cookie='__chrome_cli_dialog='+
+function s(t,m,d){try{document.cookie='__agentchrome_dialog='+
 encodeURIComponent(JSON.stringify({type:t,message:String(m||''),
 defaultValue:String(d||''),timestamp:Date.now()}))+
 '; path=/; max-age=300';}catch(e){}}

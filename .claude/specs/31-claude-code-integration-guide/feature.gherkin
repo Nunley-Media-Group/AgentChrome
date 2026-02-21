@@ -6,7 +6,7 @@
 Feature: Claude Code Integration Guide
   As a developer using Claude Code for browser automation
   I want a comprehensive integration guide and CLAUDE.md template
-  So that Claude Code can immediately discover and use chrome-cli
+  So that Claude Code can immediately discover and use agentchrome
 
   # --- Happy Path ---
 
@@ -14,16 +14,16 @@ Feature: Claude Code Integration Guide
     Given the file "docs/claude-code.md" exists in the repository
     When I read the integration guide
     Then it contains a "Discovery" or "Setup" section
-    And it mentions "chrome-cli capabilities" for machine-readable discovery
-    And it mentions "chrome-cli examples" for learning commands
+    And it mentions "agentchrome capabilities" for machine-readable discovery
+    And it mentions "agentchrome examples" for learning commands
     And it provides a setup checklist
 
   Scenario: CLAUDE.md template is provided as a drop-in example
     Given the file "examples/CLAUDE.md.example" exists in the repository
     When I read the template file
-    Then it contains "chrome-cli connect" for launching Chrome
-    And it contains "chrome-cli page snapshot" for page inspection
-    And it contains "chrome-cli interact" or "chrome-cli form fill" for interaction
+    Then it contains "agentchrome connect" for launching Chrome
+    And it contains "agentchrome page snapshot" for page inspection
+    And it contains "agentchrome interact" or "agentchrome form fill" for interaction
     And it contains a workflow loop description
 
   # --- Workflow Documentation ---
@@ -35,7 +35,7 @@ Feature: Claude Code Integration Guide
     And it documents a "Scraping Data" workflow
     And it documents a "Debugging UI Issues" workflow
     And it documents a "Form Automation" workflow
-    And each workflow shows complete chrome-cli command sequences
+    And each workflow shows complete agentchrome command sequences
 
   Scenario: Recommended workflow loops are documented
     Given the file "docs/claude-code.md" exists in the repository
@@ -79,8 +79,8 @@ Feature: Claude Code Integration Guide
     Given the file "docs/claude-code.md" exists in the repository
     When I read the example conversation section
     Then it shows a multi-turn interaction between a user and Claude Code
-    And the conversation includes "chrome-cli connect" to start a session
-    And the conversation includes "chrome-cli page snapshot" to inspect the page
+    And the conversation includes "agentchrome connect" to start a session
+    And the conversation includes "agentchrome page snapshot" to inspect the page
     And the conversation includes an interaction command to act on an element
     And the conversation includes verification of the result
 

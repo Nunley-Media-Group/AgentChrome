@@ -39,7 +39,7 @@ Chrome Browser
 ### Data Flow
 
 ```
-1. User runs: chrome-cli page text [--selector CSS] [--plain] [--tab ID]
+1. User runs: agentchrome page text [--selector CSS] [--plain] [--tab ID]
 2. CLI layer parses args into PageTextArgs
 3. Command layer resolves connection and target tab
 4. Creates CdpSession via Target.attachToTarget
@@ -67,7 +67,7 @@ Chrome Browser
 
 | Command | Purpose |
 |---------|---------|
-| `chrome-cli page text` | Extract visible text from current page |
+| `agentchrome page text` | Extract visible text from current page |
 
 ### CLI Arguments (PageTextArgs)
 

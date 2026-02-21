@@ -4,7 +4,7 @@
 # Issue: #2
 
 Feature: Cross-platform release pipeline
-  As a developer contributing to chrome-cli
+  As a developer contributing to agentchrome
   I want automated CI/CD pipelines that build, test, lint, and release cross-platform binaries
   So that every PR is validated and releases produce optimized standalone binaries for all supported platforms
 
@@ -68,13 +68,13 @@ Feature: Cross-platform release pipeline
     Given a release binary has been built for a Unix target
     When it is archived
     Then the archive format is "tar.gz"
-    And the archive name matches "chrome-cli-{version}-{target}.tar.gz"
+    And the archive name matches "agentchrome-{version}-{target}.tar.gz"
 
   Scenario: Windows targets archived as zip
     Given a release binary has been built for "x86_64-pc-windows-msvc"
     When it is archived
     Then the archive format is "zip"
-    And the archive name matches "chrome-cli-{version}-{target}.zip"
+    And the archive name matches "agentchrome-{version}-{target}.zip"
 
   # --- Checksums ---
 
@@ -103,8 +103,8 @@ Feature: Cross-platform release pipeline
 
     Examples:
       | version | target                        | filename                                              |
-      | 0.1.0   | aarch64-apple-darwin          | chrome-cli-0.1.0-aarch64-apple-darwin.tar.gz          |
-      | 0.1.0   | x86_64-apple-darwin           | chrome-cli-0.1.0-x86_64-apple-darwin.tar.gz           |
-      | 0.1.0   | x86_64-unknown-linux-gnu      | chrome-cli-0.1.0-x86_64-unknown-linux-gnu.tar.gz      |
-      | 0.1.0   | aarch64-unknown-linux-gnu     | chrome-cli-0.1.0-aarch64-unknown-linux-gnu.tar.gz     |
-      | 0.1.0   | x86_64-pc-windows-msvc        | chrome-cli-0.1.0-x86_64-pc-windows-msvc.zip           |
+      | 0.1.0   | aarch64-apple-darwin          | agentchrome-0.1.0-aarch64-apple-darwin.tar.gz          |
+      | 0.1.0   | x86_64-apple-darwin           | agentchrome-0.1.0-x86_64-apple-darwin.tar.gz           |
+      | 0.1.0   | x86_64-unknown-linux-gnu      | agentchrome-0.1.0-x86_64-unknown-linux-gnu.tar.gz      |
+      | 0.1.0   | aarch64-unknown-linux-gnu     | agentchrome-0.1.0-aarch64-unknown-linux-gnu.tar.gz     |
+      | 0.1.0   | x86_64-pc-windows-msvc        | agentchrome-0.1.0-x86_64-pc-windows-msvc.zip           |

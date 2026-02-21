@@ -13,10 +13,10 @@
 
 ### Steps to Reproduce
 
-1. `chrome-cli connect --launch --headless`
-2. Create 3 additional tabs: `chrome-cli tabs create` (x3, for 4 total)
-3. `chrome-cli tabs close <TAB_ID>` — observe `remaining: 4` (should be 3)
-4. `chrome-cli tabs close <TAB_ID>` — observe `remaining: 3` (should be 2)
+1. `agentchrome connect --launch --headless`
+2. Create 3 additional tabs: `agentchrome tabs create` (x3, for 4 total)
+3. `agentchrome tabs close <TAB_ID>` — observe `remaining: 4` (should be 3)
+4. `agentchrome tabs close <TAB_ID>` — observe `remaining: 3` (should be 2)
 
 ### Environment
 
@@ -58,7 +58,7 @@ Intermittent (~80%+ of the time) — race condition depends on Chrome's HTTP end
 ### AC1: Remaining count is accurate after single close
 
 **Given** a headless Chrome instance with 4 open tabs
-**When** I close one tab via `chrome-cli tabs close <ID>`
+**When** I close one tab via `agentchrome tabs close <ID>`
 **Then** the `remaining` field in the JSON output is `3`
 
 **Example**:
@@ -69,7 +69,7 @@ Intermittent (~80%+ of the time) — race condition depends on Chrome's HTTP end
 ### AC2: Multiple sequential closes report correct counts
 
 **Given** a headless Chrome instance with 4 open tabs
-**When** I close 2 tabs sequentially via separate `chrome-cli tabs close` invocations
+**When** I close 2 tabs sequentially via separate `agentchrome tabs close` invocations
 **Then** the remaining counts are `3` then `2` respectively
 
 **Example**:
@@ -80,7 +80,7 @@ Intermittent (~80%+ of the time) — race condition depends on Chrome's HTTP end
 ### AC3: Existing tab close behavior is preserved
 
 **Given** a headless Chrome instance with 2 open tabs
-**When** I close one tab via `chrome-cli tabs close <ID>`
+**When** I close one tab via `agentchrome tabs close <ID>`
 **Then** the `closed` field contains the target ID and `remaining` is `1`
 **And** the closed tab is no longer in `tabs list` output
 

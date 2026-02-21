@@ -21,7 +21,7 @@ Feature: console read returns captured messages after page load
   @regression @requires-chrome
   Scenario: Console read returns captured messages
     Given a page has generated console messages
-    When I run "chrome-cli console read"
+    When I run "agentchrome console read"
     Then the output is a JSON array
     And the array contains at least one entry
     And each entry contains "id", "type", "text", and "timestamp"
@@ -30,7 +30,7 @@ Feature: console read returns captured messages after page load
   @regression @requires-chrome
   Scenario: Errors-only filter works on captured messages
     Given a page has generated log, warn, and error messages
-    When I run "chrome-cli console read --errors-only"
+    When I run "agentchrome console read --errors-only"
     Then the output is a JSON array
     And the array contains at least one entry
     And each entry has type "error"
@@ -38,7 +38,7 @@ Feature: console read returns captured messages after page load
   @regression @requires-chrome
   Scenario: Console messages from page scripts are captured across invocations
     Given a page has generated console messages via inline scripts
-    When I run "chrome-cli console read" in a new CLI invocation
+    When I run "agentchrome console read" in a new CLI invocation
     Then the output is a JSON array
     And the array contains at least one entry
 
@@ -47,7 +47,7 @@ Feature: console read returns captured messages after page load
   @regression @requires-chrome
   Scenario: Console follow streaming still works
     Given a page is open
-    When I run "chrome-cli console follow --timeout 2000"
+    When I run "agentchrome console follow --timeout 2000"
     And console messages are generated on the page
     Then messages are streamed as JSON lines
     And each line contains "type" and "text"

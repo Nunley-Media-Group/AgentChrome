@@ -160,7 +160,7 @@ pub async fn launch_chrome(
     let (data_dir, temp_dir) = if let Some(ref dir) = config.user_data_dir {
         (dir.clone(), None)
     } else {
-        let dir = std::env::temp_dir().join(format!("chrome-cli-{}", random_suffix()));
+        let dir = std::env::temp_dir().join(format!("agentchrome-{}", random_suffix()));
         std::fs::create_dir_all(&dir)?;
         let td = TempDir { path: dir.clone() };
         (dir, Some(td))
@@ -278,7 +278,7 @@ mod tests {
 
     #[test]
     fn temp_dir_cleanup_on_drop() {
-        let path = std::env::temp_dir().join("chrome-cli-test-cleanup");
+        let path = std::env::temp_dir().join("agentchrome-test-cleanup");
         std::fs::create_dir_all(&path).unwrap();
         assert!(path.exists());
 

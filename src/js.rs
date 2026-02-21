@@ -2,9 +2,9 @@ use std::time::Duration;
 
 use serde::Serialize;
 
-use chrome_cli::cdp::{CdpClient, CdpConfig};
-use chrome_cli::connection::{ManagedSession, resolve_connection, resolve_target};
-use chrome_cli::error::{AppError, ExitCode};
+use agentchrome::cdp::{CdpClient, CdpConfig};
+use agentchrome::connection::{ManagedSession, resolve_connection, resolve_target};
+use agentchrome::error::{AppError, ExitCode};
 
 use crate::cli::{GlobalOpts, JsArgs, JsCommand, JsExecArgs};
 use crate::emulate::apply_emulate_state;
@@ -421,7 +421,7 @@ async fn execute_with_uid(
             custom_json: None,
         })?
         .ok_or_else(|| AppError {
-            message: "No snapshot state found. Run 'chrome-cli page snapshot' first.".to_string(),
+            message: "No snapshot state found. Run 'agentchrome page snapshot' first.".to_string(),
             code: ExitCode::GeneralError,
             custom_json: None,
         })?;
@@ -868,7 +868,7 @@ mod tests {
 
     #[test]
     fn resolve_code_from_file() {
-        let dir = std::env::temp_dir().join("chrome-cli-test-js-resolve");
+        let dir = std::env::temp_dir().join("agentchrome-test-js-resolve");
         let _ = std::fs::create_dir_all(&dir);
         let path = dir.join("test.js");
         std::fs::write(&path, "document.title").unwrap();

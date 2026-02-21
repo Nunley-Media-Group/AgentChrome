@@ -9,7 +9,7 @@
 
 ## Overview
 
-This feature creates two new documentation files and updates the README to provide comprehensive Claude Code integration guidance. The primary deliverable is `docs/claude-code.md` — a guide explaining how to use chrome-cli with Claude Code, covering discovery, workflows, best practices, error handling, and an example conversation. The secondary deliverable is `examples/CLAUDE.md.example` — a drop-in template that developers can copy into their projects.
+This feature creates two new documentation files and updates the README to provide comprehensive Claude Code integration guidance. The primary deliverable is `docs/claude-code.md` — a guide explaining how to use agentchrome with Claude Code, covering discovery, workflows, best practices, error handling, and an example conversation. The secondary deliverable is `examples/CLAUDE.md.example` — a drop-in template that developers can copy into their projects.
 
 This is a documentation-only change. No Rust code, CLI commands, or binary changes are required. The existing minimal "Claude Code Integration" section in README.md (lines 265-288) will be replaced with a concise summary that links to the full guide.
 
@@ -20,7 +20,7 @@ This is a documentation-only change. No Rust code, CLI commands, or binary chang
 ### File Layout
 
 ```
-chrome-cli/
+agentchrome/
 ├── docs/
 │   └── claude-code.md              # NEW — Full integration guide
 ├── examples/
@@ -32,11 +32,11 @@ chrome-cli/
 
 ```
 1. Introduction
-   - What chrome-cli is and why it's built for AI agents
-   - Prerequisites (chrome-cli installed, Chrome available)
+   - What agentchrome is and why it's built for AI agents
+   - Prerequisites (agentchrome installed, Chrome available)
 
 2. Discovery & Setup
-   - How Claude Code discovers chrome-cli (PATH, --help)
+   - How Claude Code discovers agentchrome (PATH, --help)
    - Machine-readable discovery via `capabilities` command
    - Learning commands via `examples` subcommand
    - Setup checklist
@@ -81,8 +81,8 @@ chrome-cli/
    - Shows realistic command usage and output parsing
 
 10. Reference
-    - Link to `chrome-cli capabilities` for full command manifest
-    - Link to `chrome-cli examples <cmd>` for per-command examples
+    - Link to `agentchrome capabilities` for full command manifest
+    - Link to `agentchrome examples <cmd>` for per-command examples
     - Link to man pages
 ```
 
@@ -91,7 +91,7 @@ chrome-cli/
 ```
 # Browser Automation
 
-Brief intro: this project uses chrome-cli
+Brief intro: this project uses agentchrome
 
 ## Quick Start
 - Connect, navigate, snapshot, screenshot
@@ -113,7 +113,7 @@ Replace lines 265-288 (current "Claude Code Integration" section) with:
 ```markdown
 ## Claude Code Integration
 
-chrome-cli is designed for AI agent consumption. See the full
+agentchrome is designed for AI agent consumption. See the full
 [Claude Code Integration Guide](docs/claude-code.md) for workflows,
 best practices, and a drop-in [CLAUDE.md template](examples/CLAUDE.md.example).
 ```
@@ -173,12 +173,12 @@ Not applicable — documentation files have no runtime performance impact.
 | Layer | Type | Coverage |
 |-------|------|----------|
 | Documentation | Content verification (BDD) | All acceptance criteria verified via file existence and content checks |
-| Commands | Accuracy check | All commands in guide match `chrome-cli capabilities` output |
+| Commands | Accuracy check | All commands in guide match `agentchrome capabilities` output |
 
 Since this is a documentation feature, BDD tests will verify:
 1. Files exist at expected paths
 2. Required sections are present in each file
-3. Commands referenced in the guide are valid chrome-cli commands
+3. Commands referenced in the guide are valid agentchrome commands
 4. README links to the guide correctly
 
 ---
@@ -187,7 +187,7 @@ Since this is a documentation feature, BDD tests will verify:
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|------------|--------|------------|
-| Commands in guide become stale as CLI evolves | Medium | Medium | Reference `chrome-cli capabilities` and `chrome-cli examples` as canonical sources; note in guide that these commands are always up-to-date |
+| Commands in guide become stale as CLI evolves | Medium | Medium | Reference `agentchrome capabilities` and `agentchrome examples` as canonical sources; note in guide that these commands are always up-to-date |
 | Example conversation output doesn't match real CLI output | Low | Low | Keep example conversation output realistic but clearly marked as illustrative |
 | CLAUDE.md template too verbose or too terse | Low | Medium | Balance: include essential commands with brief explanations; link to full guide for details |
 

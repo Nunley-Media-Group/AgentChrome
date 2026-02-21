@@ -26,41 +26,41 @@ AI agents and automation scripts need to type text into form fields and press ke
 ### AC1: Type text into the focused element
 
 **Given** a page with a focused text input
-**When** I run `chrome-cli interact type "Hello World"`
+**When** I run `agentchrome interact type "Hello World"`
 **Then** the text "Hello World" is typed character-by-character
 **And** JSON output is returned: `{"typed": "Hello World", "length": 11}`
 **And** the exit code is 0
 
 **Example**:
 - Given: page has `<input>` with focus
-- When: `chrome-cli interact type "Hello World"`
+- When: `agentchrome interact type "Hello World"`
 - Then: `{"typed": "Hello World", "length": 11}`
 
 ### AC2: Type with delay between keystrokes
 
 **Given** a page with a focused text input
-**When** I run `chrome-cli interact type "abc" --delay 50`
+**When** I run `agentchrome interact type "abc" --delay 50`
 **Then** each character is typed with a 50ms pause between keystrokes
 **And** JSON output is returned: `{"typed": "abc", "length": 3}`
 
 ### AC3: Type with include-snapshot flag
 
 **Given** a page with a focused text input
-**When** I run `chrome-cli interact type "test" --include-snapshot`
+**When** I run `agentchrome interact type "test" --include-snapshot`
 **Then** the text is typed
 **And** the JSON output includes an updated accessibility snapshot in the `snapshot` field
 
 ### AC4: Type handles Unicode and special characters
 
 **Given** a page with a focused text input
-**When** I run `chrome-cli interact type "cafe\u0301"` (or other multi-byte/Unicode text)
+**When** I run `agentchrome interact type "cafe\u0301"` (or other multi-byte/Unicode text)
 **Then** each character is dispatched individually via `char` events
 **And** special characters, Unicode, and multi-byte characters are handled correctly
 
 ### AC5: Press a single key
 
 **Given** a page with a focused element
-**When** I run `chrome-cli interact key Enter`
+**When** I run `agentchrome interact key Enter`
 **Then** the Enter key is pressed (keyDown + keyUp sequence)
 **And** JSON output is returned: `{"pressed": "Enter"}`
 **And** the exit code is 0
@@ -68,68 +68,68 @@ AI agents and automation scripts need to type text into form fields and press ke
 ### AC6: Press a key combination with modifiers
 
 **Given** a page with a text input containing selected text
-**When** I run `chrome-cli interact key "Control+A"`
+**When** I run `agentchrome interact key "Control+A"`
 **Then** the Control+A combination is pressed (Control keyDown, A keyDown+keyUp, Control keyUp)
 **And** JSON output is returned: `{"pressed": "Control+A"}`
 
 **Example**:
 - Given: page has `<input value="Hello">` with focus
-- When: `chrome-cli interact key "Control+A"`
+- When: `agentchrome interact key "Control+A"`
 - Then: `{"pressed": "Control+A"}`
 
 ### AC7: Press a key with multiple modifiers
 
 **Given** a page with an element listening for key events
-**When** I run `chrome-cli interact key "Control+Shift+ArrowDown"`
+**When** I run `agentchrome interact key "Control+Shift+ArrowDown"`
 **Then** both modifiers are held while ArrowDown is pressed
 **And** JSON output is returned: `{"pressed": "Control+Shift+ArrowDown"}`
 
 ### AC8: Press a key with repeat flag
 
 **Given** a page with a focused element
-**When** I run `chrome-cli interact key ArrowDown --repeat 5`
+**When** I run `agentchrome interact key ArrowDown --repeat 5`
 **Then** the ArrowDown key is pressed 5 times
 **And** JSON output is returned: `{"pressed": "ArrowDown", "repeat": 5}`
 
 ### AC9: Key press with include-snapshot flag
 
 **Given** a page with a focused element
-**When** I run `chrome-cli interact key Enter --include-snapshot`
+**When** I run `agentchrome interact key Enter --include-snapshot`
 **Then** the key is pressed
 **And** the JSON output includes an updated accessibility snapshot in the `snapshot` field
 
 ### AC10: Invalid key name error
 
 **Given** the user provides an invalid key name
-**When** I run `chrome-cli interact key "InvalidKey"`
+**When** I run `agentchrome interact key "InvalidKey"`
 **Then** an error is returned: `Invalid key: 'InvalidKey'`
 **And** the exit code is non-zero
 
 ### AC11: Duplicate modifier error
 
 **Given** the user provides a key combination with duplicate modifiers
-**When** I run `chrome-cli interact key "Control+Control+A"`
+**When** I run `agentchrome interact key "Control+Control+A"`
 **Then** an error is returned: `Duplicate modifier: 'Control'`
 **And** the exit code is non-zero
 
 ### AC12: Type command requires text argument
 
 **Given** no text argument is provided
-**When** I run `chrome-cli interact type`
+**When** I run `agentchrome interact type`
 **Then** an error is returned indicating the required argument is missing
 **And** the exit code is non-zero
 
 ### AC13: Key command requires keys argument
 
 **Given** no keys argument is provided
-**When** I run `chrome-cli interact key`
+**When** I run `agentchrome interact key`
 **Then** an error is returned indicating the required argument is missing
 **And** the exit code is non-zero
 
 ### AC14: Supported key categories
 
 **Given** the tool supports 100+ keys matching the MCP server
-**When** I run `chrome-cli interact key <KEY>` with any supported key name
+**When** I run `agentchrome interact key <KEY>` with any supported key name
 **Then** the key is pressed correctly via CDP `Input.dispatchKeyEvent`
 
 Supported key categories:
@@ -149,25 +149,25 @@ Supported key categories:
 ### AC15: Plain text output for type command
 
 **Given** a page with a focused text input
-**When** I run `chrome-cli interact type "Hello" --plain`
+**When** I run `agentchrome interact type "Hello" --plain`
 **Then** plain text output is returned: `Typed 5 characters`
 
 ### AC16: Plain text output for key command
 
 **Given** a page with a focused element
-**When** I run `chrome-cli interact key Enter --plain`
+**When** I run `agentchrome interact key Enter --plain`
 **Then** plain text output is returned: `Pressed Enter`
 
 ### AC17: Tab targeting for type command
 
 **Given** a specific tab with ID "ABC123" contains a focused input
-**When** I run `chrome-cli interact type "Hello" --tab ABC123`
+**When** I run `agentchrome interact type "Hello" --tab ABC123`
 **Then** the text is typed in that specific tab
 
 ### AC18: Tab targeting for key command
 
 **Given** a specific tab with ID "ABC123" contains a focused element
-**When** I run `chrome-cli interact key Enter --tab ABC123`
+**When** I run `agentchrome interact key Enter --tab ABC123`
 **Then** the key is pressed in that specific tab
 
 ### Generated Gherkin Preview
@@ -180,37 +180,37 @@ Feature: Keyboard Input
 
   Scenario: Type text into the focused element
     Given a page with a focused text input
-    When I run "chrome-cli interact type 'Hello World'"
+    When I run "agentchrome interact type 'Hello World'"
     Then the output JSON should contain "typed" equal to "Hello World"
     And the output JSON should contain "length" equal to 11
     And the exit code should be 0
 
   Scenario: Type with delay between keystrokes
     Given a page with a focused text input
-    When I run "chrome-cli interact type 'abc' --delay 50"
+    When I run "agentchrome interact type 'abc' --delay 50"
     Then the output JSON should contain "typed" equal to "abc"
 
   Scenario: Press a single key
     Given a page with a focused element
-    When I run "chrome-cli interact key Enter"
+    When I run "agentchrome interact key Enter"
     Then the output JSON should contain "pressed" equal to "Enter"
 
   Scenario: Press a key combination
-    When I run "chrome-cli interact key Control+A"
+    When I run "agentchrome interact key Control+A"
     Then the output JSON should contain "pressed" equal to "Control+A"
 
   Scenario: Press key with repeat
-    When I run "chrome-cli interact key ArrowDown --repeat 5"
+    When I run "agentchrome interact key ArrowDown --repeat 5"
     Then the output JSON should contain "pressed" equal to "ArrowDown"
     And the output JSON should contain "repeat" equal to 5
 
   Scenario: Invalid key name
-    When I run "chrome-cli interact key InvalidKey"
+    When I run "agentchrome interact key InvalidKey"
     Then stderr should contain "Invalid key"
     And the exit code should be non-zero
 
   Scenario: Duplicate modifier
-    When I run "chrome-cli interact key Control+Control+A"
+    When I run "agentchrome interact key Control+Control+A"
     Then stderr should contain "Duplicate modifier"
     And the exit code should be non-zero
 ```

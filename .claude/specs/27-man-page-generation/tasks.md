@@ -48,11 +48,11 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
-- [ ] `clap_mangen` added to `[dependencies]` (needed for runtime `chrome-cli man`)
+- [ ] `clap_mangen` added to `[dependencies]` (needed for runtime `agentchrome man`)
 - [ ] Version is compatible with clap 4
 - [ ] `cargo check` passes
 
-**Notes**: `clap_mangen` must be a regular dependency (not dev-dependency) since the `chrome-cli man` subcommand uses it at runtime.
+**Notes**: `clap_mangen` must be a regular dependency (not dev-dependency) since the `agentchrome man` subcommand uses it at runtime.
 
 ### T002: Create xtask workspace member
 
@@ -77,7 +77,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] `Command::Man(ManArgs)` variant added to the `Command` enum
 - [ ] `about`, `long_about`, and `after_long_help` attributes with usage examples
 - [ ] `cargo check` passes
-- [ ] `chrome-cli man --help` shows usage information
+- [ ] `agentchrome man --help` shows usage information
 
 ---
 
@@ -108,11 +108,11 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] `cargo xtask man` generates man pages for all commands
 - [ ] Recursively walks the command tree (top-level + all nested subcommands)
 - [ ] Writes `.1` files to `man/` directory (creates it if needed)
-- [ ] File naming: `chrome-cli.1`, `chrome-cli-connect.1`, `chrome-cli-tabs-list.1`, etc.
+- [ ] File naming: `agentchrome.1`, `agentchrome-connect.1`, `agentchrome-tabs-list.1`, etc.
 - [ ] Prints a summary of generated files to stdout
 - [ ] Exit code 0 on success
 
-**Notes**: The xtask needs to import `chrome-cli`'s `Cli` struct. Since `chrome-cli` is a binary crate, the xtask should use `Cli::command()` from the library export in `lib.rs`. May need to re-export `Cli::command()` from `lib.rs`.
+**Notes**: The xtask needs to import `agentchrome`'s `Cli` struct. Since `agentchrome` is a binary crate, the xtask should use `Cli::command()` from the library export in `lib.rs`. May need to re-export `Cli::command()` from `lib.rs`.
 
 ---
 
@@ -185,7 +185,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] `src/lib.rs` re-exports `cli::Cli` (or a function returning `Command`) so xtask can access it
 - [ ] `.gitignore` includes `man/` directory (generated files not tracked)
 - [ ] `cargo xtask man` successfully generates man pages to `man/`
-- [ ] `chrome-cli man` successfully renders man pages to stdout
+- [ ] `agentchrome man` successfully renders man pages to stdout
 
 ---
 

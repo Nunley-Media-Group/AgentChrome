@@ -11,7 +11,7 @@
 
 The bug occurs because `main()` in `src/main.rs:37` calls `Cli::parse()` directly. When clap encounters a validation error (conflicting flags, invalid enum values, out-of-range numbers), it bypasses the application's error handling entirely — clap prints its own plain-text error message to stderr and calls `std::process::exit(2)`.
 
-The application's JSON error formatting (`AppError::print_json_stderr()`) and custom exit code mapping (`ExitCode::GeneralError = 1`) are never reached because clap short-circuits the process before `run()` is called. Clap's default exit code for usage errors is 2, which conflicts with chrome-cli's exit code 2 meaning "connection error" (`ExitCode::ConnectionError = 2`).
+The application's JSON error formatting (`AppError::print_json_stderr()`) and custom exit code mapping (`ExitCode::GeneralError = 1`) are never reached because clap short-circuits the process before `run()` is called. Clap's default exit code for usage errors is 2, which conflicts with agentchrome's exit code 2 meaning "connection error" (`ExitCode::ConnectionError = 2`).
 
 The fix is to replace `Cli::parse()` with `Cli::try_parse()`, which returns a `Result` instead of exiting. The `Err` variant can then be caught, converted to an `AppError` with `ExitCode::GeneralError`, and output as JSON via the existing `print_json_stderr()` method.
 

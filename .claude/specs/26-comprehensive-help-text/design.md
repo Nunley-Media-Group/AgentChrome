@@ -9,7 +9,7 @@
 
 ## Overview
 
-This feature adds rich, AI-agent-optimized `--help` documentation to every command, subcommand, and flag in chrome-cli. The implementation is purely additive — it modifies the clap derive attributes in `src/cli/mod.rs` to add `after_help`, `after_long_help`, and enhanced `long_about` strings. No runtime behavior changes. No new files are created. The entire change is confined to compile-time string literals in the existing CLI definition module.
+This feature adds rich, AI-agent-optimized `--help` documentation to every command, subcommand, and flag in agentchrome. The implementation is purely additive — it modifies the clap derive attributes in `src/cli/mod.rs` to add `after_help`, `after_long_help`, and enhanced `long_about` strings. No runtime behavior changes. No new files are created. The entire change is confined to compile-time string literals in the existing CLI definition module.
 
 The design leverages clap 4's attribute system: `about` (short), `long_about` (detailed), `after_help` (shown after options in short help), and `after_long_help` (shown after options in long help). We use `after_long_help` for usage examples so they appear with `--help` but not with `-h`, keeping short help concise.
 
@@ -57,10 +57,10 @@ No API changes. The only user-visible change is richer `--help` output.
 
 **Before:**
 ```
-$ chrome-cli tabs --help
+$ agentchrome tabs --help
 Tab management (list, create, close, activate)
 
-Usage: chrome-cli tabs <COMMAND>
+Usage: agentchrome tabs <COMMAND>
 
 Commands:
   list      List open tabs
@@ -71,12 +71,12 @@ Commands:
 
 **After:**
 ```
-$ chrome-cli tabs --help
+$ agentchrome tabs --help
 Tab management commands: list open tabs, create new tabs, close tabs, and
 activate (focus) a specific tab. Each operation returns structured JSON with
 tab IDs and metadata.
 
-Usage: chrome-cli tabs <COMMAND>
+Usage: agentchrome tabs <COMMAND>
 
 Commands:
   list      List open tabs
@@ -86,13 +86,13 @@ Commands:
 
 EXAMPLES:
   # List all open tabs
-  chrome-cli tabs list
+  agentchrome tabs list
 
   # Open a new tab and get its ID
-  chrome-cli tabs create https://example.com
+  agentchrome tabs create https://example.com
 
   # Close tabs by ID
-  chrome-cli tabs close ABC123 DEF456
+  agentchrome tabs close ABC123 DEF456
 ```
 
 ---
@@ -136,30 +136,30 @@ Using `after_long_help` ensures examples only appear with `--help` (verbose), no
 |---------|-----------|---------|
 | Command descriptions | Imperative voice, present tense | "List open browser tabs" |
 | Flag descriptions | Sentence fragment, lowercase start | "target tab ID (defaults to the active tab)" |
-| Examples | Shell comment + command | `# List all tabs` / `chrome-cli tabs list` |
+| Examples | Shell comment + command | `# List all tabs` / `agentchrome tabs list` |
 | Return value docs | "Returns JSON with..." | "Returns JSON with tab ID, title, and URL" |
-| Cross-references | "See also: chrome-cli ..." | "See also: chrome-cli tabs activate" |
+| Cross-references | "See also: agentchrome ..." | "See also: agentchrome tabs activate" |
 
 ### Top-Level `after_long_help` Structure
 
 ```
 QUICK START:
   # Connect to Chrome and list tabs
-  chrome-cli connect && chrome-cli tabs list
+  agentchrome connect && agentchrome tabs list
 
   # Navigate and take a screenshot
-  chrome-cli navigate https://example.com
-  chrome-cli page screenshot --file shot.png
+  agentchrome navigate https://example.com
+  agentchrome page screenshot --file shot.png
 
   # Execute JavaScript and get the result
-  chrome-cli js exec "document.title"
+  agentchrome js exec "document.title"
 
   # Fill a form field
-  chrome-cli page snapshot
-  chrome-cli form fill s5 "hello@example.com"
+  agentchrome page snapshot
+  agentchrome form fill s5 "hello@example.com"
 
   # Monitor console output in real time
-  chrome-cli console follow --timeout 5000
+  agentchrome console follow --timeout 5000
 
 EXIT CODES:
   0  Success
@@ -170,10 +170,10 @@ EXIT CODES:
   5  Protocol error (CDP protocol failure, dialog handling error)
 
 ENVIRONMENT VARIABLES:
-  CHROME_CLI_PORT     CDP port number (default: 9222)
-  CHROME_CLI_HOST     CDP host address (default: 127.0.0.1)
-  CHROME_CLI_TIMEOUT  Default command timeout in milliseconds
-  CHROME_CLI_CONFIG   Path to configuration file
+  AGENTCHROME_PORT     CDP port number (default: 9222)
+  AGENTCHROME_HOST     CDP host address (default: 127.0.0.1)
+  AGENTCHROME_TIMEOUT  Default command timeout in milliseconds
+  AGENTCHROME_CONFIG   Path to configuration file
 ```
 
 ---

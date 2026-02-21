@@ -11,15 +11,15 @@ Feature: Console Message Reading with Filtering
   # --- CLI Argument Validation (no Chrome required) ---
 
   Scenario: Console help lists read and follow subcommands
-    Given chrome-cli is built
-    When I run "chrome-cli console --help"
+    Given agentchrome is built
+    When I run "agentchrome console --help"
     Then the exit code should be 0
     And stdout should contain "read"
     And stdout should contain "follow"
 
   Scenario: Console read help shows all flags
-    Given chrome-cli is built
-    When I run "chrome-cli console read --help"
+    Given agentchrome is built
+    When I run "agentchrome console read --help"
     Then the exit code should be 0
     And stdout should contain "--type"
     And stdout should contain "--errors-only"
@@ -28,22 +28,22 @@ Feature: Console Message Reading with Filtering
     And stdout should contain "--include-preserved"
 
   Scenario: Console follow help shows all flags
-    Given chrome-cli is built
-    When I run "chrome-cli console follow --help"
+    Given agentchrome is built
+    When I run "agentchrome console follow --help"
     Then the exit code should be 0
     And stdout should contain "--type"
     And stdout should contain "--errors-only"
     And stdout should contain "--timeout"
 
   Scenario: Conflicting flags --type and --errors-only on read
-    Given chrome-cli is built
-    When I run "chrome-cli console read --type error --errors-only"
+    Given agentchrome is built
+    When I run "agentchrome console read --type error --errors-only"
     Then the exit code should be nonzero
     And stderr should contain "cannot be used with"
 
   Scenario: Conflicting flags --type and --errors-only on follow
-    Given chrome-cli is built
-    When I run "chrome-cli console follow --type error --errors-only"
+    Given agentchrome is built
+    When I run "agentchrome console follow --type error --errors-only"
     Then the exit code should be nonzero
     And stderr should contain "cannot be used with"
 
@@ -52,20 +52,20 @@ Feature: Console Message Reading with Filtering
   # Scenario: List console messages from current page
   #   Given Chrome is running with CDP enabled
   #   And a page has generated console messages
-  #   When I run "chrome-cli console read"
+  #   When I run "agentchrome console read"
   #   Then the output is a JSON array
   #   And the exit code should be 0
 
   # Scenario: Console read with no messages returns empty array
   #   Given Chrome is running with CDP enabled
-  #   When I run "chrome-cli console read"
+  #   When I run "agentchrome console read"
   #   Then the output is "[]"
   #   And the exit code should be 0
 
   # Scenario: Default limit is 50 messages
   #   Given Chrome is running with CDP enabled
   #   And a page has generated 100 console messages
-  #   When I run "chrome-cli console read"
+  #   When I run "agentchrome console read"
   #   Then at most 50 messages are returned
   #   And the exit code should be 0
 
@@ -74,13 +74,13 @@ Feature: Console Message Reading with Filtering
   # Scenario: Filter console messages by single type
   #   Given Chrome is running with CDP enabled
   #   And a page has generated log, warn, and error messages
-  #   When I run "chrome-cli console read --type error"
+  #   When I run "agentchrome console read --type error"
   #   Then all returned messages have type "error"
 
   # Scenario: Use errors-only shorthand filter
   #   Given Chrome is running with CDP enabled
   #   And a page has generated log and error messages
-  #   When I run "chrome-cli console read --errors-only"
+  #   When I run "agentchrome console read --errors-only"
   #   Then all returned messages have type "error" or "assert"
 
   # --- Console Read: Detail Mode (requires Chrome) ---
@@ -88,13 +88,13 @@ Feature: Console Message Reading with Filtering
   # Scenario: Get detailed information about a specific message
   #   Given Chrome is running with CDP enabled
   #   And console messages exist
-  #   When I run "chrome-cli console read 0"
+  #   When I run "agentchrome console read 0"
   #   Then the output contains "args" field
   #   And the output contains "stackTrace" field
 
   # Scenario: Console read with invalid message ID errors
   #   Given Chrome is running with CDP enabled
-  #   When I run "chrome-cli console read 9999"
+  #   When I run "agentchrome console read 9999"
   #   Then the exit code should be nonzero
   #   And stderr should contain "not found"
 
@@ -102,5 +102,5 @@ Feature: Console Message Reading with Filtering
 
   # Scenario: Stream with timeout exits after specified duration
   #   Given Chrome is running with CDP enabled
-  #   When I run "chrome-cli console follow --timeout 1000"
+  #   When I run "agentchrome console follow --timeout 1000"
   #   Then the exit code should be 0

@@ -9,7 +9,7 @@
 
 ## Root Cause
 
-The `execute_back`, `execute_forward`, and `execute_reload` functions in `src/navigate.rs` all receive `global: &GlobalOpts` which contains the user-specified `timeout` field (populated from `--timeout` or `CHROME_CLI_TIMEOUT`). However, all three functions pass the hardcoded constant `DEFAULT_NAVIGATE_TIMEOUT_MS` (30,000ms) to their respective wait functions instead of using `global.timeout`.
+The `execute_back`, `execute_forward`, and `execute_reload` functions in `src/navigate.rs` all receive `global: &GlobalOpts` which contains the user-specified `timeout` field (populated from `--timeout` or `AGENTCHROME_TIMEOUT`). However, all three functions pass the hardcoded constant `DEFAULT_NAVIGATE_TIMEOUT_MS` (30,000ms) to their respective wait functions instead of using `global.timeout`.
 
 This is an oversight from the original implementation. The `execute_url` function correctly uses `args.timeout.unwrap_or(DEFAULT_NAVIGATE_TIMEOUT_MS)` for its per-command timeout, but the history navigation commands were never wired to any timeout parameter. The `global.timeout` field is correctly used for the CDP `command_timeout` (via the `cdp_config` helper), but it is not forwarded to the navigation event wait logic.
 
@@ -23,7 +23,7 @@ This is an oversight from the original implementation. The `execute_url` functio
 
 ### Triggering Conditions
 
-- User specifies `--timeout <ms>` or sets `CHROME_CLI_TIMEOUT=<ms>`
+- User specifies `--timeout <ms>` or sets `AGENTCHROME_TIMEOUT=<ms>`
 - User runs `navigate back`, `navigate forward`, or `navigate reload`
 - The navigation event is delayed or missed (e.g., SPA pushState)
 - The command waits the full 30 seconds instead of the user-specified value

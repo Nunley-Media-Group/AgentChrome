@@ -2,9 +2,9 @@ use std::time::Duration;
 
 use serde::Serialize;
 
-use chrome_cli::cdp::{CdpClient, CdpConfig};
-use chrome_cli::connection::{ManagedSession, resolve_connection, resolve_target};
-use chrome_cli::error::AppError;
+use agentchrome::cdp::{CdpClient, CdpConfig};
+use agentchrome::connection::{ManagedSession, resolve_connection, resolve_target};
+use agentchrome::error::AppError;
 
 use crate::cli::{
     ClickArgs, ClickAtArgs, DragArgs, GlobalOpts, HoverArgs, InteractArgs, InteractCommand,
@@ -104,7 +104,7 @@ fn print_output(value: &impl Serialize, output: &crate::cli::OutputFormat) -> Re
     };
     let json = json.map_err(|e| AppError {
         message: format!("serialization error: {e}"),
-        code: chrome_cli::error::ExitCode::GeneralError,
+        code: agentchrome::error::ExitCode::GeneralError,
         custom_json: None,
     })?;
     println!("{json}");
@@ -1001,7 +1001,7 @@ async fn take_snapshot(
     // Write snapshot state
     let state = snapshot::SnapshotState {
         url: url.to_string(),
-        timestamp: chrome_cli::session::now_iso8601(),
+        timestamp: agentchrome::session::now_iso8601(),
         uid_map: build_result.uid_map,
     };
     snapshot::write_snapshot_state(&state)?;

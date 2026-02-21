@@ -9,7 +9,7 @@
 
 ## Overview
 
-This feature adds a `dialog` command group to chrome-cli for handling browser JavaScript dialogs (alert, confirm, prompt, beforeunload). It consists of two subcommands (`dialog handle` and `dialog info`) plus a global `--auto-dismiss-dialogs` flag.
+This feature adds a `dialog` command group to agentchrome for handling browser JavaScript dialogs (alert, confirm, prompt, beforeunload). It consists of two subcommands (`dialog handle` and `dialog info`) plus a global `--auto-dismiss-dialogs` flag.
 
 The implementation follows the established command pattern: CLI args defined in `cli/mod.rs`, a new `dialog.rs` command module, CDP communication via `ManagedSession`, and JSON/plain output formatting. The key CDP methods are `Page.javascriptDialogOpening` (event) and `Page.handleJavaScriptDialog` (command).
 
@@ -51,7 +51,7 @@ A critical design consideration is that dialog state must be captured via event 
 ### Data Flow — `dialog handle accept`
 
 ```
-1. User runs: chrome-cli dialog handle accept [--text "foo"]
+1. User runs: agentchrome dialog handle accept [--text "foo"]
 2. CLI layer parses args → DialogHandleArgs { action: Accept, text: Some("foo") }
 3. setup_session() → CdpClient + ManagedSession
 4. managed.ensure_domain("Page")
@@ -65,7 +65,7 @@ A critical design consideration is that dialog state must be captured via event 
 ### Data Flow — `dialog info`
 
 ```
-1. User runs: chrome-cli dialog info
+1. User runs: agentchrome dialog info
 2. CLI layer parses args → DialogCommand::Info
 3. setup_session() → CdpClient + ManagedSession
 4. managed.ensure_domain("Page")
@@ -85,7 +85,7 @@ A critical design consideration is that dialog state must be captured via event 
 ### Data Flow — `--auto-dismiss-dialogs`
 
 ```
-1. User runs: chrome-cli navigate https://example.com --auto-dismiss-dialogs
+1. User runs: agentchrome navigate https://example.com --auto-dismiss-dialogs
 2. Global flag parsed in GlobalOpts
 3. Before executing the primary command, subscribe to Page.javascriptDialogOpening
 4. Spawn a background task that auto-dismisses any dialog that appears
@@ -101,8 +101,8 @@ A critical design consideration is that dialog state must be captured via event 
 
 | Command | Purpose |
 |---------|---------|
-| `chrome-cli dialog handle <accept\|dismiss>` | Accept or dismiss the current dialog |
-| `chrome-cli dialog info` | Check if a dialog is currently open |
+| `agentchrome dialog handle <accept\|dismiss>` | Accept or dismiss the current dialog |
+| `agentchrome dialog info` | Check if a dialog is currently open |
 
 ### New Global Flag
 
@@ -116,7 +116,7 @@ A critical design consideration is that dialog state must be captured via event 
 
 **Input (CLI args):**
 ```
-chrome-cli dialog handle accept [--text TEXT] [--tab ID]
+agentchrome dialog handle accept [--text TEXT] [--tab ID]
 ```
 
 **Output (success — JSON):**

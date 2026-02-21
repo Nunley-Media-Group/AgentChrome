@@ -215,8 +215,8 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] `run()` match arm updated: `Command::Tabs(args) => tabs::execute_tabs(&cli.global, args).await`
 - [ ] `cargo build` succeeds with no warnings
 - [ ] `cargo clippy` passes with project's lint settings (all=deny, pedantic=warn)
-- [ ] Running `chrome-cli tabs --help` shows subcommands: list, create, close, activate
-- [ ] Running `chrome-cli tabs list --help` shows --all flag
+- [ ] Running `agentchrome tabs --help` shows subcommands: list, create, close, activate
+- [ ] Running `agentchrome tabs list --help` shows --all flag
 
 ---
 

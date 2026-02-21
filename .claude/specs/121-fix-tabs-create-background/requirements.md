@@ -13,10 +13,10 @@
 
 ### Steps to Reproduce
 
-1. `chrome-cli connect --launch --headless`
-2. `chrome-cli tabs create https://google.com` — google.com becomes the active tab
-3. `chrome-cli tabs create --background https://example.com` — example.com is created
-4. `chrome-cli tabs list --plain` — example.com shows as active (marked with `*`), not google.com
+1. `agentchrome connect --launch --headless`
+2. `agentchrome tabs create https://google.com` — google.com becomes the active tab
+3. `agentchrome tabs create --background https://example.com` — example.com is created
+4. `agentchrome tabs list --plain` — example.com shows as active (marked with `*`), not google.com
 
 ### Environment
 
@@ -53,25 +53,25 @@ No error output — the command exits with code 0 but the tab ordering in `/json
 ### AC1: Background tab does not become active
 
 **Given** Chrome is running with an active tab at google.com
-**When** I run `chrome-cli tabs create --background https://example.com`
-**Then** `chrome-cli tabs list` shows google.com as the active tab (first in list)
+**When** I run `agentchrome tabs create --background https://example.com`
+**Then** `agentchrome tabs list` shows google.com as the active tab (first in list)
 
 **Example**:
 - Given: Tab at `https://google.com` is active (first page target in `/json/list`)
-- When: `chrome-cli tabs create --background https://example.com`
+- When: `agentchrome tabs create --background https://example.com`
 - Then: `tabs list` output shows google.com tab with `active: true`
 
 ### AC2: Background tab is created successfully
 
 **Given** Chrome is running with an active tab
-**When** I run `chrome-cli tabs create --background https://example.com`
+**When** I run `agentchrome tabs create --background https://example.com`
 **Then** the new tab exists in the tab list with URL containing "example.com"
 **And** the new tab's `active` field is `false`
 
 ### AC3: Non-background create still activates the new tab
 
 **Given** Chrome is running with an active tab
-**When** I run `chrome-cli tabs create https://example.com` (without `--background`)
+**When** I run `agentchrome tabs create https://example.com` (without `--background`)
 **Then** the new tab becomes the active tab (first in list)
 
 ---

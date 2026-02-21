@@ -17,7 +17,7 @@ Feature: Console Read Runtime Messages
   Scenario: Console read captures messages from page interactions
     Given a page with a button that logs to console on click
     And the button has been clicked via interact click
-    When I run "chrome-cli console read"
+    When I run "agentchrome console read"
     Then the output is a JSON array
     And the array contains at least one entry
     And each entry contains "id", "type", "text", and "timestamp"
@@ -26,7 +26,7 @@ Feature: Console Read Runtime Messages
   @requires-chrome
   Scenario: Console read captures messages from js exec across invocations
     Given js exec has generated console messages in a prior invocation
-    When I run "chrome-cli console read" in a new CLI invocation
+    When I run "agentchrome console read" in a new CLI invocation
     Then the output is a JSON array
     And the array contains entries with text "test" and "oops"
     And the exit code should be 0
@@ -36,7 +36,7 @@ Feature: Console Read Runtime Messages
   @requires-chrome
   Scenario: Console read still returns page-load messages
     Given a page has console output from inline scripts during load
-    When I run "chrome-cli console read"
+    When I run "agentchrome console read"
     Then the output is a JSON array
     And the array contains at least one entry
     And each entry contains "id", "type", "text", and "timestamp"
@@ -44,13 +44,13 @@ Feature: Console Read Runtime Messages
   @requires-chrome
   Scenario: Console read preserves page state
     Given a page has been modified via runtime interactions
-    When I run "chrome-cli console read"
+    When I run "agentchrome console read"
     Then the page state is preserved with no reload
 
   @requires-chrome
   Scenario: Console follow streaming still works
     Given a page is open
-    When I run "chrome-cli console follow --timeout 2000"
+    When I run "agentchrome console follow --timeout 2000"
     And console messages are generated on the page
     Then messages are streamed as JSON lines
     And each line contains "type" and "text"
@@ -60,7 +60,7 @@ Feature: Console Read Runtime Messages
   @requires-chrome
   Scenario: Errors-only filter works on runtime interaction messages
     Given runtime interactions have generated log, warn, and error messages
-    When I run "chrome-cli console read --errors-only"
+    When I run "agentchrome console read --errors-only"
     Then the output is a JSON array
     And each entry has type "error"
 
@@ -69,7 +69,7 @@ Feature: Console Read Runtime Messages
   @requires-chrome
   Scenario: Accumulated messages from multiple interactions
     Given multiple js exec invocations have each generated console messages
-    When I run "chrome-cli console read"
+    When I run "agentchrome console read"
     Then the output is a JSON array
     And the array contains entries from all prior invocations
     And entries are ordered chronologically by timestamp

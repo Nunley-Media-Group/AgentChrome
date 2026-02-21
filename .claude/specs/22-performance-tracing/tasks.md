@@ -65,7 +65,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
-- [ ] `AppError::no_active_trace()` — "No active trace. Run 'chrome-cli perf start' first."
+- [ ] `AppError::no_active_trace()` — "No active trace. Run 'agentchrome perf start' first."
 - [ ] `AppError::unknown_insight(name: &str)` — lists available insight names
 - [ ] `AppError::trace_file_not_found(path: &str)` — "Trace file not found: {path}"
 - [ ] `AppError::trace_parse_failed(error: &str)` — "Failed to parse trace file: {error}"
@@ -230,7 +230,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] `mod perf;` added to `main.rs`
 - [ ] `Command::Perf(args)` match arm calls `perf::execute_perf(&cli.global, args).await`
 - [ ] `Command::Perf` variant updated from unit to `Perf(PerfArgs)`
-- [ ] CLI help text renders correctly for `chrome-cli perf --help` and all subcommands
+- [ ] CLI help text renders correctly for `agentchrome perf --help` and all subcommands
 - [ ] `cargo build` succeeds
 - [ ] `cargo clippy` passes
 

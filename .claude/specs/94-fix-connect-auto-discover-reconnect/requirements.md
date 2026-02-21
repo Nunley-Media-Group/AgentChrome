@@ -13,10 +13,10 @@
 
 ### Steps to Reproduce
 
-1. Clean any existing session: `chrome-cli connect --disconnect`
-2. Launch headless Chrome: `chrome-cli connect --launch --headless` — note the `port` and `pid` in output
-3. Verify session: `cat ~/.chrome-cli/session.json` — shows the launched PID
-4. Run auto-discover: `chrome-cli connect` (bare, no flags)
+1. Clean any existing session: `agentchrome connect --disconnect`
+2. Launch headless Chrome: `agentchrome connect --launch --headless` — note the `port` and `pid` in output
+3. Verify session: `cat ~/.agentchrome/session.json` — shows the launched PID
+4. Run auto-discover: `agentchrome connect` (bare, no flags)
 5. Observe: output shows a **different** `port` and `pid` — a new Chrome instance was launched
 6. Verify: `ps aux | grep Chrome.*remote-debugging` shows **two** Chrome processes
 7. The original headless Chrome is now orphaned (not tracked in session.json)
@@ -68,7 +68,7 @@ Always
 
 **Given** Chrome was launched with `connect --launch --headless`
 **When** I run `connect` (auto-discover) followed by `connect --disconnect`
-**Then** exactly zero Chrome processes related to chrome-cli remain running
+**Then** exactly zero Chrome processes related to agentchrome remain running
 
 ### AC4: Session PID preserved after reconnection
 

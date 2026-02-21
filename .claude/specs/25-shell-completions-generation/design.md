@@ -9,7 +9,7 @@
 
 ## Overview
 
-This feature adds a `completions` subcommand to chrome-cli that generates shell completion scripts for bash, zsh, fish, powershell, and elvish. It uses the `clap_complete` crate which introspects the existing `Cli` parser definition to produce accurate completions automatically — no manual maintenance as commands evolve.
+This feature adds a `completions` subcommand to agentchrome that generates shell completion scripts for bash, zsh, fish, powershell, and elvish. It uses the `clap_complete` crate which introspects the existing `Cli` parser definition to produce accurate completions automatically — no manual maintenance as commands evolve.
 
 The implementation is minimal: add a new `Command::Completions` variant, a `Shell` enum argument, and a handler that calls `clap_complete::generate()` with the shell and the `Cli::command()` builder. The completion script is written to stdout so users can redirect it to the appropriate shell-specific location.
 
@@ -20,7 +20,7 @@ The implementation is minimal: add a new `Command::Completions` variant, a `Shel
 ### Component Diagram
 
 ```
-CLI Input: `chrome-cli completions bash`
+CLI Input: `agentchrome completions bash`
     ↓
 ┌─────────────────┐
 │   CLI Layer      │ ← Parse args, match Command::Completions(shell)
@@ -39,11 +39,11 @@ No CDP connection, Chrome process, or async runtime is needed. This command is e
 ### Data Flow
 
 ```
-1. User runs `chrome-cli completions <shell>`
+1. User runs `agentchrome completions <shell>`
 2. Clap parses args → Command::Completions(CompletionsArgs { shell })
 3. main.rs matches Command::Completions, calls execute_completions()
 4. execute_completions() calls Cli::command() to get the clap Command builder
-5. clap_complete::generate(shell, &mut cmd, "chrome-cli", &mut stdout)
+5. clap_complete::generate(shell, &mut cmd, "agentchrome", &mut stdout)
 6. Completion script is written to stdout
 7. Exit code 0
 ```
@@ -67,16 +67,16 @@ Uses `clap_complete::Shell` which implements `clap::ValueEnum` and supports: `ba
 The `completions` subcommand help will include per-shell installation instructions in the `long_about`:
 
 ```
-chrome-cli completions <SHELL>
+agentchrome completions <SHELL>
 
 Generate shell completion scripts.
 
 INSTALLATION:
-  bash:       chrome-cli completions bash > /etc/bash_completion.d/chrome-cli
-  zsh:        chrome-cli completions zsh > ~/.zfunc/_chrome-cli
-  fish:       chrome-cli completions fish > ~/.config/fish/completions/chrome-cli.fish
-  powershell: chrome-cli completions powershell >> $PROFILE
-  elvish:     chrome-cli completions elvish >> ~/.elvish/rc.elv
+  bash:       agentchrome completions bash > /etc/bash_completion.d/agentchrome
+  zsh:        agentchrome completions zsh > ~/.zfunc/_agentchrome
+  fish:       agentchrome completions fish > ~/.config/fish/completions/agentchrome.fish
+  powershell: agentchrome completions powershell >> $PROFILE
+  elvish:     agentchrome completions elvish >> ~/.elvish/rc.elv
 ```
 
 ---

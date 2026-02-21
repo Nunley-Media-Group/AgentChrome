@@ -14,7 +14,7 @@
 ### Steps to Reproduce
 
 1. Ensure Chrome is installed and no existing connection session exists
-2. Run `chrome-cli connect --launch`
+2. Run `agentchrome connect --launch`
 3. Observe the command hangs for ~30 seconds
 4. Command fails with `"Chrome startup timed out on port XXXXX"` (exit code 4)
 
@@ -62,13 +62,13 @@ The polling loop in `launcher.rs:181-202` retries every 100ms, but each failed `
 ### AC1: Bug Is Fixed — Successful launch and connect
 
 **Given** Chrome is installed and no existing connection session exists
-**When** the user runs `chrome-cli connect --launch`
+**When** the user runs `agentchrome connect --launch`
 **Then** Chrome is launched, the DevTools port is detected, a session is saved, and connection metadata is printed as JSON with exit code 0
 
 ### AC2: No Regression — Headless mode still works
 
 **Given** Chrome is installed
-**When** the user runs `chrome-cli connect --launch --headless`
+**When** the user runs `agentchrome connect --launch --headless`
 **Then** Chrome is launched in headless mode and the connection succeeds within the default 30-second timeout
 
 ### AC3: http_get handles Chrome's delayed connection close

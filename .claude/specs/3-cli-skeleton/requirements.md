@@ -9,7 +9,7 @@
 
 ## User Story
 
-**As a** developer or AI agent using chrome-cli
+**As a** developer or AI agent using agentchrome
 **I want** a well-structured CLI with comprehensive help text, global flags, and subcommand stubs
 **So that** I can discover all capabilities, configure connection settings, and understand available commands before they are fully implemented
 
@@ -17,7 +17,7 @@
 
 ## Background
 
-chrome-cli is a Rust CLI tool for browser automation via the Chrome DevTools Protocol. It is designed to be consumed primarily by AI agents (Claude Code), which means every subcommand, flag, and argument must have rich, descriptive help text. This issue establishes the foundational CLI structure — the argument parsing, subcommand hierarchy, global options, output format flags, and exit code conventions — that all future commands will build upon.
+agentchrome is a Rust CLI tool for browser automation via the Chrome DevTools Protocol. It is designed to be consumed primarily by AI agents (Claude Code), which means every subcommand, flag, and argument must have rich, descriptive help text. This issue establishes the foundational CLI structure — the argument parsing, subcommand hierarchy, global options, output format flags, and exit code conventions — that all future commands will build upon.
 
 The current `main.rs` only prints the package name and version. This feature replaces that with a full clap-based CLI skeleton.
 
@@ -27,88 +27,88 @@ The current `main.rs` only prints the package name and version. This feature rep
 
 ### AC1: Top-level help displays comprehensive tool description
 
-**Given** chrome-cli is installed
-**When** I run `chrome-cli --help`
+**Given** agentchrome is installed
+**When** I run `agentchrome --help`
 **Then** the output includes a description of what the tool does
 **And** lists all available subcommands with descriptions
 **And** lists all global flags and options
 
 ### AC2: Version flag displays version information
 
-**Given** chrome-cli is installed
-**When** I run `chrome-cli --version`
+**Given** agentchrome is installed
+**When** I run `agentchrome --version`
 **Then** the output contains the package name and version string
 
 ### AC3: Output format flags are mutually exclusive
 
-**Given** chrome-cli is installed
-**When** I run `chrome-cli --json --plain <subcommand>`
+**Given** agentchrome is installed
+**When** I run `agentchrome --json --plain <subcommand>`
 **Then** the CLI rejects the conflicting flags with an error
 **And** the error message explains the conflict
 
 ### AC4: Global connection options accept custom values
 
-**Given** chrome-cli is installed
-**When** I run `chrome-cli --port 9333 --host 192.168.1.100 tabs`
+**Given** agentchrome is installed
+**When** I run `agentchrome --port 9333 --host 192.168.1.100 tabs`
 **Then** the port is parsed as 9333
 **And** the host is parsed as "192.168.1.100"
 
 ### AC5: Default connection values are applied
 
-**Given** chrome-cli is installed
-**When** I run `chrome-cli tabs` without specifying --port or --host
+**Given** agentchrome is installed
+**When** I run `agentchrome tabs` without specifying --port or --host
 **Then** the port defaults to 9222
 **And** the host defaults to "127.0.0.1"
 
 ### AC6: Subcommand stubs return "not yet implemented"
 
-**Given** chrome-cli is installed
-**When** I run `chrome-cli connect`
+**Given** agentchrome is installed
+**When** I run `agentchrome connect`
 **Then** the stderr output contains a JSON error: `{"error": "not yet implemented", "code": 1}`
 **And** the exit code is 1
 
 ### AC7: Each subcommand group has help text
 
-**Given** chrome-cli is installed
-**When** I run `chrome-cli tabs --help`
+**Given** agentchrome is installed
+**When** I run `agentchrome tabs --help`
 **Then** the output includes a description of what the tabs command group does
 **And** the description is detailed enough for an AI agent to understand
 
 ### AC8: Exit codes are correctly returned
 
-**Given** chrome-cli is installed
+**Given** agentchrome is installed
 **When** a stub subcommand is executed
 **Then** the exit code is 1 (general error for "not yet implemented")
 
 ### AC9: Error output is structured JSON on stderr
 
-**Given** chrome-cli is installed
+**Given** agentchrome is installed
 **When** an error occurs (e.g., stub command)
 **Then** the error is written to stderr (not stdout)
 **And** the error is formatted as JSON: `{"error": "<message>", "code": <N>}`
 
 ### AC10: All 12 subcommand groups are registered
 
-**Given** chrome-cli is installed
-**When** I run `chrome-cli --help`
+**Given** agentchrome is installed
+**When** I run `agentchrome --help`
 **Then** the output lists all 12 subcommand groups: connect, tabs, navigate, page, dom, js, console, network, interact, form, emulate, perf
 
 ### AC11: WebSocket URL option is accepted
 
-**Given** chrome-cli is installed
-**When** I run `chrome-cli --ws-url ws://localhost:9222/devtools/browser/abc tabs`
+**Given** agentchrome is installed
+**When** I run `agentchrome --ws-url ws://localhost:9222/devtools/browser/abc tabs`
 **Then** the WebSocket URL is parsed correctly
 
 ### AC12: Timeout option is accepted
 
-**Given** chrome-cli is installed
-**When** I run `chrome-cli --timeout 5000 tabs`
+**Given** agentchrome is installed
+**When** I run `agentchrome --timeout 5000 tabs`
 **Then** the timeout is parsed as 5000 milliseconds
 
 ### AC13: Tab ID option is accepted
 
-**Given** chrome-cli is installed
-**When** I run `chrome-cli --tab abc123 js`
+**Given** agentchrome is installed
+**When** I run `agentchrome --tab abc123 js`
 **Then** the tab ID is parsed as "abc123"
 
 ---

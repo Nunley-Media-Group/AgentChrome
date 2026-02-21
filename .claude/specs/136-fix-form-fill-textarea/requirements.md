@@ -13,11 +13,11 @@
 
 ### Steps to Reproduce
 
-1. `chrome-cli connect --launch --headless`
-2. `chrome-cli navigate https://www.google.com`
-3. `chrome-cli page snapshot`
-4. `chrome-cli form fill s9 "test query"` — reports success
-5. `chrome-cli js exec --uid s9 "(el) => el.value"` — returns `""`
+1. `agentchrome connect --launch --headless`
+2. `agentchrome navigate https://www.google.com`
+3. `agentchrome page snapshot`
+4. `agentchrome form fill s9 "test query"` — reports success
+5. `agentchrome js exec --uid s9 "(el) => el.value"` — returns `""`
 
 ### Environment
 

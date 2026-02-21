@@ -24,13 +24,13 @@
 **Depends**: None
 **Acceptance**:
 - [ ] `EmulateState` struct defined with `mobile: bool`, `network: Option<String>`, `cpu: Option<u32>` and derives `Serialize`, `Deserialize`
-- [ ] `emulate_state_path()` returns `~/.chrome-cli/emulate-state.json` (following `session_file_path()` pattern from `src/session.rs`)
+- [ ] `emulate_state_path()` returns `~/.agentchrome/emulate-state.json` (following `session_file_path()` pattern from `src/session.rs`)
 - [ ] `write_emulate_state()` writes state atomically (temp file + rename) with `0o600` permissions on Unix
 - [ ] `read_emulate_state()` returns `Ok(None)` if the file does not exist, `Ok(Some(state))` if it does
 - [ ] `delete_emulate_state()` removes the file, returns `Ok(())` if already absent
 - [ ] Unit tests: round-trip write/read, read-when-missing returns None, delete-when-missing returns Ok
 
-**Notes**: Follow the exact pattern from `src/session.rs` (`write_session_to`, `read_session_from`, `delete_session_from`). Reuse the `session_file_path()` parent directory (`~/.chrome-cli/`) — the state file lives alongside `session.json`.
+**Notes**: Follow the exact pattern from `src/session.rs` (`write_session_to`, `read_session_from`, `delete_session_from`). Reuse the `session_file_path()` parent directory (`~/.agentchrome/`) — the state file lives alongside `session.json`.
 
 ### T002: Wire State into Set, Status, and Reset Commands
 

@@ -61,7 +61,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **Depends**: None
 **Acceptance**:
 - [ ] `AppError::screenshot_failed(description)` returns message `"Screenshot capture failed: {description}"` with `ExitCode::GeneralError`
-- [ ] `AppError::uid_not_found(uid)` returns message `"UID '{uid}' not found. Run 'chrome-cli page snapshot' first."` with `ExitCode::GeneralError`
+- [ ] `AppError::uid_not_found(uid)` returns message `"UID '{uid}' not found. Run 'agentchrome page snapshot' first."` with `ExitCode::GeneralError`
 - [ ] `AppError::invalid_clip(input)` returns message `"Invalid clip format: expected X,Y,WIDTH,HEIGHT (e.g. 10,20,200,100): {input}"` with `ExitCode::GeneralError`
 - [ ] Unit tests for all three constructors verify message content and exit code
 
@@ -83,7 +83,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
   - `--file` (`Option<PathBuf>`)
   - `--clip` (`Option<String>`)
 - [ ] `PageCommand::Screenshot(PageScreenshotArgs)` variant added to `PageCommand` enum
-- [ ] `chrome-cli page screenshot --help` displays all options with descriptions
+- [ ] `agentchrome page screenshot --help` displays all options with descriptions
 - [ ] Compiles without errors or clippy warnings
 
 **Notes**: Follow the pattern of `PageFindArgs`. Mutual exclusion of `--full-page` with `--selector`/`--uid` is validated at runtime in the executor (not clap), consistent with how `page find` validates query vs selector. The `--clip` is parsed as a string and validated at runtime.
@@ -233,7 +233,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] `cargo fmt --check` passes
 - [ ] `cargo test --lib` passes (all unit tests including new ones)
 - [ ] `cargo build` succeeds
-- [ ] `chrome-cli page screenshot --help` displays expected usage info with all options
+- [ ] `agentchrome page screenshot --help` displays expected usage info with all options
 
 ---
 

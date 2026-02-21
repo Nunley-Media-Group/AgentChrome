@@ -9,7 +9,7 @@
 
 ## Overview
 
-This feature adds a `chrome-cli capabilities` subcommand that outputs a complete, machine-readable JSON manifest describing every command, subcommand, flag, argument, and their types. Unlike the `examples` command (which uses static data), this command walks the clap `Command` tree at runtime via `Cli::command()` — the same introspection already used by `completions` and `man` — ensuring the manifest stays automatically in sync as the CLI evolves.
+This feature adds a `agentchrome capabilities` subcommand that outputs a complete, machine-readable JSON manifest describing every command, subcommand, flag, argument, and their types. Unlike the `examples` command (which uses static data), this command walks the clap `Command` tree at runtime via `Cli::command()` — the same introspection already used by `completions` and `man` — ensuring the manifest stays automatically in sync as the CLI evolves.
 
 The implementation adds a new `capabilities.rs` module with a visitor that traverses the clap `Command` tree, extracts metadata (names, descriptions, args, flags, types, defaults, enum values), and serializes it into a structured JSON manifest. Exit code documentation is sourced from the `ExitCode` enum. The command supports `--command <CMD>` filtering, `--compact` mode, and respects the existing `--pretty` output format flag.
 
@@ -20,7 +20,7 @@ The implementation adds a new `capabilities.rs` module with a visitor that trave
 ### Component Diagram
 
 ```
-CLI Input: chrome-cli capabilities [--command <CMD>] [--compact] [--pretty]
+CLI Input: agentchrome capabilities [--command <CMD>] [--compact] [--pretty]
     ↓
 ┌──────────────────────────────────┐
 │       CLI Layer (clap)           │ ← Parse args: --command, --compact, output format
@@ -57,7 +57,7 @@ No CDP, Chrome, or session layers are involved.
 ### Data Flow
 
 ```
-1. User runs: chrome-cli capabilities [--command navigate] [--compact] [--pretty]
+1. User runs: agentchrome capabilities [--command navigate] [--compact] [--pretty]
 2. Clap parses into Command::Capabilities(CapabilitiesArgs { command, compact })
 3. main.rs dispatches to capabilities::execute_capabilities(&global, &args)
 4. execute_capabilities() calls Cli::command() to get the clap Command tree
@@ -80,7 +80,7 @@ No CDP, Chrome, or session layers are involved.
 ### New CLI Subcommand
 
 ```
-chrome-cli capabilities [--command <CMD>] [--compact] [--pretty]
+agentchrome capabilities [--command <CMD>] [--compact] [--pretty]
 ```
 
 | Argument | Type | Required | Description |
@@ -104,16 +104,16 @@ Added to `Command` enum in `src/cli/mod.rs`:
     after_long_help = "\
 EXAMPLES:
   # Full capabilities manifest
-  chrome-cli capabilities
+  agentchrome capabilities
 
   # Pretty-printed for readability
-  chrome-cli capabilities --pretty
+  agentchrome capabilities --pretty
 
   # Capabilities for a specific command
-  chrome-cli capabilities --command navigate
+  agentchrome capabilities --command navigate
 
   # Compact listing (names and descriptions only)
-  chrome-cli capabilities --compact"
+  agentchrome capabilities --compact"
 )]
 Capabilities(CapabilitiesArgs),
 ```
@@ -139,7 +139,7 @@ pub struct CapabilitiesArgs {
 
 ```json
 {
-  "name": "chrome-cli",
+  "name": "agentchrome",
   "version": "0.1.0",
   "commands": [
     {
@@ -211,7 +211,7 @@ pub struct CapabilitiesArgs {
 
 ```json
 {
-  "name": "chrome-cli",
+  "name": "agentchrome",
   "version": "0.1.0",
   "commands": [
     { "name": "connect", "description": "Connect to or launch a Chrome instance" },

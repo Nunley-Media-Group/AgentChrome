@@ -74,7 +74,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] `code` and `--file` are mutually exclusive (via clap conflict)
 - [ ] `Command::Js` variant changed from unit to `Js(JsArgs)`
 - [ ] `cargo build` compiles without errors
-- [ ] `chrome-cli js exec --help` shows all options and global flags
+- [ ] `agentchrome js exec --help` shows all options and global flags
 
 **Notes**: Follow the `PageArgs`/`PageCommand` and `PerfArgs`/`PerfCommand` patterns. The `--tab`, `--json`, `--pretty`, `--plain` flags are global and need no changes.
 
@@ -212,8 +212,8 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] `cargo fmt --check` passes
 - [ ] `cargo test --lib` passes (all unit tests including new ones)
 - [ ] `cargo build` succeeds
-- [ ] `chrome-cli js exec --help` displays expected usage info
-- [ ] `chrome-cli js --help` shows the `exec` subcommand
+- [ ] `agentchrome js exec --help` displays expected usage info
+- [ ] `agentchrome js --help` shows the `exec` subcommand
 
 ---
 

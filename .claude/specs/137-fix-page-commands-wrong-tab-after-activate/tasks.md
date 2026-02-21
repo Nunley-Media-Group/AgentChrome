@@ -79,7 +79,7 @@
 **Depends**: T003
 **Acceptance**:
 - [ ] Build debug binary: `cargo build`
-- [ ] Launch headless Chrome: `./target/debug/chrome-cli connect --launch --headless`
+- [ ] Launch headless Chrome: `./target/debug/agentchrome connect --launch --headless`
 - [ ] Reproduce original bug steps from requirements.md and confirm the bug no longer occurs
 - [ ] Run SauceDemo smoke test (navigate + snapshot)
 - [ ] Disconnect and kill orphaned Chrome processes

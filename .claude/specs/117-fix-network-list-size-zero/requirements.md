@@ -13,11 +13,11 @@
 
 ### Steps to Reproduce
 
-1. `chrome-cli connect --launch --headless`
-2. `chrome-cli navigate https://www.google.com`
-3. `chrome-cli network list --limit 5`
+1. `agentchrome connect --launch --headless`
+2. `agentchrome navigate https://www.google.com`
+3. `agentchrome network list --limit 5`
 4. Observe most requests show `"size": 0`
-5. `chrome-cli network get 3` — response headers show `content-length: 377301` but top-level `size: 0`
+5. `agentchrome network get 3` — response headers show `content-length: 377301` but top-level `size: 0`
 
 ### Environment
 
@@ -63,7 +63,7 @@ Always — the vast majority of network requests show `size: 0`.
 ### AC3: Size fallback applies to network get detail view
 
 **Given** Chrome is connected and a page has been navigated
-**When** I run `chrome-cli network get <id>` for a request where `encodedDataLength` was 0
+**When** I run `agentchrome network get <id>` for a request where `encodedDataLength` was 0
 **And** the response headers include a `content-length` value
 **Then** the detail view's `size` field uses the `content-length` value
 

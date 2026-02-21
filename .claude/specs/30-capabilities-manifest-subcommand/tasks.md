@@ -189,11 +189,11 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] `Command::Capabilities(args) => capabilities::execute_capabilities(&global, args)` added to match in `run()`
 - [ ] No `async` — this is a sync call (same as `execute_completions`, `execute_man`, `execute_examples`)
 - [ ] `cargo build` succeeds
-- [ ] Running `chrome-cli capabilities` prints valid JSON with all commands
-- [ ] Running `chrome-cli capabilities --pretty` prints indented JSON
-- [ ] Running `chrome-cli capabilities --command navigate` prints navigate-only manifest
-- [ ] Running `chrome-cli capabilities --compact` prints minimal manifest
-- [ ] Running `chrome-cli capabilities --command nonexistent` exits with code 1 and error on stderr
+- [ ] Running `agentchrome capabilities` prints valid JSON with all commands
+- [ ] Running `agentchrome capabilities --pretty` prints indented JSON
+- [ ] Running `agentchrome capabilities --command navigate` prints navigate-only manifest
+- [ ] Running `agentchrome capabilities --compact` prints minimal manifest
+- [ ] Running `agentchrome capabilities --command nonexistent` exits with code 1 and error on stderr
 
 ---
 

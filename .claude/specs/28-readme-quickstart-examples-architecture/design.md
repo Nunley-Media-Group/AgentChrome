@@ -38,7 +38,7 @@ README.md
 ```
 1. User lands on README (GitHub or crates.io)
 2. Sees badges → trust signals (CI passing, license)
-3. Reads description → understands what chrome-cli does
+3. Reads description → understands what agentchrome does
 4. Scans Features → decides if it meets their needs
 5. Follows Installation → gets the binary
 6. Follows Quick Start → first successful interaction
@@ -66,18 +66,18 @@ No other files are created or modified.
 
 ### Header Section
 
-- H1 heading: `# chrome-cli`
+- H1 heading: `# agentchrome`
 - One-line description from Cargo.toml: "A CLI tool for browser automation via the Chrome DevTools Protocol"
 - Badge row using Markdown image links:
-  - CI status: `![CI](https://github.com/Nunley-Media-Group/chrome-cli/actions/workflows/ci.yml/badge.svg)`
+  - CI status: `![CI](https://github.com/Nunley-Media-Group/AgentChrome/actions/workflows/ci.yml/badge.svg)`
   - License: `![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue)`
   - Crates.io placeholder (commented out until published)
 
 ### Features Section
 
 - Bullet list of 10+ capabilities derived from actual CLI commands
-- Comparison table: chrome-cli vs Chrome DevTools MCP vs Puppeteer/Playwright CLI
-  - Columns: Feature, chrome-cli, Alternatives
+- Comparison table: agentchrome vs Chrome DevTools MCP vs Puppeteer/Playwright CLI
+  - Columns: Feature, agentchrome, Alternatives
   - Key differentiators: standalone binary, no runtime, shell-native
 
 ### Installation Section
@@ -85,7 +85,7 @@ No other files are created or modified.
 Three methods in order of ease:
 
 1. **Pre-built binaries** — curl one-liners for macOS (ARM + Intel) and Linux (x64 + ARM), with platform detection
-2. **Cargo install** — `cargo install chrome-cli`
+2. **Cargo install** — `cargo install agentchrome`
 3. **Build from source** — git clone + cargo build
 
 Supported platforms table derived from release.yml targets:
@@ -100,27 +100,27 @@ Supported platforms table derived from release.yml targets:
 Numbered steps with actual commands from the CLI help output:
 
 ```
-1. Install chrome-cli (link to Installation)
+1. Install agentchrome (link to Installation)
 2. Start Chrome: google-chrome --remote-debugging-port=9222
-3. Connect: chrome-cli connect
-4. Navigate: chrome-cli navigate https://example.com
-5. Inspect: chrome-cli page snapshot
+3. Connect: agentchrome connect
+4. Navigate: agentchrome navigate https://example.com
+5. Inspect: agentchrome page snapshot
 ```
 
 ### Usage Examples Section
 
 Each workflow in a collapsible `<details>` section:
 
-1. **Taking a screenshot** — `chrome-cli page screenshot`
-2. **Extracting page text** — `chrome-cli page text`
-3. **Executing JavaScript** — `chrome-cli js exec`
-4. **Filling forms** — `chrome-cli form fill` / `chrome-cli form fill-many`
-5. **Monitoring network** — `chrome-cli network follow`
-6. **Performance tracing** — `chrome-cli perf start` / `chrome-cli perf stop`
+1. **Taking a screenshot** — `agentchrome page screenshot`
+2. **Extracting page text** — `agentchrome page text`
+3. **Executing JavaScript** — `agentchrome js exec`
+4. **Filling forms** — `agentchrome form fill` / `agentchrome form fill-many`
+5. **Monitoring network** — `agentchrome network follow`
+6. **Performance tracing** — `agentchrome perf start` / `agentchrome perf stop`
 
 ### Command Reference Section
 
-Markdown table with columns: Command, Description. Derived from `chrome-cli --help` output. All 16 commands (connect, tabs, navigate, page, dom, js, console, network, interact, form, emulate, perf, dialog, config, completions, man).
+Markdown table with columns: Command, Description. Derived from `agentchrome --help` output. All 16 commands (connect, tabs, navigate, page, dom, js, console, network, interact, form, emulate, perf, dialog, config, completions, man).
 
 ### Architecture Section
 
@@ -137,8 +137,8 @@ Brief descriptions of:
 
 ### Claude Code Integration Section
 
-- Brief explanation of chrome-cli as a tool for AI agents
-- Example CLAUDE.md snippet showing how to configure chrome-cli in a project
+- Brief explanation of agentchrome as a tool for AI agents
+- Example CLAUDE.md snippet showing how to configure agentchrome in a project
 - Common AI agent workflows (screenshot → analyze, navigate → extract text)
 
 ### Contributing Section

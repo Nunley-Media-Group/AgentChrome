@@ -94,7 +94,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **Depends**: T005
 **Acceptance**:
 - [ ] Uses `env!("CARGO_PKG_NAME")` and `env!("CARGO_PKG_VERSION")`
-- [ ] Prints `chrome-cli 0.1.0` format to stdout
+- [ ] Prints `agentchrome 0.1.0` format to stdout
 - [ ] Compiles without warnings
 
 ### T007: Create README.md

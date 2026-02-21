@@ -9,7 +9,7 @@
 
 ## Overview
 
-This design introduces the `src/cdp/` module — the foundational communication layer for chrome-cli. It provides an async WebSocket client that speaks the Chrome DevTools Protocol (CDP), handling command/response correlation, event subscriptions, session multiplexing, timeouts, and reconnection.
+This design introduces the `src/cdp/` module — the foundational communication layer for agentchrome. It provides an async WebSocket client that speaks the Chrome DevTools Protocol (CDP), handling command/response correlation, event subscriptions, session multiplexing, timeouts, and reconnection.
 
 The client follows a split-architecture pattern: a public `CdpClient` handle that users interact with, and a background `Transport` task that owns the WebSocket connection and dispatches messages. Communication between them flows through tokio channels. This separation keeps the public API clean while enabling concurrent command/event handling on a single WebSocket connection.
 

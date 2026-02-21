@@ -4,20 +4,20 @@
 # Issue: #26
 
 Feature: Comprehensive help text
-  As a developer or AI agent using chrome-cli
+  As a developer or AI agent using agentchrome
   I want rich, detailed --help documentation for every command, subcommand, and flag
   So that I can fully understand all capabilities without external documentation
 
   # --- Top-Level Help ---
 
   Scenario: Top-level help displays tool description
-    Given the chrome-cli binary is built
-    When I run "chrome-cli --help"
+    Given the agentchrome binary is built
+    When I run "agentchrome --help"
     Then the output contains "Browser automation via the Chrome DevTools Protocol"
 
   Scenario: Top-level help lists all command groups
-    Given the chrome-cli binary is built
-    When I run "chrome-cli --help"
+    Given the agentchrome binary is built
+    When I run "agentchrome --help"
     Then the output contains "connect"
     And the output contains "tabs"
     And the output contains "navigate"
@@ -34,15 +34,15 @@ Feature: Comprehensive help text
     And the output contains "completions"
 
   Scenario: Top-level help includes quick-start examples
-    Given the chrome-cli binary is built
-    When I run "chrome-cli --help"
+    Given the agentchrome binary is built
+    When I run "agentchrome --help"
     Then the output contains "QUICK START"
-    And the output contains "chrome-cli connect"
-    And the output contains "chrome-cli tabs list"
+    And the output contains "agentchrome connect"
+    And the output contains "agentchrome tabs list"
 
   Scenario: Top-level help documents exit codes
-    Given the chrome-cli binary is built
-    When I run "chrome-cli --help"
+    Given the agentchrome binary is built
+    When I run "agentchrome --help"
     Then the output contains "EXIT CODES"
     And the output contains "0"
     And the output contains "Success"
@@ -50,19 +50,19 @@ Feature: Comprehensive help text
     And the output contains "Timeout error"
 
   Scenario: Top-level help documents environment variables
-    Given the chrome-cli binary is built
-    When I run "chrome-cli --help"
+    Given the agentchrome binary is built
+    When I run "agentchrome --help"
     Then the output contains "ENVIRONMENT VARIABLES"
-    And the output contains "CHROME_CLI_PORT"
-    And the output contains "CHROME_CLI_TIMEOUT"
+    And the output contains "AGENTCHROME_PORT"
+    And the output contains "AGENTCHROME_TIMEOUT"
 
   # --- Command Group Help ---
 
   Scenario Outline: Command group help includes usage examples
-    Given the chrome-cli binary is built
-    When I run "chrome-cli <group> --help"
+    Given the agentchrome binary is built
+    When I run "agentchrome <group> --help"
     Then the output contains "EXAMPLES"
-    And the output contains "chrome-cli <group>"
+    And the output contains "agentchrome <group>"
 
     Examples:
       | group      |
@@ -82,8 +82,8 @@ Feature: Comprehensive help text
   # --- Leaf Command Help ---
 
   Scenario Outline: Leaf command help includes detailed description and examples
-    Given the chrome-cli binary is built
-    When I run "chrome-cli <command> --help"
+    Given the agentchrome binary is built
+    When I run "agentchrome <command> --help"
     Then the output contains "EXAMPLES"
 
     Examples:
@@ -133,13 +133,13 @@ Feature: Comprehensive help text
   # --- Help Text Quality ---
 
   Scenario: No placeholder text in any help output
-    Given the chrome-cli binary is built
+    Given the agentchrome binary is built
     When I run --help for every command and subcommand
     Then no output contains "TODO"
     And no output contains "FIXME"
     And no output contains "placeholder"
 
   Scenario: All help commands exit successfully
-    Given the chrome-cli binary is built
+    Given the agentchrome binary is built
     When I run --help for every command and subcommand
     Then every command exits with code 0

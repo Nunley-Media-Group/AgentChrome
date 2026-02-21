@@ -339,7 +339,7 @@ mod tests {
 
     #[test]
     fn read_devtools_active_port_from_dir() {
-        let dir = std::env::temp_dir().join("chrome-cli-test-devtools-port");
+        let dir = std::env::temp_dir().join("agentchrome-test-devtools-port");
         std::fs::create_dir_all(&dir).unwrap();
         let file = dir.join("DevToolsActivePort");
         std::fs::write(&file, "9333\n/devtools/browser/xyz-789\n").unwrap();
@@ -354,7 +354,7 @@ mod tests {
 
     #[test]
     fn read_devtools_active_port_from_missing_dir() {
-        let dir = std::path::Path::new("/nonexistent/chrome-cli-test");
+        let dir = std::path::Path::new("/nonexistent/agentchrome-test");
         let result = read_devtools_active_port_from(dir);
         assert!(result.is_err());
     }

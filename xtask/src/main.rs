@@ -23,15 +23,15 @@ fn generate_man_pages() {
     let out_dir = Path::new("man");
     fs::create_dir_all(out_dir).expect("failed to create man/ directory");
 
-    let cmd = chrome_cli::command();
+    let cmd = agentchrome::command();
     let mut count = 0;
 
     // Generate top-level man page
-    render_man_page(&cmd, "chrome-cli", out_dir);
+    render_man_page(&cmd, "agentchrome", out_dir);
     count += 1;
 
     // Generate man pages for all subcommands (recursively)
-    count += generate_subcommand_pages(&cmd, "chrome-cli", out_dir);
+    count += generate_subcommand_pages(&cmd, "agentchrome", out_dir);
 
     println!("Generated {count} man pages in {}", out_dir.display());
 }

@@ -30,7 +30,7 @@ The `console.rs` module handles timestamps correctly because `Runtime.consoleAPI
 
 ### Triggering Conditions
 
-- Any use of `chrome-cli network list`, `network get`, or `network follow` — the bug affects all network subcommands that display timestamps
+- Any use of `agentchrome network list`, `network get`, or `network follow` — the bug affects all network subcommands that display timestamps
 - The monotonic timestamp value is small enough (typically 10k-200k seconds) that it maps to a date in early 1970 when treated as epoch seconds
 - This was not caught before because the incorrect comment (`"seconds since epoch"`) masked the real semantics of CDP Network timestamps
 

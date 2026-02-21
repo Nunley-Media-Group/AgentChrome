@@ -226,10 +226,10 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] `mod console;` added to main.rs
 - [ ] `cargo build` succeeds
 - [ ] `cargo clippy` passes
-- [ ] `chrome-cli console --help` lists `read` and `follow` subcommands
-- [ ] `chrome-cli console read --help` shows all read flags
-- [ ] `chrome-cli console follow --help` shows all follow flags
-- [ ] `chrome-cli console read --type error --errors-only` produces a clap conflict error
+- [ ] `agentchrome console --help` lists `read` and `follow` subcommands
+- [ ] `agentchrome console read --help` shows all read flags
+- [ ] `agentchrome console follow --help` shows all follow flags
+- [ ] `agentchrome console read --type error --errors-only` produces a clap conflict error
 
 ---
 

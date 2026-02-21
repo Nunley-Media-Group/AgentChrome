@@ -20,14 +20,14 @@ Feature: perf vitals returns null for CLS and TTFB metrics
   @regression
   Scenario: CLS returns 0.0 when no layout shifts occur
     Given the loaded page has no layout shifts
-    When I run "chrome-cli perf vitals"
+    When I run "agentchrome perf vitals"
     Then the JSON output should contain key "cls"
     And the "cls" field should be a number
     And the "cls" field should equal 0.0
 
   @regression
   Scenario: TTFB is measured for loaded pages
-    When I run "chrome-cli perf vitals"
+    When I run "agentchrome perf vitals"
     Then the JSON output should contain key "ttfb_ms"
     And the "ttfb_ms" field should be a number
     And the "ttfb_ms" field should be greater than 0
@@ -36,7 +36,7 @@ Feature: perf vitals returns null for CLS and TTFB metrics
 
   @regression
   Scenario: LCP continues to work correctly
-    When I run "chrome-cli perf vitals"
+    When I run "agentchrome perf vitals"
     Then the JSON output should contain key "lcp_ms"
     And the "lcp_ms" field should be a number
     And the "lcp_ms" field should be greater than 0

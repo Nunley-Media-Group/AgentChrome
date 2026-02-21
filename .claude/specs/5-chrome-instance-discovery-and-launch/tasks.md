@@ -147,7 +147,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] Returns `ChromeError::StartupTimeout` if polling exceeds timeout
 - [ ] `cargo clippy` passes
 
-**Notes**: Use `std::process::Command::new(executable).args([...]).spawn()`. The temp directory should use `std::env::temp_dir()` with a unique subdirectory name (e.g., `chrome-cli-{random}`). Use `tokio::time::sleep` between poll attempts.
+**Notes**: Use `std::process::Command::new(executable).args([...]).spawn()`. The temp directory should use `std::env::temp_dir()` with a unique subdirectory name (e.g., `agentchrome-{random}`). Use `tokio::time::sleep` between poll attempts.
 
 ### T006: Wire up chrome module exports
 
@@ -178,7 +178,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
   - `--chrome-arg` (Vec<String>, requires "launch")
 - [ ] `ChromeChannel` enum defined (Stable, Canary, Beta, Dev) with ValueEnum derive
 - [ ] `Command::Connect` variant changed from unit to `Connect(ConnectArgs)`
-- [ ] `chrome-cli connect --help` shows all new flags
+- [ ] `agentchrome connect --help` shows all new flags
 - [ ] Existing BDD tests still pass (`cargo test --test bdd`)
 - [ ] `cargo clippy` passes
 
@@ -323,7 +323,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
   - `find_available_port()` returns a valid port
   - `TempDir` cleanup on drop
 - [ ] BDD step definitions added to `tests/bdd.rs` for connect-related scenarios
-  - Steps for "chrome-cli connect" command invocation
+  - Steps for "agentchrome connect" command invocation
   - Steps for JSON output validation
   - Steps for error message validation
 - [ ] `cargo test --lib` passes (unit tests)

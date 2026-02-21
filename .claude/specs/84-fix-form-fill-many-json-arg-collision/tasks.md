@@ -39,7 +39,7 @@
 **Acceptance**:
 - [ ] Gherkin scenario verifies `form fill-many` accepts a positional JSON argument without panicking
 - [ ] Scenario tagged `@regression`
-- [ ] Step definitions reuse existing `CliWorld` steps (given chrome-cli is built, when I run, then exit code)
+- [ ] Step definitions reuse existing `CliWorld` steps (given agentchrome is built, when I run, then exit code)
 - [ ] Scenario added to `FORM_TESTABLE_SCENARIOS` in `tests/bdd.rs`
 - [ ] `cargo test --test bdd` passes for the new scenario
 

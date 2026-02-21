@@ -79,10 +79,10 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
-- [ ] `AppError::no_snapshot_state()` constructor returning `ExitCode::GeneralError` with message "No snapshot state found. Run 'chrome-cli page snapshot' first to assign UIDs to interactive elements."
+- [ ] `AppError::no_snapshot_state()` constructor returning `ExitCode::GeneralError` with message "No snapshot state found. Run 'agentchrome page snapshot' first to assign UIDs to interactive elements."
 - [ ] `AppError::element_zero_size(target: &str)` constructor returning `ExitCode::GeneralError` with message "Element '{target}' has zero-size bounding box and cannot be clicked."
 - [ ] `AppError::interaction_failed(action: &str, reason: &str)` constructor returning `ExitCode::ProtocolError`
-- [ ] `AppError::stale_uid(uid: &str)` constructor returning `ExitCode::GeneralError` with message "UID '{uid}' refers to an element that no longer exists. Run 'chrome-cli page snapshot' to refresh."
+- [ ] `AppError::stale_uid(uid: &str)` constructor returning `ExitCode::GeneralError` with message "UID '{uid}' refers to an element that no longer exists. Run 'agentchrome page snapshot' to refresh."
 - [ ] `cargo check` passes with no errors
 
 ---

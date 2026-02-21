@@ -109,8 +109,8 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
   - `aarch64-unknown-linux-gnu` on `ubuntu-24.04-arm`
   - `x86_64-pc-windows-msvc` on `windows-latest`
 - [ ] Steps: checkout → toolchain install (with target) → cache → build release → strip (Unix) → create archive dir → copy binary + README + LICENSE files → archive (tar.gz Unix / zip Windows) → upload artifact
-- [ ] Binary name is `chrome-cli` (or `chrome-cli.exe` on Windows)
-- [ ] Archive naming: `chrome-cli-{version}-{target}.tar.gz` (Unix) or `.zip` (Windows)
+- [ ] Binary name is `agentchrome` (or `agentchrome.exe` on Windows)
+- [ ] Archive naming: `agentchrome-{version}-{target}.tar.gz` (Unix) or `.zip` (Windows)
 - [ ] Strip step skipped on Windows
 - [ ] Uses `actions/upload-artifact@v4` to upload archive
 

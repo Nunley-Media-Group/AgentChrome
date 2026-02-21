@@ -9,7 +9,7 @@
 
 ## Overview
 
-This feature adds a `perf` subcommand group to chrome-cli that wraps the CDP `Tracing` domain. It supports starting/stopping performance traces, extracting Core Web Vitals from trace data, and analyzing specific performance insights. The implementation follows the same patterns as existing commands (`navigate.rs`, `page.rs`): a single `src/perf.rs` module with output types, a dispatcher, session setup, and subcommand handlers.
+This feature adds a `perf` subcommand group to agentchrome that wraps the CDP `Tracing` domain. It supports starting/stopping performance traces, extracting Core Web Vitals from trace data, and analyzing specific performance insights. The implementation follows the same patterns as existing commands (`navigate.rs`, `page.rs`): a single `src/perf.rs` module with output types, a dispatcher, session setup, and subcommand handlers.
 
 Trace data is streamed to disk via `Tracing.dataCollected` CDP events to avoid holding large traces (10+ MB) in memory. A lightweight Rust-native trace parser extracts Core Web Vitals (LCP, CLS, TTFB) from the Chrome Trace Event Format JSON. Detailed insight analysis (LCPBreakdown, RenderBlocking, LongTasks, etc.) parses trace events by category to produce structured breakdowns.
 
@@ -110,10 +110,10 @@ Trace data is streamed to disk via `Tracing.dataCollected` CDP events to avoid h
 
 | Command | Purpose |
 |---------|---------|
-| `chrome-cli perf start` | Begin trace recording |
-| `chrome-cli perf stop` | Stop trace and collect data |
-| `chrome-cli perf analyze <INSIGHT>` | Analyze a performance insight |
-| `chrome-cli perf vitals` | Quick Core Web Vitals measurement |
+| `agentchrome perf start` | Begin trace recording |
+| `agentchrome perf stop` | Stop trace and collect data |
+| `agentchrome perf analyze <INSIGHT>` | Analyze a performance insight |
+| `agentchrome perf vitals` | Quick Core Web Vitals measurement |
 
 ### CLI Argument Definitions
 
@@ -228,7 +228,7 @@ pub struct PerfVitalsArgs {
 
 | Condition | Error Message | Exit Code |
 |-----------|---------------|-----------|
-| `perf stop` with no active trace | "No active trace. Run 'chrome-cli perf start' first." | 1 (GeneralError) |
+| `perf stop` with no active trace | "No active trace. Run 'agentchrome perf start' first." | 1 (GeneralError) |
 | `perf analyze` with invalid insight | "Unknown insight: '{name}'. Available: DocumentLatency, LCPBreakdown, RenderBlocking, LongTasks" | 1 (GeneralError) |
 | `perf analyze` with missing trace file | "Trace file not found: {path}" | 1 (GeneralError) |
 | `perf analyze` with invalid trace data | "Failed to parse trace file: {error}" | 1 (GeneralError) |

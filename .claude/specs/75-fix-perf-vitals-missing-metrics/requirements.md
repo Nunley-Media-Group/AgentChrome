@@ -13,10 +13,10 @@
 
 ### Steps to Reproduce
 
-1. Launch Chrome via `chrome-cli` or connect to a running instance.
+1. Launch Chrome via `agentchrome` or connect to a running instance.
 2. Navigate to `https://www.google.com/`.
 3. Wait for the page to fully load.
-4. Run `chrome-cli perf vitals --pretty`.
+4. Run `agentchrome perf vitals --pretty`.
 
 ### Environment
 

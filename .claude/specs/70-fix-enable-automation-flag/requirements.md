@@ -13,7 +13,7 @@
 
 ### Steps to Reproduce
 
-1. Run `chrome-cli connect --launch` (headed mode, no `--headless`)
+1. Run `agentchrome connect --launch` (headed mode, no `--headless`)
 2. Observe the Chrome window that opens
 
 ### Environment
@@ -21,7 +21,7 @@
 | Factor | Value |
 |--------|-------|
 | **OS / Platform** | macOS (Darwin 25.2.0) |
-| **Version / Commit** | chrome-cli v0.1.0, commit 02373b8 |
+| **Version / Commit** | agentchrome v0.1.0, commit 02373b8 |
 | **Browser / Runtime** | Google Chrome 144.x |
 | **Configuration** | Default (no config file overrides) |
 
@@ -46,13 +46,13 @@ Always
 
 ### AC1: Automation flag is included on launch
 
-**Given** a user runs `chrome-cli connect --launch` in headed mode
+**Given** a user runs `agentchrome connect --launch` in headed mode
 **When** Chrome is spawned
 **Then** the `--enable-automation` flag is included in the Chrome command-line arguments
 
 ### AC2: Headless mode is unaffected
 
-**Given** a user runs `chrome-cli connect --launch --headless`
+**Given** a user runs `agentchrome connect --launch --headless`
 **When** Chrome is spawned in headless mode
 **Then** the `--enable-automation` flag is still passed and headless operation is unaffected
 

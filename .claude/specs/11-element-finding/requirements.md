@@ -26,87 +26,87 @@ The MCP server has a `find` concept where users can locate elements by their acc
 ### AC1: Find elements by text query (happy path)
 
 **Given** Chrome is connected with a page loaded
-**When** I run `chrome-cli page find "Submit"`
+**When** I run `agentchrome page find "Submit"`
 **Then** a JSON array of matching elements is returned
 **And** each element includes uid, role, name, and bounding box
 **And** elements are in document order
 
 **Example**:
 - Given: A page with a "Submit" button and a "Submit Form" heading
-- When: `chrome-cli page find "Submit"`
+- When: `agentchrome page find "Submit"`
 - Then: Both elements are returned, button with uid, heading without (or with uid if interactive)
 
 ### AC2: Find elements by CSS selector
 
 **Given** Chrome is connected with a page loaded
-**When** I run `chrome-cli page find --selector "button.primary"`
+**When** I run `agentchrome page find --selector "button.primary"`
 **Then** elements matching the CSS selector are returned as a JSON array
 **And** each element includes uid, role, name, and bounding box
 
 ### AC3: Filter by accessibility role
 
 **Given** Chrome is connected with a page loaded containing buttons and links
-**When** I run `chrome-cli page find "Click" --role button`
+**When** I run `agentchrome page find "Click" --role button`
 **Then** only elements with the "button" role matching "Click" are returned
 **And** links containing "Click" are excluded
 
 ### AC4: Exact text match
 
 **Given** Chrome is connected with a page containing "Log" and "Login" buttons
-**When** I run `chrome-cli page find "Log" --exact`
+**When** I run `agentchrome page find "Log" --exact`
 **Then** only the element with the exact name "Log" is returned
 **And** "Login" is excluded
 
 ### AC5: Limit results
 
 **Given** Chrome is connected with a page containing 50 links
-**When** I run `chrome-cli page find "link" --limit 5`
+**When** I run `agentchrome page find "link" --limit 5`
 **Then** at most 5 results are returned
 **And** they are in document order (first 5 matches)
 
 ### AC6: Default limit
 
 **Given** Chrome is connected with a page containing many matching elements
-**When** I run `chrome-cli page find "item"` without `--limit`
+**When** I run `agentchrome page find "item"` without `--limit`
 **Then** at most 10 results are returned (default limit)
 
 ### AC7: Target a specific tab
 
 **Given** Chrome is connected with multiple tabs open
-**When** I run `chrome-cli page find "Submit" --tab <ID>`
+**When** I run `agentchrome page find "Submit" --tab <ID>`
 **Then** the search is performed on the specified tab only
 
 ### AC8: No matches found
 
 **Given** Chrome is connected with a page loaded
-**When** I run `chrome-cli page find "nonexistent-element-xyz"`
+**When** I run `agentchrome page find "nonexistent-element-xyz"`
 **Then** an empty JSON array `[]` is returned
 **And** the exit code is 0 (not an error)
 
 ### AC9: Bounding box information
 
 **Given** Chrome is connected with a page containing a visible button
-**When** I run `chrome-cli page find "Submit"`
+**When** I run `agentchrome page find "Submit"`
 **Then** each result includes a bounding box with x, y, width, and height
 **And** bounding box values are numeric (pixels)
 
 ### AC10: Snapshot triggered if needed
 
 **Given** Chrome is connected with a page loaded but no prior snapshot
-**When** I run `chrome-cli page find "Submit"`
+**When** I run `agentchrome page find "Submit"`
 **Then** a snapshot is automatically captured before searching
 **And** UIDs are assigned and persisted to snapshot state
 
 ### AC11: CSS selector with no text query
 
 **Given** Chrome is connected with a page loaded
-**When** I run `chrome-cli page find --selector "input[type=email]"`
+**When** I run `agentchrome page find --selector "input[type=email]"`
 **Then** matching elements are returned without requiring a text query argument
 
 ### AC12: Combined role and text query
 
 **Given** Chrome is connected with a page containing links and buttons with "Next"
-**When** I run `chrome-cli page find "Next" --role link`
+**When** I run `agentchrome page find "Next" --role link`
 **Then** only link elements with "Next" in their name are returned
 
 ---

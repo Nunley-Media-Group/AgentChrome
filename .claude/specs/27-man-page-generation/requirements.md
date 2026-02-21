@@ -9,15 +9,15 @@
 
 ## User Story
 
-**As a** developer or automation engineer using chrome-cli
+**As a** developer or automation engineer using agentchrome
 **I want** Unix man pages generated from the CLI definition
-**So that** I can access documentation through the standard `man` command or inline via `chrome-cli man`
+**So that** I can access documentation through the standard `man` command or inline via `agentchrome man`
 
 ---
 
 ## Background
 
-Man pages are the standard documentation format on Unix systems. Users expect to find documentation via `man chrome-cli` after installing a CLI tool. The `clap_mangen` crate can generate roff-format man pages directly from clap's `Command` definition, keeping documentation automatically in sync with the CLI structure.
+Man pages are the standard documentation format on Unix systems. Users expect to find documentation via `man agentchrome` after installing a CLI tool. The `clap_mangen` crate can generate roff-format man pages directly from clap's `Command` definition, keeping documentation automatically in sync with the CLI structure.
 
 Issue #26 (comprehensive help text) has been completed, meaning all commands now have detailed `about`, `long_about`, and `after_long_help` attributes. This rich help text will flow directly into the generated man pages, producing high-quality documentation without manual authoring.
 
@@ -27,17 +27,17 @@ Issue #26 (comprehensive help text) has been completed, meaning all commands now
 
 ### AC1: Generate man page for the top-level command
 
-**Given** the chrome-cli binary is built
+**Given** the agentchrome binary is built
 **When** I run the man page generation process
-**Then** a man page file `chrome-cli.1` is produced
+**Then** a man page file `agentchrome.1` is produced
 **And** it is valid roff-format man page content
 
 ### AC2: Generate man pages for all subcommands
 
-**Given** the chrome-cli binary is built
+**Given** the agentchrome binary is built
 **When** I run the man page generation process
-**Then** man page files are produced for each subcommand (e.g., `chrome-cli-connect.1`, `chrome-cli-tabs.1`, `chrome-cli-navigate.1`)
-**And** nested subcommands also get man pages (e.g., `chrome-cli-tabs-list.1`)
+**Then** man page files are produced for each subcommand (e.g., `agentchrome-connect.1`, `agentchrome-tabs.1`, `agentchrome-navigate.1`)
+**And** nested subcommands also get man pages (e.g., `agentchrome-tabs-list.1`)
 
 ### AC3: Man pages include standard sections
 
@@ -48,29 +48,29 @@ Issue #26 (comprehensive help text) has been completed, meaning all commands now
 
 ### AC4: Build script generates man pages to man/ directory
 
-**Given** the chrome-cli source tree
+**Given** the agentchrome source tree
 **When** I run the build script or xtask to generate man pages
 **Then** all man pages are written to the `man/` directory at the project root
 **And** the generation completes without errors
 
-### AC5: chrome-cli man subcommand displays man page inline
+### AC5: agentchrome man subcommand displays man page inline
 
-**Given** the chrome-cli binary is built
-**When** I run `chrome-cli man`
+**Given** the agentchrome binary is built
+**When** I run `agentchrome man`
 **Then** the top-level man page content is displayed to stdout
 **And** the exit code is 0
 
-### AC6: chrome-cli man subcommand displays subcommand man page
+### AC6: agentchrome man subcommand displays subcommand man page
 
-**Given** the chrome-cli binary is built
-**When** I run `chrome-cli man connect`
+**Given** the agentchrome binary is built
+**When** I run `agentchrome man connect`
 **Then** the man page for the `connect` subcommand is displayed to stdout
 **And** the exit code is 0
 
-### AC7: chrome-cli man with invalid subcommand produces error
+### AC7: agentchrome man with invalid subcommand produces error
 
-**Given** the chrome-cli binary is built
-**When** I run `chrome-cli man nonexistent`
+**Given** the agentchrome binary is built
+**When** I run `agentchrome man nonexistent`
 **Then** an error message indicates the subcommand is not found
 **And** the exit code is non-zero
 
@@ -83,15 +83,15 @@ Issue #26 (comprehensive help text) has been completed, meaning all commands now
 
 ### AC9: Man pages are generated via xtask command
 
-**Given** the chrome-cli source tree
+**Given** the agentchrome source tree
 **When** I run `cargo xtask man`
 **Then** man pages are generated for all commands and subcommands
 **And** they are written to the `man/` directory
 
-### AC10: chrome-cli man help text describes usage
+### AC10: agentchrome man help text describes usage
 
-**Given** the chrome-cli binary is built
-**When** I run `chrome-cli man --help`
+**Given** the agentchrome binary is built
+**When** I run `agentchrome man --help`
 **Then** the help text explains how to display man pages for commands
 **And** lists available subcommand names
 
@@ -99,21 +99,21 @@ Issue #26 (comprehensive help text) has been completed, meaning all commands now
 
 ```gherkin
 Feature: Man Page Generation
-  As a developer or automation engineer using chrome-cli
+  As a developer or automation engineer using agentchrome
   I want Unix man pages generated from the CLI definition
   So that I can access documentation through the standard man command or inline
 
   Scenario: Display top-level man page inline
-    Given chrome-cli is built
-    When I run "chrome-cli man"
-    Then stdout should contain "chrome-cli"
+    Given agentchrome is built
+    When I run "agentchrome man"
+    Then stdout should contain "agentchrome"
     And stdout should contain "SYNOPSIS"
     And the exit code should be 0
 
   Scenario Outline: Display subcommand man page inline
-    Given chrome-cli is built
-    When I run "chrome-cli man <subcommand>"
-    Then stdout should contain "chrome-cli-<subcommand>"
+    Given agentchrome is built
+    When I run "agentchrome man <subcommand>"
+    Then stdout should contain "agentchrome-<subcommand>"
     And the exit code should be 0
 
     Examples:
@@ -125,12 +125,12 @@ Feature: Man Page Generation
       | js         |
 
   Scenario: Invalid subcommand produces error
-    Given chrome-cli is built
-    When I run "chrome-cli man nonexistent"
+    Given agentchrome is built
+    When I run "agentchrome man nonexistent"
     Then the exit code should be non-zero
 
   Scenario: Generate man pages via xtask
-    Given the chrome-cli source tree is available
+    Given the agentchrome source tree is available
     When I run "cargo xtask man"
     Then man page files exist in the man/ directory
 ```
@@ -141,7 +141,7 @@ Feature: Man Page Generation
 
 | ID | Requirement | Priority | Notes |
 |----|-------------|----------|-------|
-| FR1 | `chrome-cli man [COMMAND]` subcommand to display man pages inline | Must | Runtime man page rendering via clap_mangen |
+| FR1 | `agentchrome man [COMMAND]` subcommand to display man pages inline | Must | Runtime man page rendering via clap_mangen |
 | FR2 | Generate man pages for all top-level commands | Must | connect, tabs, navigate, page, dom, js, console, network, interact, form, emulate, perf, dialog, config, completions, man |
 | FR3 | Generate man pages for nested subcommands | Must | e.g., tabs list, tabs create, page screenshot |
 | FR4 | `cargo xtask man` command to write man pages to `man/` directory | Must | For packaging and distribution |
@@ -156,9 +156,9 @@ Feature: Man Page Generation
 
 | Aspect | Requirement |
 |--------|-------------|
-| **Performance** | `chrome-cli man` output is instant (< 50ms) — no Chrome connection needed |
+| **Performance** | `agentchrome man` output is instant (< 50ms) — no Chrome connection needed |
 | **Reliability** | Man pages stay in sync with CLI definition automatically (clap introspection) |
-| **Platforms** | `chrome-cli man` works on all platforms; `man` command integration is Unix-only |
+| **Platforms** | `agentchrome man` works on all platforms; `man` command integration is Unix-only |
 
 ---
 
@@ -212,7 +212,7 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - Automatic installation of man pages to system paths (e.g., `/usr/share/man`)
 - HTML or Markdown generation from man pages
 - Man pages for section other than 1 (user commands)
-- Colored/styled output for `chrome-cli man` (plain roff rendering)
+- Colored/styled output for `agentchrome man` (plain roff rendering)
 
 ---
 
@@ -222,7 +222,7 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 |--------|--------|-------------|
 | Command coverage | Man pages for all 16 top-level commands + nested subcommands | Count files in `man/` directory |
 | Content completeness | NAME, SYNOPSIS, DESCRIPTION, OPTIONS in every man page | Grep man page content |
-| Inline display | `chrome-cli man [cmd]` works for all commands | BDD test pass |
+| Inline display | `agentchrome man [cmd]` works for all commands | BDD test pass |
 
 ---
 

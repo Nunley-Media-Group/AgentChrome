@@ -13,11 +13,11 @@
 
 ### Steps to Reproduce
 
-1. `chrome-cli connect --launch --headless`
-2. `chrome-cli navigate https://www.google.com`
-3. `chrome-cli perf record --duration 2000 --file /tmp/trace.json`
+1. `agentchrome connect --launch --headless`
+2. `agentchrome navigate https://www.google.com`
+3. `agentchrome perf record --duration 2000 --file /tmp/trace.json`
 4. Observe `duration_ms` in the JSON output — it shows ~21 instead of ~2000
-5. `chrome-cli perf record --reload --duration 3000 --file /tmp/trace2.json`
+5. `agentchrome perf record --reload --duration 3000 --file /tmp/trace2.json`
 6. Observe `duration_ms` — it shows ~133 instead of ~3000
 
 ### Environment
@@ -58,19 +58,19 @@ Always
 ### AC1: Duration reflects actual recording time
 
 **Given** a connected Chrome session on a loaded page
-**When** I run `chrome-cli perf record --duration 2000 --file /tmp/trace.json`
+**When** I run `agentchrome perf record --duration 2000 --file /tmp/trace.json`
 **Then** the `duration_ms` in the JSON output is approximately 2000 (within ±500ms tolerance)
 
 ### AC2: Duration includes reload time when applicable
 
 **Given** a connected Chrome session on a loaded page
-**When** I run `chrome-cli perf record --reload --duration 3000 --file /tmp/trace.json`
+**When** I run `agentchrome perf record --reload --duration 3000 --file /tmp/trace.json`
 **Then** the `duration_ms` in the JSON output reflects the total recording time (approximately ≥ 3000ms)
 
 ### AC3: Existing perf record output structure is preserved
 
 **Given** a connected Chrome session on a loaded page
-**When** I run `chrome-cli perf record --duration 1000 --file /tmp/trace.json`
+**When** I run `agentchrome perf record --duration 1000 --file /tmp/trace.json`
 **Then** the JSON output contains `file`, `duration_ms`, `size_bytes`, and `vitals` fields
 **And** the trace file is written successfully
 

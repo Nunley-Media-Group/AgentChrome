@@ -9,7 +9,7 @@
 
 ## User Story
 
-**As a** developer or automation engineer using chrome-cli repeatedly
+**As a** developer or automation engineer using agentchrome repeatedly
 **I want** to set default values for flags in a configuration file
 **So that** I don't have to repeat common flags on every invocation, reducing overhead for scripted and AI-agent workflows
 
@@ -17,7 +17,7 @@
 
 ## Background
 
-chrome-cli is frequently invoked by AI agents and automation scripts. Each invocation currently requires explicit flags for host, port, timeout, output format, and Chrome launch settings. A configuration file allows users to set project-level or user-level defaults once, making every subsequent invocation shorter and more consistent. The priority chain (CLI flags > env vars > project config > user config > built-in defaults) follows established CLI conventions.
+agentchrome is frequently invoked by AI agents and automation scripts. Each invocation currently requires explicit flags for host, port, timeout, output format, and Chrome launch settings. A configuration file allows users to set project-level or user-level defaults once, making every subsequent invocation shorter and more consistent. The priority chain (CLI flags > env vars > project config > user config > built-in defaults) follows established CLI conventions.
 
 ---
 
@@ -28,60 +28,60 @@ chrome-cli is frequently invoked by AI agents and automation scripts. Each invoc
 ### AC1: Load config from explicit --config path
 
 **Given** a valid TOML config file exists at `/tmp/my-config.toml`
-**When** the user runs `chrome-cli --config /tmp/my-config.toml config show`
+**When** the user runs `agentchrome --config /tmp/my-config.toml config show`
 **Then** the resolved configuration reflects values from that file
 
 **Example**:
 - Given: `/tmp/my-config.toml` contains `[connection]\nport = 9333`
-- When: `chrome-cli --config /tmp/my-config.toml config show`
+- When: `agentchrome --config /tmp/my-config.toml config show`
 - Then: output shows `port = 9333`
 
-### AC2: Load config from CHROME_CLI_CONFIG environment variable
+### AC2: Load config from AGENTCHROME_CONFIG environment variable
 
-**Given** `CHROME_CLI_CONFIG` is set to a path containing a valid TOML config
+**Given** `AGENTCHROME_CONFIG` is set to a path containing a valid TOML config
 **And** no `--config` flag is provided
-**When** the user runs `chrome-cli config show`
+**When** the user runs `agentchrome config show`
 **Then** the resolved configuration reflects values from the env-var-specified file
 
 ### AC3: Load config from project-local file
 
-**Given** `./.chrome-cli.toml` exists in the current working directory
-**And** no `--config` flag or `CHROME_CLI_CONFIG` env var is set
-**When** the user runs `chrome-cli config show`
-**Then** the resolved configuration reflects values from `./.chrome-cli.toml`
+**Given** `./.agentchrome.toml` exists in the current working directory
+**And** no `--config` flag or `AGENTCHROME_CONFIG` env var is set
+**When** the user runs `agentchrome config show`
+**Then** the resolved configuration reflects values from `./.agentchrome.toml`
 
 ### AC4: Load config from XDG standard path
 
-**Given** `~/.config/chrome-cli/config.toml` exists
+**Given** `~/.config/agentchrome/config.toml` exists
 **And** no higher-priority config source is present
-**When** the user runs `chrome-cli config show`
+**When** the user runs `agentchrome config show`
 **Then** the resolved configuration reflects values from the XDG path
 
 ### AC5: Load config from home directory fallback
 
-**Given** `~/.chrome-cli.toml` exists
+**Given** `~/.agentchrome.toml` exists
 **And** no higher-priority config source is present
-**When** the user runs `chrome-cli config show`
-**Then** the resolved configuration reflects values from `~/.chrome-cli.toml`
+**When** the user runs `agentchrome config show`
+**Then** the resolved configuration reflects values from `~/.agentchrome.toml`
 
 ### AC6: Config file priority order
 
 **Given** config files exist at multiple locations (project-local and home directory)
-**When** the user runs `chrome-cli config show`
+**When** the user runs `agentchrome config show`
 **Then** the project-local file takes precedence over the home directory file
 **And** only the highest-priority file is used
 
 ### AC7: CLI flags override config file values
 
 **Given** a config file sets `port = 9333`
-**When** the user runs `chrome-cli --port 9444 config show`
+**When** the user runs `agentchrome --port 9444 config show`
 **Then** the resolved port is `9444` (CLI flag wins)
 
 ### AC8: Environment variables override config file values
 
 **Given** a config file sets `port = 9333`
-**And** `CHROME_CLI_PORT` is set to `9555`
-**When** the user runs `chrome-cli config show`
+**And** `AGENTCHROME_PORT` is set to `9555`
+**When** the user runs `agentchrome config show`
 **Then** the resolved port is `9555` (env var wins)
 
 ### AC9: Connection defaults in config
@@ -93,7 +93,7 @@ chrome-cli is frequently invoked by AI agents and automation scripts. Each invoc
 ### AC10: Chrome launch defaults in config
 
 **Given** a config file contains `[launch]` section with `executable`, `channel`, `headless`, and `extra_args`
-**When** the user runs `chrome-cli connect --launch`
+**When** the user runs `agentchrome connect --launch`
 **Then** Chrome is launched with the config file defaults
 
 ### AC11: Output format defaults in config
@@ -111,35 +111,35 @@ chrome-cli is frequently invoked by AI agents and automation scripts. Each invoc
 ### AC13: config show — display resolved configuration
 
 **Given** a config file exists with custom values
-**When** the user runs `chrome-cli config show`
+**When** the user runs `agentchrome config show`
 **Then** the output displays the fully resolved configuration merged from all sources
 **And** the output format respects `--json`/`--pretty`/`--plain` flags
 
 ### AC14: config init — create default config file
 
-**Given** no config file exists at `~/.config/chrome-cli/config.toml`
-**When** the user runs `chrome-cli config init`
+**Given** no config file exists at `~/.config/agentchrome/config.toml`
+**When** the user runs `agentchrome config init`
 **Then** a default config file is created with commented example values
 **And** the file path is printed to stdout
 
 ### AC15: config init — refuse to overwrite existing file
 
 **Given** a config file already exists at the target path
-**When** the user runs `chrome-cli config init`
+**When** the user runs `agentchrome config init`
 **Then** the tool prints a warning that the file already exists
 **And** does not overwrite it
 **And** exits with a non-zero exit code
 
 ### AC16: config path — show active config file path
 
-**Given** a config file is being loaded from `~/.chrome-cli.toml`
-**When** the user runs `chrome-cli config path`
-**Then** the output shows `~/.chrome-cli.toml` (the resolved path)
+**Given** a config file is being loaded from `~/.agentchrome.toml`
+**When** the user runs `agentchrome config path`
+**Then** the output shows `~/.agentchrome.toml` (the resolved path)
 
 ### AC17: config path — no config file found
 
 **Given** no config file exists at any search location
-**When** the user runs `chrome-cli config path`
+**When** the user runs `agentchrome config path`
 **Then** the output indicates no config file is in use
 
 ### AC18: Invalid config file — graceful degradation
@@ -167,29 +167,29 @@ Feature: Configuration file support
 
   Scenario: Load config from explicit --config path
     Given a valid config file at "/tmp/my-config.toml" with port 9333
-    When I run "chrome-cli --config /tmp/my-config.toml config show"
+    When I run "agentchrome --config /tmp/my-config.toml config show"
     Then the resolved port should be 9333
 
-  Scenario: Load config from CHROME_CLI_CONFIG env var
+  Scenario: Load config from AGENTCHROME_CONFIG env var
     Given a valid config file at "/tmp/env-config.toml"
-    And CHROME_CLI_CONFIG is set to "/tmp/env-config.toml"
-    When I run "chrome-cli config show"
+    And AGENTCHROME_CONFIG is set to "/tmp/env-config.toml"
+    When I run "agentchrome config show"
     Then the config file path should be "/tmp/env-config.toml"
 
   Scenario: Config file priority order
     Given a project-local config with port 1111
     And a home directory config with port 2222
-    When I run "chrome-cli config show"
+    When I run "agentchrome config show"
     Then the resolved port should be 1111
 
   Scenario: CLI flags override config
     Given a config file with port 9333
-    When I run "chrome-cli --port 9444 config show"
+    When I run "agentchrome --port 9444 config show"
     Then the resolved port should be 9444
 
   Scenario: Invalid config file graceful degradation
     Given a config file with invalid TOML syntax
-    When I run "chrome-cli config show"
+    When I run "agentchrome config show"
     Then a warning is printed to stderr
     And the command completes with defaults
 ```

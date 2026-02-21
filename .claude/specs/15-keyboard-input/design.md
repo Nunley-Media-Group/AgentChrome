@@ -81,7 +81,7 @@ The architecture follows the established interact command pattern: CLI args → 
 ### Data Flow — `interact type "Hello World"`
 
 ```
-1. User runs: chrome-cli interact type "Hello World" [--delay 50] [--include-snapshot]
+1. User runs: agentchrome interact type "Hello World" [--delay 50] [--include-snapshot]
 2. CLI layer parses args → TypeArgs { text: "Hello World", delay: 0, include_snapshot: false }
 3. setup_session() → CdpClient + ManagedSession
 4. For each character in "Hello World":
@@ -97,7 +97,7 @@ The architecture follows the established interact command pattern: CLI args → 
 ### Data Flow — `interact key "Control+A"`
 
 ```
-1. User runs: chrome-cli interact key "Control+A" [--repeat 3] [--include-snapshot]
+1. User runs: agentchrome interact key "Control+A" [--repeat 3] [--include-snapshot]
 2. CLI layer parses args → KeyArgs { keys: "Control+A", repeat: 1, include_snapshot: false }
 3. parse_key_combination("Control+A"):
    a. Split by '+' → ["Control", "A"]
@@ -118,7 +118,7 @@ The architecture follows the established interact command pattern: CLI args → 
 ### Data Flow — `interact key "Enter"` (no modifiers)
 
 ```
-1. User runs: chrome-cli interact key Enter
+1. User runs: agentchrome interact key Enter
 2. parse_key_combination("Enter"):
    a. Split by '+' → ["Enter"]
    b. Validate: "Enter" is valid key ✓
@@ -139,8 +139,8 @@ The architecture follows the established interact command pattern: CLI args → 
 
 | Command | Purpose |
 |---------|---------|
-| `chrome-cli interact type <TEXT>` | Type text character-by-character into the focused element |
-| `chrome-cli interact key <KEYS>` | Press a key or key combination |
+| `agentchrome interact type <TEXT>` | Type text character-by-character into the focused element |
+| `agentchrome interact key <KEYS>` | Press a key or key combination |
 
 ### New CLI Flags
 
@@ -156,7 +156,7 @@ The architecture follows the established interact command pattern: CLI args → 
 
 **Input (CLI args):**
 ```
-chrome-cli interact type <TEXT> [--delay MS] [--include-snapshot] [--tab ID]
+agentchrome interact type <TEXT> [--delay MS] [--include-snapshot] [--tab ID]
 ```
 
 **Output (success — JSON):**
@@ -195,7 +195,7 @@ Typed 11 characters
 
 **Input (CLI args):**
 ```
-chrome-cli interact key <KEYS> [--repeat N] [--include-snapshot] [--tab ID]
+agentchrome interact key <KEYS> [--repeat N] [--include-snapshot] [--tab ID]
 ```
 
 **Output (success — JSON, single press):**
@@ -242,7 +242,7 @@ Pressed Enter
 
 ## Database / Storage Changes
 
-None. These commands do not read or write persistent state. When `--include-snapshot` is used, the updated snapshot is written to `~/.chrome-cli/snapshot.json` (same behavior as mouse interaction commands).
+None. These commands do not read or write persistent state. When `--include-snapshot` is used, the updated snapshot is written to `~/.agentchrome/snapshot.json` (same behavior as mouse interaction commands).
 
 ---
 

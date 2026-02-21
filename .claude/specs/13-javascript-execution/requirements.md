@@ -28,20 +28,20 @@ JavaScript execution is a fundamental building block for browser automation. Whi
 ### AC1: Execute a JavaScript expression
 
 **Given** Chrome is running with a page loaded at "https://example.com"
-**When** I run `chrome-cli js exec "document.title"`
+**When** I run `agentchrome js exec "document.title"`
 **Then** stdout contains JSON with `result` and `type` fields
 **And** the `result` field contains the page title string
 **And** the `type` field is `"string"`
 
 **Example**:
 - Given: Page loaded at https://example.com
-- When: `chrome-cli js exec "document.title"`
+- When: `agentchrome js exec "document.title"`
 - Then: `{"result":"Example Domain","type":"string"}`
 
 ### AC2: Execute a JavaScript function
 
 **Given** Chrome is running with a page loaded
-**When** I run `chrome-cli js exec "() => { return 2 + 2; }"`
+**When** I run `agentchrome js exec "() => { return 2 + 2; }"`
 **Then** the `result` field is `4`
 **And** the `type` field is `"number"`
 
@@ -55,28 +55,28 @@ JavaScript execution is a fundamental building block for browser automation. Whi
 ### AC4: Target a specific tab with --tab
 
 **Given** Chrome is running with multiple tabs open
-**When** I run `chrome-cli js exec --tab <ID> "document.title"`
+**When** I run `agentchrome js exec --tab <ID> "document.title"`
 **Then** the JavaScript is executed in the specified tab
 **And** the `result` reflects that tab's page context
 
 ### AC5: Await promise results (default behavior)
 
 **Given** Chrome is running with a page loaded
-**When** I run `chrome-cli js exec "new Promise(r => setTimeout(() => r('done'), 100))"`
+**When** I run `agentchrome js exec "new Promise(r => setTimeout(() => r('done'), 100))"`
 **Then** the `result` field is `"done"`
 **And** the promise was awaited before returning
 
 ### AC6: Disable promise awaiting with --no-await
 
 **Given** Chrome is running with a page loaded
-**When** I run `chrome-cli js exec --no-await "new Promise(r => setTimeout(() => r('done'), 100))"`
+**When** I run `agentchrome js exec --no-await "new Promise(r => setTimeout(() => r('done'), 100))"`
 **Then** the `result` field represents the unresolved promise object
 **And** the `type` field is `"object"`
 
 ### AC7: Execution timeout with --timeout
 
 **Given** Chrome is running with a page loaded
-**When** I run `chrome-cli js exec --timeout 100 "new Promise(() => {})"`
+**When** I run `agentchrome js exec --timeout 100 "new Promise(() => {})"`
 **Then** stderr contains a JSON error indicating a timeout
 **And** the exit code is non-zero
 
@@ -84,30 +84,30 @@ JavaScript execution is a fundamental building block for browser automation. Whi
 
 **Given** Chrome is running with a page loaded
 **And** a file `/tmp/script.js` contains `document.title`
-**When** I run `chrome-cli js exec --file /tmp/script.js`
+**When** I run `agentchrome js exec --file /tmp/script.js`
 **Then** the `result` field contains the page title
 **And** the behavior is identical to inline code execution
 
 ### AC9: Read code from stdin with `-`
 
 **Given** Chrome is running with a page loaded
-**When** I run `echo "document.title" | chrome-cli js exec -`
+**When** I run `echo "document.title" | agentchrome js exec -`
 **Then** the `result` field contains the page title
 **And** stdin is read as the JavaScript code to execute
 
 ### AC10: Element context execution with --uid
 
 **Given** Chrome is running with a page loaded
-**And** a snapshot has been taken with `chrome-cli page snapshot`
+**And** a snapshot has been taken with `agentchrome page snapshot`
 **And** element `s1` exists in the snapshot
-**When** I run `chrome-cli js exec --uid s1 "(el) => el.textContent"`
+**When** I run `agentchrome js exec --uid s1 "(el) => el.textContent"`
 **Then** the function receives the DOM element as its first argument
 **And** the `result` field contains the element's text content
 
 ### AC11: JavaScript exception handling
 
 **Given** Chrome is running with a page loaded
-**When** I run `chrome-cli js exec "throw new Error('test error')"`
+**When** I run `agentchrome js exec "throw new Error('test error')"`
 **Then** stderr contains a JSON error with `error` and `stack` fields
 **And** the `error` field contains `"Error: test error"`
 **And** the exit code is non-zero
@@ -115,14 +115,14 @@ JavaScript execution is a fundamental building block for browser automation. Whi
 ### AC12: Reference error handling
 
 **Given** Chrome is running with a page loaded
-**When** I run `chrome-cli js exec "nonExistentVariable"`
+**When** I run `agentchrome js exec "nonExistentVariable"`
 **Then** stderr contains a JSON error indicating a ReferenceError
 **And** the exit code is non-zero
 
 ### AC13: Large result truncation with --max-size
 
 **Given** Chrome is running with a page loaded
-**When** I run `chrome-cli js exec --max-size 100 "'x'.repeat(10000)"`
+**When** I run `agentchrome js exec --max-size 100 "'x'.repeat(10000)"`
 **Then** the `result` field is truncated to approximately 100 bytes
 **And** a `truncated` field is set to `true` in the JSON output
 
@@ -130,21 +130,21 @@ JavaScript execution is a fundamental building block for browser automation. Whi
 
 **Given** Chrome is running with a page loaded
 **And** no snapshot exists or the UID is invalid
-**When** I run `chrome-cli js exec --uid s999 "(el) => el.textContent"`
+**When** I run `agentchrome js exec --uid s999 "(el) => el.textContent"`
 **Then** stderr contains a JSON error indicating the UID was not found
 **And** the exit code is non-zero
 
 ### AC15: File not found error
 
 **Given** Chrome is running with a page loaded
-**When** I run `chrome-cli js exec --file /nonexistent/script.js`
+**When** I run `agentchrome js exec --file /nonexistent/script.js`
 **Then** stderr contains a JSON error indicating the file was not found
 **And** the exit code is non-zero
 
 ### AC16: Console output capture
 
 **Given** Chrome is running with a page loaded
-**When** I run `chrome-cli js exec "console.log('hello'); 42"`
+**When** I run `agentchrome js exec "console.log('hello'); 42"`
 **Then** the `result` field is `42`
 **And** a `console` field in the JSON output contains the captured console messages
 
@@ -161,20 +161,20 @@ Feature: JavaScript execution in page context
 
   Scenario: Execute a JavaScript expression
     Given a page is loaded at "https://example.com"
-    When I run "chrome-cli js exec 'document.title'"
+    When I run "agentchrome js exec 'document.title'"
     Then stdout contains JSON with keys "result", "type"
     And the "result" field is "Example Domain"
     And the "type" field is "string"
 
   Scenario: Execute a JavaScript function
     Given a page is loaded
-    When I run "chrome-cli js exec '() => { return 2 + 2; }'"
+    When I run "agentchrome js exec '() => { return 2 + 2; }'"
     Then the "result" field is 4
     And the "type" field is "number"
 
   Scenario Outline: Return all JavaScript value types
     Given a page is loaded
-    When I run "chrome-cli js exec '<expression>'"
+    When I run "agentchrome js exec '<expression>'"
     Then the "type" field is "<expected_type>"
 
     Examples:
@@ -189,76 +189,76 @@ Feature: JavaScript execution in page context
 
   Scenario: Target a specific tab
     Given multiple tabs are open
-    When I run "chrome-cli js exec --tab <ID> 'document.title'"
+    When I run "agentchrome js exec --tab <ID> 'document.title'"
     Then the result reflects the targeted tab's context
 
   Scenario: Await promise results by default
     Given a page is loaded
-    When I run "chrome-cli js exec 'new Promise(r => setTimeout(() => r(\"done\"), 100))'"
+    When I run "agentchrome js exec 'new Promise(r => setTimeout(() => r(\"done\"), 100))'"
     Then the "result" field is "done"
 
   Scenario: Disable promise awaiting
     Given a page is loaded
-    When I run "chrome-cli js exec --no-await 'new Promise(r => r(42))'"
+    When I run "agentchrome js exec --no-await 'new Promise(r => r(42))'"
     Then the "type" field is "object"
 
   Scenario: Execution timeout
     Given a page is loaded
-    When I run "chrome-cli js exec --timeout 100 'new Promise(() => {})'"
+    When I run "agentchrome js exec --timeout 100 'new Promise(() => {})'"
     Then stderr contains a JSON error indicating timeout
     And the exit code is non-zero
 
   Scenario: Execute JavaScript from a file
     Given a page is loaded
     And a file "/tmp/script.js" contains "document.title"
-    When I run "chrome-cli js exec --file /tmp/script.js"
+    When I run "agentchrome js exec --file /tmp/script.js"
     Then the "result" field contains the page title
 
   Scenario: Read code from stdin
     Given a page is loaded
-    When I pipe "document.title" to "chrome-cli js exec -"
+    When I pipe "document.title" to "agentchrome js exec -"
     Then the "result" field contains the page title
 
   Scenario: Element context execution with UID
     Given a page is loaded
     And a snapshot has been taken
     And element "s1" exists in the snapshot
-    When I run "chrome-cli js exec --uid s1 '(el) => el.textContent'"
+    When I run "agentchrome js exec --uid s1 '(el) => el.textContent'"
     Then the result contains the element's text content
 
   Scenario: JavaScript exception returned as structured error
     Given a page is loaded
-    When I run "chrome-cli js exec 'throw new Error(\"test error\")'"
+    When I run "agentchrome js exec 'throw new Error(\"test error\")'"
     Then stderr contains a JSON error with "error" and "stack" fields
     And the exit code is non-zero
 
   Scenario: Reference error handling
     Given a page is loaded
-    When I run "chrome-cli js exec 'nonExistentVariable'"
+    When I run "agentchrome js exec 'nonExistentVariable'"
     Then stderr contains a JSON error indicating ReferenceError
     And the exit code is non-zero
 
   Scenario: Large result truncation
     Given a page is loaded
-    When I run "chrome-cli js exec --max-size 100 \"'x'.repeat(10000)\""
+    When I run "agentchrome js exec --max-size 100 \"'x'.repeat(10000)\""
     Then the "result" field is truncated
     And a "truncated" field is true
 
   Scenario: UID not found error
     Given a page is loaded
-    When I run "chrome-cli js exec --uid s999 '(el) => el.textContent'"
+    When I run "agentchrome js exec --uid s999 '(el) => el.textContent'"
     Then stderr contains a JSON error about UID not found
     And the exit code is non-zero
 
   Scenario: File not found error
     Given a page is loaded
-    When I run "chrome-cli js exec --file /nonexistent/script.js"
+    When I run "agentchrome js exec --file /nonexistent/script.js"
     Then stderr contains a JSON error about file not found
     And the exit code is non-zero
 
   Scenario: Console output capture
     Given a page is loaded
-    When I run "chrome-cli js exec 'console.log(\"hello\"); 42'"
+    When I run "agentchrome js exec 'console.log(\"hello\"); 42'"
     Then the "result" field is 42
     And the "console" field contains "hello"
 ```
@@ -373,7 +373,7 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 |--------|--------|-------------|
 | Type coverage | All 7 JS types handled | Test with each type |
 | Error fidelity | Exception message + stack trace returned | Test with throwing code |
-| Pipeline support | stdin and file input work | Test with `echo ... \| chrome-cli js exec -` |
+| Pipeline support | stdin and file input work | Test with `echo ... \| agentchrome js exec -` |
 
 ---
 

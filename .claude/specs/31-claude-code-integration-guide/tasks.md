@@ -65,12 +65,12 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **Depends**: T001
 **Acceptance**:
 - [ ] File exists at `docs/claude-code.md`
-- [ ] Contains Introduction section explaining chrome-cli is built for AI agents
+- [ ] Contains Introduction section explaining agentchrome is built for AI agents
 - [ ] Contains Discovery & Setup section covering PATH, `--help`, `capabilities`, `examples`
 - [ ] Contains a step-by-step setup checklist
-- [ ] All commands referenced are valid chrome-cli commands
+- [ ] All commands referenced are valid agentchrome commands
 
-**Notes**: This task creates the file and writes the first two sections. Reference `chrome-cli capabilities` output to ensure command accuracy.
+**Notes**: This task creates the file and writes the first two sections. Reference `agentchrome capabilities` output to ensure command accuracy.
 
 ### T003: Write integration guide — Workflow and Efficiency sections
 
@@ -104,7 +104,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] Contains "Example Conversation" section showing a realistic multi-turn Claude Code session
 - [ ] Example demonstrates: connecting, navigating, taking snapshot, interacting with elements, verifying results
 - [ ] Example shows error handling and recovery
-- [ ] Contains "Reference" section linking to `chrome-cli capabilities`, `chrome-cli examples`, and man pages
+- [ ] Contains "Reference" section linking to `agentchrome capabilities`, `agentchrome examples`, and man pages
 - [ ] All commands in the example are valid and use realistic output
 
 ---
@@ -123,7 +123,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] Contains Key Commands section with: `capabilities`, `examples`, `page snapshot`, `interact click`, `form fill`
 - [ ] Contains recommended workflow loop: snapshot → identify → interact → verify
 - [ ] Contains tips: JSON output, exit codes, timeouts, `form fill` preference
-- [ ] Commands match the current chrome-cli interface
+- [ ] Commands match the current agentchrome interface
 - [ ] Template is concise (under 60 lines) and immediately usable
 
 ---

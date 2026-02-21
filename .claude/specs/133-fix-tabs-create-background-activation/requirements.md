@@ -13,11 +13,11 @@
 
 ### Steps to Reproduce
 
-1. `chrome-cli connect --launch --headless`
-2. `chrome-cli tabs create https://www.google.com` — google.com becomes active
-3. `chrome-cli tabs list --pretty` — confirms google.com is `active: true`
-4. `chrome-cli tabs create https://example.com --background` — should keep google.com active
-5. `chrome-cli tabs list --pretty` — **example.com shows as `active: true`**
+1. `agentchrome connect --launch --headless`
+2. `agentchrome tabs create https://www.google.com` — google.com becomes active
+3. `agentchrome tabs list --pretty` — confirms google.com is `active: true`
+4. `agentchrome tabs create https://example.com --background` — should keep google.com active
+5. `agentchrome tabs list --pretty` — **example.com shows as `active: true`**
 
 ### Environment
 
@@ -61,8 +61,8 @@ No error output — the command exits with code 0 but the activation state repor
 
 **Example**:
 - Given: Tab at `https://www.google.com` is active
-- When: `chrome-cli tabs create https://example.com --background`
-- Then: `chrome-cli tabs list` shows google.com tab with `active: true` and example.com with `active: false`
+- When: `agentchrome tabs create https://example.com --background`
+- Then: `agentchrome tabs list` shows google.com tab with `active: true` and example.com with `active: false`
 
 ### AC2: Non-background create still activates the new tab
 
