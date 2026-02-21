@@ -1,7 +1,7 @@
 use clap::CommandFactory;
 use serde::Serialize;
 
-use chrome_cli::error::{AppError, ExitCode};
+use agentchrome::error::{AppError, ExitCode};
 
 use crate::cli::{CapabilitiesArgs, Cli, GlobalOpts};
 
@@ -491,7 +491,7 @@ mod tests {
     #[test]
     fn manifest_has_correct_name_and_version() {
         let manifest = build_manifest(&root_cmd(), false);
-        assert_eq!(manifest.name, "chrome-cli");
+        assert_eq!(manifest.name, "agentchrome");
         assert!(!manifest.version.is_empty());
     }
 
@@ -655,7 +655,7 @@ mod tests {
         let manifest = build_manifest(&root_cmd(), false);
         let json = serde_json::to_string(&manifest).unwrap();
         let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
-        assert_eq!(parsed["name"], "chrome-cli");
+        assert_eq!(parsed["name"], "agentchrome");
         assert!(parsed["commands"].is_array());
         assert!(parsed["global_flags"].is_array());
         assert!(parsed["exit_codes"].is_array());

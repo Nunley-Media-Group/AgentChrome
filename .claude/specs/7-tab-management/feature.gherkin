@@ -15,38 +15,38 @@ Feature: Tab management commands
 
   Scenario: List all open tabs (AC1)
     Given Chrome has tabs open at "https://google.com" and "https://github.com"
-    When I run "chrome-cli tabs list"
+    When I run "agentchrome tabs list"
     Then stdout contains a JSON array with 2 elements
     And each element has "id", "url", "title", and "active" fields
     And the exit code should be 0
 
   Scenario: List filters internal pages by default (AC2)
     Given Chrome has tabs open including "chrome://extensions/" and "chrome://newtab/"
-    When I run "chrome-cli tabs list"
+    When I run "agentchrome tabs list"
     Then the output does not contain "chrome://extensions/"
     And the output contains "chrome://newtab/"
 
   Scenario: List all pages including internal ones (AC3)
     Given Chrome has tabs open including "chrome://extensions/"
-    When I run "chrome-cli tabs list --all"
+    When I run "agentchrome tabs list --all"
     Then the output contains "chrome://extensions/"
 
   # --- tabs create ---
 
   Scenario: Create a new tab with URL (AC4)
-    When I run "chrome-cli tabs create https://example.com"
+    When I run "agentchrome tabs create https://example.com"
     Then stdout contains a JSON object with "id", "url", and "title" fields
     And the "url" field contains "example.com"
     And the exit code should be 0
 
   Scenario: Create a blank tab (AC5)
-    When I run "chrome-cli tabs create"
+    When I run "agentchrome tabs create"
     Then stdout contains a JSON object with "id", "url", and "title" fields
     And the "url" field is "about:blank" or "chrome://newtab/"
 
   Scenario: Create a tab in the background (AC6)
     Given Chrome has a tab "TAB_A" that is active
-    When I run "chrome-cli tabs create --background https://example.com"
+    When I run "agentchrome tabs create --background https://example.com"
     Then a new tab is created
     And "TAB_A" remains the active tab
 
@@ -54,25 +54,25 @@ Feature: Tab management commands
 
   Scenario: Close a tab by ID (AC7)
     Given Chrome has tabs "TAB_A" and "TAB_B" open
-    When I run "chrome-cli tabs close TAB_A"
+    When I run "agentchrome tabs close TAB_A"
     Then stdout contains a JSON object with "closed" and "remaining" fields
     And the "remaining" field is 1
     And the exit code should be 0
 
   Scenario: Close a tab by index (AC8)
     Given Chrome has at least 3 tabs open
-    When I run "chrome-cli tabs close 1"
+    When I run "agentchrome tabs close 1"
     Then stdout contains a JSON object with "closed" and "remaining" fields
 
   Scenario: Close multiple tabs (AC9)
     Given Chrome has tabs "TAB_A", "TAB_B", and "TAB_C" open
-    When I run "chrome-cli tabs close TAB_A TAB_B"
+    When I run "agentchrome tabs close TAB_A TAB_B"
     Then stdout contains a JSON object with "closed" as an array of 2 IDs
     And the "remaining" field is 1
 
   Scenario: Prevent closing the last tab (AC10)
     Given Chrome has exactly one tab open
-    When I run "chrome-cli tabs close" with that tab's ID
+    When I run "agentchrome tabs close" with that tab's ID
     Then the command fails with an error about closing the last tab
     And the exit code should be 3
 
@@ -81,38 +81,38 @@ Feature: Tab management commands
   Scenario: Activate a tab by ID (AC11)
     Given Chrome has tabs "TAB_A" and "TAB_B" open
     And "TAB_A" is the active tab
-    When I run "chrome-cli tabs activate TAB_B"
+    When I run "agentchrome tabs activate TAB_B"
     Then stdout contains a JSON object with "activated", "url", and "title" fields
     And the "activated" field is "TAB_B"
     And the exit code should be 0
 
   Scenario: Activate a tab by index (AC12)
     Given Chrome has at least 3 tabs open
-    When I run "chrome-cli tabs activate 2"
+    When I run "agentchrome tabs activate 2"
     Then stdout contains a JSON object with "activated", "url", and "title" fields
 
   # --- Error handling ---
 
   Scenario: Tab not found error (AC13)
-    When I run "chrome-cli tabs close nonexistent"
+    When I run "agentchrome tabs close nonexistent"
     Then the command fails with a "not found" error
     And the exit code should be 3
 
   Scenario: No Chrome connection error (AC14)
     Given no Chrome instance is running
-    When I run "chrome-cli tabs list"
+    When I run "agentchrome tabs list"
     Then the command fails with a connection error
-    And the error message suggests running "chrome-cli connect"
+    And the error message suggests running "agentchrome connect"
     And the exit code should be 2
 
   # --- Output formatting ---
 
   Scenario: Plain text output for list (AC15)
     Given Chrome has tabs open
-    When I run "chrome-cli tabs list --plain"
+    When I run "agentchrome tabs list --plain"
     Then stdout contains a human-readable table with columns for index, ID, title, URL, and active status
 
   Scenario: Tab IDs are consistent across invocations (AC16)
     Given Chrome has tabs open
-    When I run "chrome-cli tabs list" twice
+    When I run "agentchrome tabs list" twice
     Then the "id" field for each tab is the same in both outputs

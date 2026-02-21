@@ -15,7 +15,7 @@ Feature: URL Navigation
 
   Scenario: AC1 - Navigate to a valid URL
     Given a tab is open with "about:blank"
-    When I run "chrome-cli navigate https://example.com"
+    When I run "agentchrome navigate https://example.com"
     Then the exit code is 0
     And the JSON output has key "url" containing "example.com"
     And the JSON output has key "title" with a non-empty string
@@ -24,7 +24,7 @@ Feature: URL Navigation
   Scenario: AC2 - Navigate with --tab to target a specific tab
     Given two tabs are open
     And the second tab has ID "<TAB_ID>"
-    When I run "chrome-cli navigate https://example.com --tab <TAB_ID>"
+    When I run "agentchrome navigate https://example.com --tab <TAB_ID>"
     Then the exit code is 0
     And the JSON output has key "url" containing "example.com"
     And the first tab URL is unchanged
@@ -33,7 +33,7 @@ Feature: URL Navigation
 
   Scenario: AC3 - Navigate with --wait-until load (default)
     Given a tab is open
-    When I run "chrome-cli navigate https://example.com --wait-until load"
+    When I run "agentchrome navigate https://example.com --wait-until load"
     Then the exit code is 0
     And the command waited for the page load event
     And the JSON output has key "url"
@@ -42,7 +42,7 @@ Feature: URL Navigation
 
   Scenario: AC4 - Navigate with --wait-until domcontentloaded
     Given a tab is open
-    When I run "chrome-cli navigate https://example.com --wait-until domcontentloaded"
+    When I run "agentchrome navigate https://example.com --wait-until domcontentloaded"
     Then the exit code is 0
     And the command returned after DOMContentLoaded fired
     And the JSON output has key "url"
@@ -51,7 +51,7 @@ Feature: URL Navigation
 
   Scenario: AC5 - Navigate with --wait-until networkidle
     Given a tab is open
-    When I run "chrome-cli navigate https://example.com --wait-until networkidle"
+    When I run "agentchrome navigate https://example.com --wait-until networkidle"
     Then the exit code is 0
     And the command waited until network was idle for 500ms
     And the JSON output has key "url"
@@ -60,7 +60,7 @@ Feature: URL Navigation
 
   Scenario: AC6 - Navigate with --wait-until none
     Given a tab is open
-    When I run "chrome-cli navigate https://example.com --wait-until none"
+    When I run "agentchrome navigate https://example.com --wait-until none"
     Then the exit code is 0
     And the command returned immediately after initiating navigation
     And the JSON output has key "url"
@@ -69,7 +69,7 @@ Feature: URL Navigation
 
   Scenario: AC7 - Navigate with --timeout
     Given a tab is open
-    When I run "chrome-cli navigate https://httpbin.org/delay/60 --timeout 1000"
+    When I run "agentchrome navigate https://httpbin.org/delay/60 --timeout 1000"
     Then the exit code is 4
     And the error message contains "timed out"
     And the error message contains "1000ms"
@@ -78,7 +78,7 @@ Feature: URL Navigation
 
   Scenario: AC8 - Navigate with --ignore-cache
     Given a tab is open
-    When I run "chrome-cli navigate https://example.com --ignore-cache"
+    When I run "agentchrome navigate https://example.com --ignore-cache"
     Then the exit code is 0
     And the navigation bypassed the browser cache
     And the JSON output has key "url"
@@ -88,7 +88,7 @@ Feature: URL Navigation
   Scenario: AC9 - Navigate back in browser history
     Given a tab is open with "https://example.com"
     And the tab has navigated to "https://www.iana.org/domains/reserved"
-    When I run "chrome-cli navigate back"
+    When I run "agentchrome navigate back"
     Then the exit code is 0
     And the JSON output has key "url" containing "example.com"
     And the JSON output has key "title"
@@ -96,7 +96,7 @@ Feature: URL Navigation
   Scenario: AC10 - Navigate back with --tab
     Given two tabs are open
     And the second tab has navigated to two pages
-    When I run "chrome-cli navigate back --tab <TAB_ID>"
+    When I run "agentchrome navigate back --tab <TAB_ID>"
     Then the exit code is 0
     And the JSON output has key "url"
     And the specified tab navigated back
@@ -105,7 +105,7 @@ Feature: URL Navigation
   Scenario: AC9b - Cross-origin navigate back succeeds
     Given a tab is open with "https://example.com"
     And the tab has navigated to "https://www.iana.org/domains/reserved"
-    When I run "chrome-cli navigate back"
+    When I run "agentchrome navigate back"
     Then the exit code is 0
     And the JSON output has key "url" containing "example.com"
 
@@ -113,7 +113,7 @@ Feature: URL Navigation
 
   Scenario: AC11 - Navigate forward in browser history
     Given a tab has navigated to two pages and then gone back
-    When I run "chrome-cli navigate forward"
+    When I run "agentchrome navigate forward"
     Then the exit code is 0
     And the JSON output has key "url" containing the second page URL
     And the JSON output has key "title"
@@ -121,7 +121,7 @@ Feature: URL Navigation
   Scenario: AC12 - Navigate forward with --tab
     Given two tabs are open
     And the second tab has gone back and has forward history
-    When I run "chrome-cli navigate forward --tab <TAB_ID>"
+    When I run "agentchrome navigate forward --tab <TAB_ID>"
     Then the exit code is 0
     And the specified tab navigated forward
 
@@ -130,7 +130,7 @@ Feature: URL Navigation
     Given a tab is open with "https://example.com"
     And the tab has navigated to "https://www.iana.org/domains/reserved"
     And the tab has navigated back
-    When I run "chrome-cli navigate forward"
+    When I run "agentchrome navigate forward"
     Then the exit code is 0
     And the JSON output has key "url" containing "iana.org"
 
@@ -138,20 +138,20 @@ Feature: URL Navigation
 
   Scenario: AC13 - Reload the current page
     Given a tab is open with "https://example.com"
-    When I run "chrome-cli navigate reload"
+    When I run "agentchrome navigate reload"
     Then the exit code is 0
     And the JSON output has key "url" containing "example.com"
     And the JSON output has key "title"
 
   Scenario: AC14 - Reload with --ignore-cache
     Given a tab is open with "https://example.com"
-    When I run "chrome-cli navigate reload --ignore-cache"
+    When I run "agentchrome navigate reload --ignore-cache"
     Then the exit code is 0
     And the page was reloaded bypassing the cache
 
   Scenario: AC15 - Reload with --tab
     Given two tabs are open with pages loaded
-    When I run "chrome-cli navigate reload --tab <TAB_ID>"
+    When I run "agentchrome navigate reload --tab <TAB_ID>"
     Then the exit code is 0
     And the specified tab was reloaded
 
@@ -159,19 +159,19 @@ Feature: URL Navigation
 
   Scenario: AC16 - DNS resolution failure
     Given a tab is open
-    When I run "chrome-cli navigate https://this-domain-does-not-exist.invalid"
+    When I run "agentchrome navigate https://this-domain-does-not-exist.invalid"
     Then the exit code is not 0
     And the error message contains "Navigation failed"
     And the error message contains "ERR_NAME_NOT_RESOLVED" or a DNS-related message
 
   Scenario: AC17 - Navigation timeout
     Given a tab is open
-    When I run "chrome-cli navigate https://httpbin.org/delay/60 --timeout 1000"
+    When I run "agentchrome navigate https://httpbin.org/delay/60 --timeout 1000"
     Then the exit code is 4
     And the error message contains "timed out"
 
   Scenario: AC18 - No Chrome connection
     Given no Chrome instance is running
-    When I run "chrome-cli navigate https://example.com"
+    When I run "agentchrome navigate https://example.com"
     Then the exit code is 2
-    And the error message contains "No Chrome instance found" or "chrome-cli connect"
+    And the error message contains "No Chrome instance found" or "agentchrome connect"

@@ -149,7 +149,7 @@ on:
 2. Install Rust toolchain with target via `dtolnay/rust-toolchain`
 3. Build: `cargo build --release --target ${{ matrix.target }}`
 4. Strip binary (Unix only): `strip` to reduce size
-5. Create archive directory: `chrome-cli-{version}-{target}/`
+5. Create archive directory: `agentchrome-{version}-{target}/`
 6. Copy binary + README.md + LICENSE files into archive directory
 7. Archive: `tar czf` for Unix, `7z a` (zip) for Windows
 8. Upload archive as GitHub Actions artifact

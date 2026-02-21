@@ -23,7 +23,7 @@ The omission is a straightforward oversight — the flag was not part of the ori
 
 ### Triggering Conditions
 
-- User runs `chrome-cli connect --launch` (any mode — headed or headless)
+- User runs `agentchrome connect --launch` (any mode — headed or headless)
 - `launch_chrome()` is called, which builds the Chrome command without `--enable-automation`
 - This occurs on every launch — it is not intermittent
 

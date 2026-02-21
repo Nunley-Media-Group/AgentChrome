@@ -18,22 +18,22 @@ Feature: Emulate set overrides persist across commands
   @regression
   Scenario: User agent persists across commands
     Given Chrome is running with CDP enabled
-    And I run "chrome-cli emulate set --user-agent \"TestBot/1.0\" --pretty"
-    When I run "chrome-cli js exec \"navigator.userAgent\" --pretty"
+    And I run "agentchrome emulate set --user-agent \"TestBot/1.0\" --pretty"
+    When I run "agentchrome js exec \"navigator.userAgent\" --pretty"
     Then the output contains "TestBot/1.0"
 
   @regression
   Scenario: Device scale factor persists and is reported correctly
     Given Chrome is running with CDP enabled
-    And I run "chrome-cli emulate set --device-scale 2 --pretty"
-    When I run "chrome-cli emulate status --pretty"
+    And I run "agentchrome emulate set --device-scale 2 --pretty"
+    When I run "agentchrome emulate status --pretty"
     Then the JSON output field "deviceScaleFactor" is 2.0
 
   @regression
   Scenario: Geolocation is shown in status
     Given Chrome is running with CDP enabled
-    And I run "chrome-cli emulate set --geolocation \"37.7749,-122.4194\" --pretty"
-    When I run "chrome-cli emulate status --pretty"
+    And I run "agentchrome emulate set --geolocation \"37.7749,-122.4194\" --pretty"
+    When I run "agentchrome emulate status --pretty"
     Then the JSON output field "geolocation.latitude" is 37.7749
     And the JSON output field "geolocation.longitude" is -122.4194
 
@@ -42,9 +42,9 @@ Feature: Emulate set overrides persist across commands
   @regression
   Scenario: Reset clears all overrides
     Given Chrome is running with CDP enabled
-    And I run "chrome-cli emulate set --user-agent \"TestBot/1.0\" --viewport 375x812 --geolocation \"37.7749,-122.4194\" --color-scheme dark --pretty"
-    When I run "chrome-cli emulate reset --pretty"
-    And I run "chrome-cli js exec \"navigator.userAgent\" --pretty"
+    And I run "agentchrome emulate set --user-agent \"TestBot/1.0\" --viewport 375x812 --geolocation \"37.7749,-122.4194\" --color-scheme dark --pretty"
+    When I run "agentchrome emulate reset --pretty"
+    And I run "agentchrome js exec \"navigator.userAgent\" --pretty"
     Then the output does not contain "TestBot/1.0"
 
   # --- Related Behavior Still Works ---
@@ -52,8 +52,8 @@ Feature: Emulate set overrides persist across commands
   @regression
   Scenario: Existing mobile/network/cpu persistence still works
     Given Chrome is running with CDP enabled
-    And I run "chrome-cli emulate set --mobile --network slow-4g --cpu 4 --pretty"
-    When I run "chrome-cli emulate status --pretty"
+    And I run "agentchrome emulate set --mobile --network slow-4g --cpu 4 --pretty"
+    When I run "agentchrome emulate status --pretty"
     Then the JSON output field "mobile" is true
     And the JSON output field "network" is "slow-4g"
     And the JSON output field "cpu" is 4

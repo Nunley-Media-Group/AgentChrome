@@ -17,7 +17,7 @@
 
 ## Background
 
-The `navigate` subcommand group implements URL navigation and browser history traversal for chrome-cli. This maps to the MCP server's `navigate_page` tool, which supports URL navigation, back/forward/reload, and configurable wait strategies. The navigate feature is a core MVP capability — it enables the fundamental "go to a URL and wait for it to load" workflow that underpins all other page inspection and interaction commands.
+The `navigate` subcommand group implements URL navigation and browser history traversal for agentchrome. This maps to the MCP server's `navigate_page` tool, which supports URL navigation, back/forward/reload, and configurable wait strategies. The navigate feature is a core MVP capability — it enables the fundamental "go to a URL and wait for it to load" workflow that underpins all other page inspection and interaction commands.
 
 Navigation requires session-level CDP communication (attached to a specific tab target) because the Page and Network domains are per-target, unlike the browser-level Target domain commands used by `tabs`. This introduces the first use of `CdpSession`, `ManagedSession`, and event subscriptions in the command layer.
 
@@ -28,7 +28,7 @@ Navigation requires session-level CDP communication (attached to a specific tab 
 ### AC1: Navigate to a valid URL
 
 **Given** Chrome is running with CDP enabled and a tab is open
-**When** I run `chrome-cli navigate https://example.com`
+**When** I run `agentchrome navigate https://example.com`
 **Then** the active tab navigates to `https://example.com`
 **And** the command waits for the `load` event (default wait strategy)
 **And** the output is JSON: `{"url": "https://example.com/", "title": "Example Domain", "status": 200}`
@@ -37,56 +37,56 @@ Navigation requires session-level CDP communication (attached to a specific tab 
 ### AC2: Navigate with --tab to target a specific tab
 
 **Given** Chrome has multiple tabs open
-**When** I run `chrome-cli navigate https://example.com --tab <ID>`
+**When** I run `agentchrome navigate https://example.com --tab <ID>`
 **Then** the specified tab navigates to the URL
 **And** other tabs are unaffected
 
 ### AC3: Navigate with --wait-until load (default)
 
 **Given** Chrome is running with a tab open
-**When** I run `chrome-cli navigate https://example.com --wait-until load`
+**When** I run `agentchrome navigate https://example.com --wait-until load`
 **Then** the command waits for `Page.loadEventFired` before returning
 **And** the JSON output includes the final URL, title, and HTTP status
 
 ### AC4: Navigate with --wait-until domcontentloaded
 
 **Given** Chrome is running with a tab open
-**When** I run `chrome-cli navigate https://example.com --wait-until domcontentloaded`
+**When** I run `agentchrome navigate https://example.com --wait-until domcontentloaded`
 **Then** the command waits for `Page.domContentEventFired` before returning
 **And** the JSON output includes the final URL, title, and HTTP status
 
 ### AC5: Navigate with --wait-until networkidle
 
 **Given** Chrome is running with a tab open
-**When** I run `chrome-cli navigate https://example.com --wait-until networkidle`
+**When** I run `agentchrome navigate https://example.com --wait-until networkidle`
 **Then** the command waits until there are 0 in-flight network requests for 500ms
 **And** the JSON output includes the final URL, title, and HTTP status
 
 ### AC6: Navigate with --wait-until none
 
 **Given** Chrome is running with a tab open
-**When** I run `chrome-cli navigate https://example.com --wait-until none`
+**When** I run `agentchrome navigate https://example.com --wait-until none`
 **Then** the command returns immediately after initiating navigation
 **And** the JSON output includes the URL that was navigated to
 
 ### AC7: Navigate with --timeout
 
 **Given** Chrome is running with a tab open
-**When** I run `chrome-cli navigate https://example.com --timeout 5000`
+**When** I run `agentchrome navigate https://example.com --timeout 5000`
 **Then** the navigation timeout is set to 5000ms
 **And** if the wait strategy does not complete within 5000ms, the command fails with exit code 4
 
 ### AC8: Navigate with --ignore-cache
 
 **Given** Chrome is running with a tab open
-**When** I run `chrome-cli navigate https://example.com --ignore-cache`
+**When** I run `agentchrome navigate https://example.com --ignore-cache`
 **Then** the navigation bypasses the browser cache
 **And** the page is fetched fresh from the server
 
 ### AC9: Navigate back in browser history
 
 **Given** Chrome has navigated to at least two pages in the active tab
-**When** I run `chrome-cli navigate back`
+**When** I run `agentchrome navigate back`
 **Then** the tab navigates back one step in history
 **And** the output is JSON with the new URL and title
 **And** the exit code is 0
@@ -94,13 +94,13 @@ Navigation requires session-level CDP communication (attached to a specific tab 
 ### AC10: Navigate back with --tab
 
 **Given** Chrome has multiple tabs, and a specific tab has history
-**When** I run `chrome-cli navigate back --tab <ID>`
+**When** I run `agentchrome navigate back --tab <ID>`
 **Then** the specified tab navigates back in its history
 
 ### AC11: Navigate forward in browser history
 
 **Given** Chrome has navigated back from a page
-**When** I run `chrome-cli navigate forward`
+**When** I run `agentchrome navigate forward`
 **Then** the tab navigates forward one step in history
 **And** the output is JSON with the new URL and title
 **And** the exit code is 0
@@ -108,13 +108,13 @@ Navigation requires session-level CDP communication (attached to a specific tab 
 ### AC12: Navigate forward with --tab
 
 **Given** Chrome has multiple tabs, and a specific tab has forward history
-**When** I run `chrome-cli navigate forward --tab <ID>`
+**When** I run `agentchrome navigate forward --tab <ID>`
 **Then** the specified tab navigates forward in its history
 
 ### AC13: Reload the current page
 
 **Given** Chrome has a page loaded in the active tab
-**When** I run `chrome-cli navigate reload`
+**When** I run `agentchrome navigate reload`
 **Then** the page reloads
 **And** the output is JSON with the URL and title
 **And** the exit code is 0
@@ -122,35 +122,35 @@ Navigation requires session-level CDP communication (attached to a specific tab 
 ### AC14: Reload with --ignore-cache
 
 **Given** Chrome has a page loaded in the active tab
-**When** I run `chrome-cli navigate reload --ignore-cache`
+**When** I run `agentchrome navigate reload --ignore-cache`
 **Then** the page performs a hard reload, bypassing the cache
 
 ### AC15: Reload with --tab
 
 **Given** Chrome has multiple tabs with pages loaded
-**When** I run `chrome-cli navigate reload --tab <ID>`
+**When** I run `agentchrome navigate reload --tab <ID>`
 **Then** the specified tab reloads
 
 ### AC16: DNS resolution failure
 
 **Given** Chrome is running with a tab open
-**When** I run `chrome-cli navigate https://this-domain-does-not-exist.invalid`
+**When** I run `agentchrome navigate https://this-domain-does-not-exist.invalid`
 **Then** the command fails with a meaningful error message mentioning DNS resolution
 **And** the exit code is non-zero
 
 ### AC17: Navigation timeout
 
 **Given** Chrome is running with a tab open
-**When** I run `chrome-cli navigate https://httpbin.org/delay/60 --timeout 1000`
+**When** I run `agentchrome navigate https://httpbin.org/delay/60 --timeout 1000`
 **Then** the command fails with a timeout error message
 **And** the exit code is 4
 
 ### AC18: No Chrome connection
 
 **Given** no Chrome instance is running or connected
-**When** I run `chrome-cli navigate https://example.com`
+**When** I run `agentchrome navigate https://example.com`
 **Then** the command fails with exit code 2
-**And** the error message suggests running `chrome-cli connect`
+**And** the error message suggests running `agentchrome connect`
 
 ### Generated Gherkin Preview
 
@@ -165,7 +165,7 @@ Feature: URL Navigation
 
   Scenario: Navigate to a valid URL
     Given a tab is open
-    When I run "chrome-cli navigate https://example.com"
+    When I run "agentchrome navigate https://example.com"
     Then the output JSON has key "url" with value "https://example.com/"
     And the output JSON has key "title"
     And the output JSON has key "status" with a numeric value
@@ -173,7 +173,7 @@ Feature: URL Navigation
 
   Scenario: Navigate with --tab targets specific tab
     Given multiple tabs are open
-    When I run "chrome-cli navigate https://example.com --tab <ID>"
+    When I run "agentchrome navigate https://example.com --tab <ID>"
     Then the specified tab URL changes to "https://example.com/"
 
   Scenario: Wait until load (default)

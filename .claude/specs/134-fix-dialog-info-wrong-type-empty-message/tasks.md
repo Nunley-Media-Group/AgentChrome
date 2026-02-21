@@ -28,7 +28,7 @@
 **Depends**: None
 **Acceptance**:
 - [x] `ManagedSession` gains an `install_dialog_interceptors()` async method
-- [x] Method injects a JS script via `Runtime.evaluate` that overrides `window.alert`, `window.confirm`, `window.prompt` to store `{type, message, defaultValue}` in a cookie named `__chrome_cli_dialog` before calling the original
+- [x] Method injects a JS script via `Runtime.evaluate` that overrides `window.alert`, `window.confirm`, `window.prompt` to store `{type, message, defaultValue}` in a cookie named `__agentchrome_dialog` before calling the original
 - [x] Cookie set is wrapped in `try/catch` — handles `data:` URLs (where cookies are disabled) without breaking the original dialog function
 - [x] Cookie is URL-encoded JSON, path=/, max-age=300
 - [x] Method also calls `Page.addScriptToEvaluateOnNewDocument` to persist across navigations
@@ -41,7 +41,7 @@
 **Type**: Modify
 **Depends**: T001
 **Acceptance**:
-- [x] Add `read_dialog_cookie()` async fn that sends `Network.getCookies` and parses `__chrome_cli_dialog`
+- [x] Add `read_dialog_cookie()` async fn that sends `Network.getCookies` and parses `__agentchrome_dialog`
 - [x] Returns `(type, message, default_value)` tuple or fallback `("unknown", "", "")`
 - [x] Add `probe_dialog_open()` helper — shared dialog detection via `Runtime.evaluate` probe
 - [x] `execute_info()` uses `probe_dialog_open()` + `read_dialog_cookie()` when dialog detected
@@ -101,7 +101,7 @@
 **Type**: Verify (no file changes)
 **Depends**: T002, T003, T004
 **Acceptance**:
-- [x] Build chrome-cli in release mode
+- [x] Build agentchrome in release mode
 - [x] Launch Chrome via `connect --launch`
 - [x] Navigate to https://example.com (installs interceptors)
 - [x] Trigger alert with 5s delay, wait for dialog to appear

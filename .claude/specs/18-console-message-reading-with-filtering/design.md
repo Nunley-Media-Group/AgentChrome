@@ -64,7 +64,7 @@ A key design decision is to collect messages by subscribing to `Runtime.consoleA
 ### Data Flow — `console read`
 
 ```
-1. User runs: chrome-cli console read [OPTIONS]
+1. User runs: agentchrome console read [OPTIONS]
 2. Clap parses args into ConsoleArgs → ConsoleCommand::Read(ReadArgs)
 3. execute_read() sets up CDP session via setup_session()
 4. Enable "Runtime" domain (and "Page" domain if --include-preserved)
@@ -80,7 +80,7 @@ A key design decision is to collect messages by subscribing to `Runtime.consoleA
 ### Data Flow — `console follow`
 
 ```
-1. User runs: chrome-cli console follow [OPTIONS]
+1. User runs: agentchrome console follow [OPTIONS]
 2. Clap parses args into ConsoleArgs → ConsoleCommand::Follow(FollowArgs)
 3. execute_follow() sets up CDP session via setup_session()
 4. Enable "Runtime" domain
@@ -102,8 +102,8 @@ A key design decision is to collect messages by subscribing to `Runtime.consoleA
 
 | Command | Purpose |
 |---------|---------|
-| `chrome-cli console read [OPTIONS] [MSG_ID]` | List or retrieve console messages |
-| `chrome-cli console follow [OPTIONS]` | Stream console messages in real-time |
+| `agentchrome console read [OPTIONS] [MSG_ID]` | List or retrieve console messages |
+| `agentchrome console follow [OPTIONS]` | Stream console messages in real-time |
 
 ### ConsoleArgs / ConsoleCommand (Clap)
 
@@ -352,7 +352,7 @@ The CLI exposes a simplified subset: `log`, `error`, `warn`, `info`, `debug`, `d
 When `console follow` exits (via timeout or signal):
 - Exit 0 if no error-level messages (`error`, `assert`) were seen
 - Exit 1 if any error-level messages were seen
-- This enables CI usage: `chrome-cli console follow --timeout 5000 || echo "Errors detected"`
+- This enables CI usage: `agentchrome console follow --timeout 5000 || echo "Errors detected"`
 
 ---
 

@@ -13,12 +13,12 @@
 
 ### Steps to Reproduce
 
-1. `chrome-cli connect --launch --headless`
-2. `chrome-cli emulate status` → observe baseline viewport (e.g., `{width: 756, height: 417}`)
-3. `chrome-cli emulate set --viewport 375x667 --mobile`
-4. `chrome-cli emulate status` → viewport is `{width: 375, height: 667}`, mobile is `true`
-5. `chrome-cli emulate reset`
-6. `chrome-cli emulate status` → viewport remains `{width: 375, height: 667}` instead of `{width: 756, height: 417}`
+1. `agentchrome connect --launch --headless`
+2. `agentchrome emulate status` → observe baseline viewport (e.g., `{width: 756, height: 417}`)
+3. `agentchrome emulate set --viewport 375x667 --mobile`
+4. `agentchrome emulate status` → viewport is `{width: 375, height: 667}`, mobile is `true`
+5. `agentchrome emulate reset`
+6. `agentchrome emulate status` → viewport remains `{width: 375, height: 667}` instead of `{width: 756, height: 417}`
 
 ### Environment
 

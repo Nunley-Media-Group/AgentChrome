@@ -13,7 +13,7 @@ This feature adds the `page snapshot` subcommand to capture the page's accessibi
 
 1. **Accessibility tree capture** via CDP `Accessibility.getFullAXTree`, which returns a flat list of accessibility nodes that we reconstruct into a tree.
 2. **UID assignment** for interactive elements — short sequential IDs (`s1`, `s2`, ...) that AI agents use to reference elements in subsequent interaction commands.
-3. **UID-to-backend-node mapping persistence** in a snapshot state file (`~/.chrome-cli/snapshot.json`), enabling interaction commands (#14-#17) to resolve UIDs back to DOM elements.
+3. **UID-to-backend-node mapping persistence** in a snapshot state file (`~/.agentchrome/snapshot.json`), enabling interaction commands (#14-#17) to resolve UIDs back to DOM elements.
 4. **Dual output formatting** — hierarchical text (default) and JSON tree.
 
 The implementation builds directly on the CDP infrastructure from Issue #6 and follows the module patterns established by `page.rs` (text extraction) and `navigate.rs`.
@@ -44,13 +44,13 @@ Chrome Browser
   └── Returns accessibility node list
 
 Session Layer (session.rs + snapshot.rs)
-  └── Write uid mapping to ~/.chrome-cli/snapshot.json
+  └── Write uid mapping to ~/.agentchrome/snapshot.json
 ```
 
 ### Data Flow
 
 ```
-1. User runs: chrome-cli page snapshot [--verbose] [--file PATH] [--json] [--tab ID]
+1. User runs: agentchrome page snapshot [--verbose] [--file PATH] [--json] [--tab ID]
 2. CLI layer parses args into PageSnapshotArgs
 3. Command layer resolves connection and target tab (existing pattern)
 4. Creates CdpSession via Target.attachToTarget
@@ -62,7 +62,7 @@ Session Layer (session.rs + snapshot.rs)
    - Roles: link, button, textbox, checkbox, radio, combobox, menuitem,
      tab, switch, slider, spinbutton, searchbox, option, treeitem
    - Format: s1, s2, s3, ...
-10. Persists {uid → backendDOMNodeId} mapping to ~/.chrome-cli/snapshot.json
+10. Persists {uid → backendDOMNodeId} mapping to ~/.agentchrome/snapshot.json
 11. Formats output:
     - Default/--plain: hierarchical text with "- role "name" [uid]"
     - --json/--pretty: JSON tree with uid, role, name, children
@@ -77,7 +77,7 @@ Session Layer (session.rs + snapshot.rs)
 
 | Command | Purpose |
 |---------|---------|
-| `chrome-cli page snapshot` | Capture accessibility tree of current page |
+| `agentchrome page snapshot` | Capture accessibility tree of current page |
 
 ### CLI Arguments (PageSnapshotArgs)
 
@@ -284,7 +284,7 @@ struct SnapshotState {
 }
 ```
 
-File location: `~/.chrome-cli/snapshot.json`
+File location: `~/.agentchrome/snapshot.json`
 
 ---
 
@@ -326,7 +326,7 @@ UIDs are assigned in deterministic tree-traversal order. For unchanged pages, `A
 
 ## Snapshot State Persistence
 
-### File: `~/.chrome-cli/snapshot.json`
+### File: `~/.agentchrome/snapshot.json`
 
 ```json
 {
@@ -497,8 +497,8 @@ FeatureScreen
 
 | Option | Location | Pros | Cons | Decision |
 |--------|----------|------|------|----------|
-| **A: Separate file** | `~/.chrome-cli/snapshot.json` | Clean separation, doesn't bloat session file | Extra file | **Selected** |
-| **B: In session file** | `~/.chrome-cli/session.json` | Single file | Mixes connection and snapshot state, larger file | Rejected |
+| **A: Separate file** | `~/.agentchrome/snapshot.json` | Clean separation, doesn't bloat session file | Extra file | **Selected** |
+| **B: In session file** | `~/.agentchrome/session.json` | Single file | Mixes connection and snapshot state, larger file | Rejected |
 | **C: In-memory only** | Not persisted | Simple | Can't be used by subsequent CLI invocations | Rejected — breaks the use case |
 
 ---

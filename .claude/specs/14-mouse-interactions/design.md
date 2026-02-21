@@ -9,9 +9,9 @@
 
 ## Overview
 
-This feature adds an `interact` subcommand group to chrome-cli with four commands: `click`, `click-at`, `hover`, and `drag`. These commands simulate mouse interactions via the Chrome DevTools Protocol's `Input.dispatchMouseEvent` method.
+This feature adds an `interact` subcommand group to agentchrome with four commands: `click`, `click-at`, `hover`, and `drag`. These commands simulate mouse interactions via the Chrome DevTools Protocol's `Input.dispatchMouseEvent` method.
 
-The implementation follows the established command pattern: CLI args defined in `cli/mod.rs`, a new `interact.rs` command module, CDP communication via `ManagedSession`, and JSON/plain output formatting. A shared target resolution module handles the dual UID/CSS-selector targeting system — UIDs are resolved from the persisted snapshot state (`~/.chrome-cli/snapshot.json`), while CSS selectors are resolved via `DOM.querySelector`.
+The implementation follows the established command pattern: CLI args defined in `cli/mod.rs`, a new `interact.rs` command module, CDP communication via `ManagedSession`, and JSON/plain output formatting. A shared target resolution module handles the dual UID/CSS-selector targeting system — UIDs are resolved from the persisted snapshot state (`~/.agentchrome/snapshot.json`), while CSS selectors are resolved via `DOM.querySelector`.
 
 The core flow for all interaction commands is: resolve target → get element coordinates → scroll into view → dispatch mouse event(s) → optionally wait for navigation → format output.
 
@@ -74,14 +74,14 @@ The core flow for all interaction commands is: resolve target → get element co
 ### Data Flow — `interact click s1`
 
 ```
-1. User runs: chrome-cli interact click s1 [--double] [--right] [--include-snapshot]
+1. User runs: agentchrome interact click s1 [--double] [--right] [--include-snapshot]
 2. CLI layer parses args → ClickArgs { target: "s1", double: false, right: false, include_snapshot: false }
 3. setup_session() → CdpClient + ManagedSession
 4. managed.ensure_domain("DOM")
 5. managed.ensure_domain("Page")
 6. Resolve target "s1":
    a. Detect UID pattern (starts with "s" followed by digits)
-   b. Read ~/.chrome-cli/snapshot.json → SnapshotState
+   b. Read ~/.agentchrome/snapshot.json → SnapshotState
    c. Lookup "s1" → backendDOMNodeId (e.g., 42)
    d. DOM.describeNode({ backendNodeId: 42 }) → nodeId
    e. DOM.getBoxModel({ nodeId }) → { content: [[x1,y1], [x2,y2], [x3,y3], [x4,y4]] }
@@ -102,7 +102,7 @@ The core flow for all interaction commands is: resolve target → get element co
 ### Data Flow — `interact click-at 100 200`
 
 ```
-1. User runs: chrome-cli interact click-at 100 200 [--double]
+1. User runs: agentchrome interact click-at 100 200 [--double]
 2. CLI layer parses → ClickAtArgs { x: 100.0, y: 200.0, double: false, right: false }
 3. setup_session() → CdpClient + ManagedSession
 4. Dispatch mouse events at (100, 200) directly (no target resolution needed)
@@ -113,7 +113,7 @@ The core flow for all interaction commands is: resolve target → get element co
 ### Data Flow — `interact hover s3`
 
 ```
-1. User runs: chrome-cli interact hover s3
+1. User runs: agentchrome interact hover s3
 2. Resolve target → (x, y) coordinates (same as click steps 4-8)
 3. Dispatch single mouseMoved event at (x, y)
 4. Build HoverResult { hovered: "s3" }
@@ -123,7 +123,7 @@ The core flow for all interaction commands is: resolve target → get element co
 ### Data Flow — `interact drag s1 s2`
 
 ```
-1. User runs: chrome-cli interact drag s1 s2
+1. User runs: agentchrome interact drag s1 s2
 2. Resolve "from" target s1 → (x1, y1)
 3. Resolve "to" target s2 → (x2, y2)
 4. Scroll s1 into view
@@ -143,10 +143,10 @@ The core flow for all interaction commands is: resolve target → get element co
 
 | Command | Purpose |
 |---------|---------|
-| `chrome-cli interact click <TARGET>` | Click an element by UID or CSS selector |
-| `chrome-cli interact click-at <X> <Y>` | Click at viewport coordinates |
-| `chrome-cli interact hover <TARGET>` | Hover over an element |
-| `chrome-cli interact drag <FROM> <TO>` | Drag from one element to another |
+| `agentchrome interact click <TARGET>` | Click an element by UID or CSS selector |
+| `agentchrome interact click-at <X> <Y>` | Click at viewport coordinates |
+| `agentchrome interact hover <TARGET>` | Hover over an element |
+| `agentchrome interact drag <FROM> <TO>` | Drag from one element to another |
 
 ### New CLI Flags
 
@@ -162,7 +162,7 @@ The core flow for all interaction commands is: resolve target → get element co
 
 **Input (CLI args):**
 ```
-chrome-cli interact click <TARGET> [--double] [--right] [--include-snapshot] [--tab ID]
+agentchrome interact click <TARGET> [--double] [--right] [--include-snapshot] [--tab ID]
 ```
 
 **Output (success — JSON):**
@@ -268,7 +268,7 @@ Dragged s1 to s2
 
 ## Database / Storage Changes
 
-None. This feature reads from the existing `~/.chrome-cli/snapshot.json` (written by `page snapshot`) but does not write any persistent state itself. When `--include-snapshot` is used, the updated snapshot is included in the output but also written to `~/.chrome-cli/snapshot.json` so subsequent interaction commands can use the updated UIDs.
+None. This feature reads from the existing `~/.agentchrome/snapshot.json` (written by `page snapshot`) but does not write any persistent state itself. When `--include-snapshot` is used, the updated snapshot is included in the output but also written to `~/.agentchrome/snapshot.json` so subsequent interaction commands can use the updated UIDs.
 
 ---
 

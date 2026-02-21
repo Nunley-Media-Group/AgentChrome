@@ -13,16 +13,16 @@
 
 ### Steps to Reproduce
 
-1. Launch Chrome: `chrome-cli connect --launch`
+1. Launch Chrome: `agentchrome connect --launch`
 2. Navigate to `https://www.saucedemo.com/`
-3. Log in: `chrome-cli form fill css:#user-name "standard_user"` / `chrome-cli form fill css:#password "secret_sauce"` / `chrome-cli interact click css:#login-button`
-4. Add item to cart: `chrome-cli interact click css:.btn_inventory` (first one)
-5. Go to cart: `chrome-cli interact click css:.shopping_cart_link`
-6. Checkout: `chrome-cli interact click css:#checkout`
-7. Fill form: `chrome-cli form fill css:#first-name "John"` / `css:#last-name "Doe"` / `css:#postal-code "90210"`
-8. Continue: `chrome-cli interact click css:#continue`
-9. Finish: `chrome-cli interact click css:#finish`
-10. Run: `chrome-cli navigate back`
+3. Log in: `agentchrome form fill css:#user-name "standard_user"` / `agentchrome form fill css:#password "secret_sauce"` / `agentchrome interact click css:#login-button`
+4. Add item to cart: `agentchrome interact click css:.btn_inventory` (first one)
+5. Go to cart: `agentchrome interact click css:.shopping_cart_link`
+6. Checkout: `agentchrome interact click css:#checkout`
+7. Fill form: `agentchrome form fill css:#first-name "John"` / `css:#last-name "Doe"` / `css:#postal-code "90210"`
+8. Continue: `agentchrome interact click css:#continue`
+9. Finish: `agentchrome interact click css:#finish`
+10. Run: `agentchrome navigate back`
 11. Observe: command hangs for 30 seconds then returns timeout error
 
 ### Environment
@@ -62,28 +62,28 @@ Always (100% reproducible on any SPA using `pushState` routing)
 ### AC1: SPA same-document navigate back succeeds
 
 **Given** a tab has navigated through multiple SPA pages via `pushState` routing (e.g., saucedemo.com checkout flow)
-**When** I run `chrome-cli navigate back`
+**When** I run `agentchrome navigate back`
 **Then** the exit code is 0
 **And** the JSON output has key `url` containing the previous page's URL
 
 ### AC2: SPA same-document navigate forward succeeds
 
 **Given** a tab has navigated through SPA pages and then navigated back
-**When** I run `chrome-cli navigate forward`
+**When** I run `agentchrome navigate forward`
 **Then** the exit code is 0
 **And** the JSON output has key `url` containing the forward destination URL
 
 ### AC3: Cross-document navigate back still works (no regression)
 
-**Given** a tab has navigated between two pages via full page loads (e.g., `chrome-cli navigate <url>`)
-**When** I run `chrome-cli navigate back`
+**Given** a tab has navigated between two pages via full page loads (e.g., `agentchrome navigate <url>`)
+**When** I run `agentchrome navigate back`
 **Then** the exit code is 0
 **And** the JSON output has key `url` containing the previous page's URL
 
 ### AC4: Cross-origin navigate back still works (no regression from #72 fix)
 
 **Given** a tab has navigated across origins via full page loads
-**When** I run `chrome-cli navigate back`
+**When** I run `agentchrome navigate back`
 **Then** the exit code is 0
 **And** the JSON output has key `url` containing the previous origin's URL
 

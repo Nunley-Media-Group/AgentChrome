@@ -11,38 +11,38 @@ Feature: Mouse Interactions
   # --- CLI Argument Validation (no Chrome required) ---
 
   Scenario: Click requires a target argument
-    Given chrome-cli is built
-    When I run "chrome-cli interact click"
+    Given agentchrome is built
+    When I run "agentchrome interact click"
     Then the exit code should be nonzero
     And stderr should contain "required"
 
   Scenario: Click-at requires x and y arguments
-    Given chrome-cli is built
-    When I run "chrome-cli interact click-at"
+    Given agentchrome is built
+    When I run "agentchrome interact click-at"
     Then the exit code should be nonzero
     And stderr should contain "required"
 
   Scenario: Hover requires a target argument
-    Given chrome-cli is built
-    When I run "chrome-cli interact hover"
+    Given agentchrome is built
+    When I run "agentchrome interact hover"
     Then the exit code should be nonzero
     And stderr should contain "required"
 
   Scenario: Drag requires from and to arguments
-    Given chrome-cli is built
-    When I run "chrome-cli interact drag"
+    Given agentchrome is built
+    When I run "agentchrome interact drag"
     Then the exit code should be nonzero
     And stderr should contain "required"
 
   Scenario: Double and right flags are mutually exclusive
-    Given chrome-cli is built
-    When I run "chrome-cli interact click s1 --double --right"
+    Given agentchrome is built
+    When I run "agentchrome interact click s1 --double --right"
     Then the exit code should be nonzero
     And stderr should contain "cannot be used with"
 
   Scenario: Interact help displays all subcommands
-    Given chrome-cli is built
-    When I run "chrome-cli interact --help"
+    Given agentchrome is built
+    When I run "agentchrome interact --help"
     Then the exit code should be 0
     And stdout should contain "click"
     And stdout should contain "click-at"
@@ -52,8 +52,8 @@ Feature: Mouse Interactions
     And stdout should contain "key"
 
   Scenario: Click help displays all options
-    Given chrome-cli is built
-    When I run "chrome-cli interact click --help"
+    Given agentchrome is built
+    When I run "agentchrome interact click --help"
     Then the exit code should be 0
     And stdout should contain "--double"
     And stdout should contain "--right"
@@ -66,7 +66,7 @@ Feature: Mouse Interactions
     And a page is loaded with interactive elements
     And a snapshot has been taken with UIDs assigned
     And the page has a button with snapshot UID "s1"
-    When I run "chrome-cli interact click s1"
+    When I run "agentchrome interact click s1"
     Then the output JSON should contain "clicked" equal to "s1"
     And the output JSON should contain "navigated" equal to false
     And the output JSON should contain "url"
@@ -76,7 +76,7 @@ Feature: Mouse Interactions
     Given Chrome is running with CDP enabled
     And a page is loaded with interactive elements
     And the page has a button with id "submit-btn"
-    When I run "chrome-cli interact click css:#submit-btn"
+    When I run "agentchrome interact click css:#submit-btn"
     Then the output JSON should contain "clicked" equal to "css:#submit-btn"
     And the output JSON should contain "navigated" equal to false
     And the exit code should be 0
@@ -86,7 +86,7 @@ Feature: Mouse Interactions
     And a page is loaded with interactive elements
     And a snapshot has been taken with UIDs assigned
     And the page has a link with UID "s1" that navigates to "/about"
-    When I run "chrome-cli interact click s1"
+    When I run "agentchrome interact click s1"
     Then the output JSON should contain "navigated" equal to true
     And the output JSON "url" should contain "/about"
 
@@ -95,7 +95,7 @@ Feature: Mouse Interactions
     And a page is loaded with interactive elements
     And a snapshot has been taken with UIDs assigned
     And the page has an element with snapshot UID "s1"
-    When I run "chrome-cli interact click s1 --double"
+    When I run "agentchrome interact click s1 --double"
     Then the output JSON should contain "double_click" equal to true
     And the output JSON should contain "clicked" equal to "s1"
 
@@ -104,7 +104,7 @@ Feature: Mouse Interactions
     And a page is loaded with interactive elements
     And a snapshot has been taken with UIDs assigned
     And the page has an element with snapshot UID "s1"
-    When I run "chrome-cli interact click s1 --right"
+    When I run "agentchrome interact click s1 --right"
     Then the output JSON should contain "right_click" equal to true
     And the output JSON should contain "clicked" equal to "s1"
 
@@ -113,7 +113,7 @@ Feature: Mouse Interactions
     And a page is loaded with interactive elements
     And a snapshot has been taken with UIDs assigned
     And the page has a button with snapshot UID "s1"
-    When I run "chrome-cli interact click s1 --include-snapshot"
+    When I run "agentchrome interact click s1 --include-snapshot"
     Then the output JSON should contain "clicked" equal to "s1"
     And the output JSON should contain a "snapshot" field
     And the snapshot should be a valid accessibility tree
@@ -123,7 +123,7 @@ Feature: Mouse Interactions
   Scenario: Click at viewport coordinates
     Given Chrome is running with CDP enabled
     And a page is loaded with interactive elements
-    When I run "chrome-cli interact click-at 100 200"
+    When I run "agentchrome interact click-at 100 200"
     Then the output JSON "clicked_at.x" should be 100
     And the output JSON "clicked_at.y" should be 200
     And the exit code should be 0
@@ -131,7 +131,7 @@ Feature: Mouse Interactions
   Scenario: Click-at with double flag
     Given Chrome is running with CDP enabled
     And a page is loaded with interactive elements
-    When I run "chrome-cli interact click-at 100 200 --double"
+    When I run "agentchrome interact click-at 100 200 --double"
     Then the output JSON should contain "double_click" equal to true
     And the output JSON "clicked_at.x" should be 100
 
@@ -142,7 +142,7 @@ Feature: Mouse Interactions
     And a page is loaded with interactive elements
     And a snapshot has been taken with UIDs assigned
     And the page has a menu item with snapshot UID "s3"
-    When I run "chrome-cli interact hover s3"
+    When I run "agentchrome interact hover s3"
     Then the output JSON should contain "hovered" equal to "s3"
     And the exit code should be 0
 
@@ -150,7 +150,7 @@ Feature: Mouse Interactions
     Given Chrome is running with CDP enabled
     And a page is loaded with interactive elements
     And the page has an element matching "css:.dropdown-trigger"
-    When I run "chrome-cli interact hover css:.dropdown-trigger"
+    When I run "agentchrome interact hover css:.dropdown-trigger"
     Then the output JSON should contain "hovered" equal to "css:.dropdown-trigger"
 
   Scenario: Hover with include-snapshot flag
@@ -158,7 +158,7 @@ Feature: Mouse Interactions
     And a page is loaded with interactive elements
     And a snapshot has been taken with UIDs assigned
     And the page has an element with snapshot UID "s3"
-    When I run "chrome-cli interact hover s3 --include-snapshot"
+    When I run "agentchrome interact hover s3 --include-snapshot"
     Then the output JSON should contain "hovered" equal to "s3"
     And the output JSON should contain a "snapshot" field
 
@@ -169,7 +169,7 @@ Feature: Mouse Interactions
     And a page is loaded with interactive elements
     And a snapshot has been taken with UIDs assigned
     And the page has a draggable item with UID "s1" and a drop target with UID "s2"
-    When I run "chrome-cli interact drag s1 s2"
+    When I run "agentchrome interact drag s1 s2"
     Then the output JSON "dragged.from" should be "s1"
     And the output JSON "dragged.to" should be "s2"
     And the exit code should be 0
@@ -178,7 +178,7 @@ Feature: Mouse Interactions
     Given Chrome is running with CDP enabled
     And a page is loaded with interactive elements
     And the page has elements matching "css:#item" and "css:#target"
-    When I run "chrome-cli interact drag css:#item css:#target"
+    When I run "agentchrome interact drag css:#item css:#target"
     Then the output JSON "dragged.from" should be "css:#item"
     And the output JSON "dragged.to" should be "css:#target"
 
@@ -187,7 +187,7 @@ Feature: Mouse Interactions
     And a page is loaded with interactive elements
     And a snapshot has been taken with UIDs assigned
     And the page has draggable elements with UIDs "s1" and "s2"
-    When I run "chrome-cli interact drag s1 s2 --include-snapshot"
+    When I run "agentchrome interact drag s1 s2 --include-snapshot"
     Then the output JSON "dragged.from" should be "s1"
     And the output JSON should contain a "snapshot" field
 
@@ -196,7 +196,7 @@ Feature: Mouse Interactions
   Scenario: Click with tab targeting
     Given Chrome is running with CDP enabled
     And a specific tab with ID "ABC123" contains an element with UID "s1"
-    When I run "chrome-cli interact click s1 --tab ABC123"
+    When I run "agentchrome interact click s1 --tab ABC123"
     Then the click is performed on the element in tab "ABC123"
     And the exit code should be 0
 
@@ -207,7 +207,7 @@ Feature: Mouse Interactions
     And a page is loaded with interactive elements
     And a snapshot has been taken with UIDs assigned
     And no element matches UID "s99" in the snapshot state
-    When I run "chrome-cli interact click s99"
+    When I run "agentchrome interact click s99"
     Then stderr should contain "UID 's99' not found"
     And stderr should contain "page snapshot"
     And the exit code should be nonzero
@@ -216,7 +216,7 @@ Feature: Mouse Interactions
     Given Chrome is running with CDP enabled
     And a page is loaded with interactive elements
     And no element matches the selector "#nonexistent"
-    When I run "chrome-cli interact click css:#nonexistent"
+    When I run "agentchrome interact click css:#nonexistent"
     Then stderr should contain "Element not found for selector"
     And the exit code should be nonzero
 
@@ -224,7 +224,7 @@ Feature: Mouse Interactions
     Given Chrome is running with CDP enabled
     And a page is loaded with interactive elements
     And no snapshot has been taken
-    When I run "chrome-cli interact click s1"
+    When I run "agentchrome interact click s1"
     Then stderr should contain "No snapshot state found"
     And stderr should contain "page snapshot"
     And the exit code should be nonzero
@@ -236,7 +236,7 @@ Feature: Mouse Interactions
     And a page is loaded with interactive elements
     And a snapshot has been taken with UIDs assigned
     And an element with UID "s5" is below the viewport fold
-    When I run "chrome-cli interact click s5"
+    When I run "agentchrome interact click s5"
     Then the element is scrolled into view
     And the click succeeds
     And the output JSON should contain "clicked" equal to "s5"
@@ -248,7 +248,7 @@ Feature: Mouse Interactions
     And a page is loaded with interactive elements
     And a snapshot has been taken with UIDs assigned
     And the page has a button with snapshot UID "s1"
-    When I run "chrome-cli interact click s1 --plain"
+    When I run "agentchrome interact click s1 --plain"
     Then the output should be plain text "Clicked s1"
 
   Scenario: Plain text output for hover
@@ -256,7 +256,7 @@ Feature: Mouse Interactions
     And a page is loaded with interactive elements
     And a snapshot has been taken with UIDs assigned
     And the page has an element with snapshot UID "s3"
-    When I run "chrome-cli interact hover s3 --plain"
+    When I run "agentchrome interact hover s3 --plain"
     Then the output should be plain text "Hovered s3"
 
   Scenario: Plain text output for drag
@@ -264,5 +264,5 @@ Feature: Mouse Interactions
     And a page is loaded with interactive elements
     And a snapshot has been taken with UIDs assigned
     And the page has draggable elements with UIDs "s1" and "s2"
-    When I run "chrome-cli interact drag s1 s2 --plain"
+    When I run "agentchrome interact drag s1 s2 --plain"
     Then the output should be plain text "Dragged s1 to s2"

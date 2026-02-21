@@ -18,8 +18,8 @@ Feature: tabs create --background reliably keeps original tab active
   @regression
   Scenario: Background tab creation keeps original tab active
     Given Chrome is running with an active tab at "https://www.google.com"
-    When I run "chrome-cli tabs create --background https://example.com"
-    And I run "chrome-cli tabs list"
+    When I run "agentchrome tabs create --background https://example.com"
+    And I run "agentchrome tabs list"
     Then the first tab in the list has "active" set to true
     And the first tab in the list has a URL containing "google.com"
 
@@ -28,8 +28,8 @@ Feature: tabs create --background reliably keeps original tab active
   @regression
   Scenario: Background tab is created and appears in tab list
     Given Chrome is running with an active tab
-    When I run "chrome-cli tabs create --background https://example.com"
-    And I run "chrome-cli tabs list"
+    When I run "agentchrome tabs create --background https://example.com"
+    And I run "agentchrome tabs list"
     Then the tab list contains a tab with URL containing "example.com"
     And the tab with URL containing "example.com" has "active" set to false
 
@@ -38,7 +38,7 @@ Feature: tabs create --background reliably keeps original tab active
   @regression
   Scenario: Non-background tab creation still activates the new tab
     Given Chrome is running with an active tab
-    When I run "chrome-cli tabs create https://example.com"
-    And I run "chrome-cli tabs list"
+    When I run "agentchrome tabs create https://example.com"
+    And I run "agentchrome tabs list"
     Then the first tab in the list has "active" set to true
     And the first tab in the list has a URL containing "example.com"

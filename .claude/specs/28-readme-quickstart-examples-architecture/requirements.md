@@ -9,15 +9,15 @@
 
 ## User Story
 
-**As a** developer or automation engineer discovering chrome-cli for the first time
+**As a** developer or automation engineer discovering agentchrome for the first time
 **I want** a comprehensive README with installation instructions, quick-start guide, usage examples, and architecture overview
-**So that** I can quickly understand what chrome-cli does, install it, and start using it without reading source code
+**So that** I can quickly understand what agentchrome does, install it, and start using it without reading source code
 
 ---
 
 ## Background
 
-The chrome-cli project has grown into a feature-rich CLI tool with 15+ major commands, multi-platform release pipelines, and extensive help text. However, the README is still a placeholder stub with only a project name, one-line description, and license section. As the primary entry point for new users and contributors, the README must communicate the tool's capabilities, installation options, and usage patterns clearly and concisely.
+The agentchrome project has grown into a feature-rich CLI tool with 15+ major commands, multi-platform release pipelines, and extensive help text. However, the README is still a placeholder stub with only a project name, one-line description, and license section. As the primary entry point for new users and contributors, the README must communicate the tool's capabilities, installation options, and usage patterns clearly and concisely.
 
 ---
 
@@ -29,13 +29,13 @@ The chrome-cli project has grown into a feature-rich CLI tool with 15+ major com
 
 **Given** the README.md file exists in the repository root
 **When** a user views the README
-**Then** it displays the project name "chrome-cli" and a one-line description
+**Then** it displays the project name "agentchrome" and a one-line description
 **And** it displays badges for CI status, license, and crates.io (when published)
 
 **Example**:
 - Given: README.md at repository root
 - When: User opens the file
-- Then: First line is a heading with "chrome-cli", followed by badges and a description matching Cargo.toml
+- Then: First line is a heading with "agentchrome", followed by badges and a description matching Cargo.toml
 
 ### AC2: Features section with capabilities list
 
@@ -50,7 +50,7 @@ The chrome-cli project has grown into a feature-rich CLI tool with 15+ major com
 **When** a user reads the Installation section
 **Then** it provides installation instructions for:
   - Pre-built binaries from GitHub Releases (with curl one-liner for macOS and Linux)
-  - Cargo install: `cargo install chrome-cli`
+  - Cargo install: `cargo install agentchrome`
   - Building from source
 **And** it lists supported platforms (macOS ARM, macOS Intel, Linux x64, Linux ARM, Windows)
 
@@ -59,7 +59,7 @@ The chrome-cli project has grown into a feature-rich CLI tool with 15+ major com
 **Given** the README.md file exists
 **When** a user reads the Quick Start section
 **Then** it provides a numbered getting-started guide with at least 5 steps covering:
-  1. Install chrome-cli
+  1. Install agentchrome
   2. Start Chrome with remote debugging
   3. Connect to Chrome
   4. Navigate to a URL
@@ -83,13 +83,13 @@ The chrome-cli project has grown into a feature-rich CLI tool with 15+ major com
 **Given** the README.md file exists
 **When** a user reads the Command Reference section
 **Then** it contains a table listing all top-level commands (connect, tabs, navigate, page, js, console, network, interact, form, emulate, perf, dialog, config, completions, man) with brief descriptions
-**And** it links to detailed help via `chrome-cli <command> --help` or man pages
+**And** it links to detailed help via `agentchrome <command> --help` or man pages
 
 ### AC7: Architecture section with CDP communication overview
 
 **Given** the README.md file exists
 **When** a user reads the Architecture section
-**Then** it includes a diagram showing how chrome-cli communicates with Chrome via CDP over WebSocket
+**Then** it includes a diagram showing how agentchrome communicates with Chrome via CDP over WebSocket
 **And** it describes the session management model
 **And** it mentions key performance characteristics (native Rust binary, fast startup)
 
@@ -97,7 +97,7 @@ The chrome-cli project has grown into a feature-rich CLI tool with 15+ major com
 
 **Given** the README.md file exists
 **When** a user reads the Claude Code Integration section
-**Then** it explains how to use chrome-cli with Claude Code for AI-assisted browser automation
+**Then** it explains how to use agentchrome with Claude Code for AI-assisted browser automation
 **And** it provides an example CLAUDE.md snippet
 
 ### AC9: Contributing section with development setup
@@ -126,14 +126,14 @@ The chrome-cli project has grown into a feature-rich CLI tool with 15+ major com
 
 ```gherkin
 Feature: README documentation
-  As a developer discovering chrome-cli
+  As a developer discovering agentchrome
   I want a comprehensive README
   So that I can quickly install and start using the tool
 
   Scenario: Header with badges and description
     Given the README.md file exists in the repository root
     When I read the file content
-    Then it starts with a heading containing "chrome-cli"
+    Then it starts with a heading containing "agentchrome"
     And it contains badge image links for CI and license
 
   Scenario: Features section lists capabilities
@@ -145,7 +145,7 @@ Feature: README documentation
   Scenario: Installation section with multiple methods
     Given the README.md file exists
     When I read the Installation section
-    Then it contains "cargo install chrome-cli"
+    Then it contains "cargo install agentchrome"
     And it contains curl commands for binary downloads
     And it lists supported platforms
 
@@ -153,8 +153,8 @@ Feature: README documentation
     Given the README.md file exists
     When I read the Quick Start section
     Then it contains numbered steps
-    And it includes "chrome-cli connect"
-    And it includes "chrome-cli navigate"
+    And it includes "agentchrome connect"
+    And it includes "agentchrome navigate"
 
   Scenario: Usage examples are copy-pasteable
     Given the README.md file exists
@@ -291,7 +291,7 @@ This feature has no runtime input data — it is a static documentation file.
 | Metric | Target | Measurement |
 |--------|--------|-------------|
 | Section completeness | All 10 sections present | Manual review |
-| Command coverage | All 15+ top-level commands listed | Diff against `chrome-cli --help` |
+| Command coverage | All 15+ top-level commands listed | Diff against `agentchrome --help` |
 | Example accuracy | All examples runnable | Manual testing |
 | Badge rendering | All badges display correctly on GitHub | Visual check |
 

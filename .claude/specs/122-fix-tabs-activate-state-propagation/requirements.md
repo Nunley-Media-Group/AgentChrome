@@ -13,11 +13,11 @@
 
 ### Steps to Reproduce
 
-1. `chrome-cli connect --launch --headless`
-2. `chrome-cli tabs create https://google.com`
-3. `chrome-cli tabs create https://example.com` — example.com is now active
-4. `chrome-cli tabs activate <google_tab_id>` — reports success with google.com info
-5. `chrome-cli tabs list --plain` — example.com still shows as active (`*`)
+1. `agentchrome connect --launch --headless`
+2. `agentchrome tabs create https://google.com`
+3. `agentchrome tabs create https://example.com` — example.com is now active
+4. `agentchrome tabs activate <google_tab_id>` — reports success with google.com info
+5. `agentchrome tabs list --plain` — example.com still shows as active (`*`)
 
 ### Environment
 
@@ -57,19 +57,19 @@ has not yet reflected the Target.activateTarget CDP command.
 ### AC1: Activate is reflected in tabs list
 
 **Given** a headless Chrome instance with multiple open tabs
-**When** I run `chrome-cli tabs activate <TAB_ID>` targeting a non-active tab
-**And** I run `chrome-cli tabs list`
+**When** I run `agentchrome tabs activate <TAB_ID>` targeting a non-active tab
+**And** I run `agentchrome tabs list`
 **Then** the activated tab shows as active in the list
 
 **Example**:
 - Given: 3 tabs open — about:blank, google.com, example.com (example.com is active)
-- When: `chrome-cli tabs activate <google_tab_id>`
-- Then: `chrome-cli tabs list` shows google.com as the active tab
+- When: `agentchrome tabs activate <google_tab_id>`
+- Then: `agentchrome tabs list` shows google.com as the active tab
 
 ### AC2: Activate returns correct tab info
 
 **Given** a headless Chrome instance with multiple open tabs
-**When** I run `chrome-cli tabs activate <TAB_ID>` targeting a specific tab
+**When** I run `agentchrome tabs activate <TAB_ID>` targeting a specific tab
 **Then** the JSON output includes the correct `activated`, `url`, and `title` fields for that tab
 
 ### AC3: Existing tab activation behavior is preserved

@@ -2,7 +2,7 @@ use std::fmt::Write;
 
 use serde::Serialize;
 
-use chrome_cli::error::{AppError, ExitCode};
+use agentchrome::error::{AppError, ExitCode};
 
 use crate::cli::{ExamplesArgs, GlobalOpts};
 
@@ -37,27 +37,27 @@ fn all_examples() -> Vec<CommandGroupSummary> {
             description: "Connect to or launch a Chrome instance".into(),
             examples: vec![
                 ExampleEntry {
-                    cmd: "chrome-cli connect".into(),
+                    cmd: "agentchrome connect".into(),
                     description: "Connect to Chrome on the default port (9222)".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli connect --launch --headless".into(),
+                    cmd: "agentchrome connect --launch --headless".into(),
                     description: "Launch a new headless Chrome instance".into(),
                     flags: Some(vec!["--launch".into(), "--headless".into()]),
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli connect --port 9333".into(),
+                    cmd: "agentchrome connect --port 9333".into(),
                     description: "Connect to Chrome on a specific port".into(),
                     flags: Some(vec!["--port".into()]),
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli connect --status".into(),
+                    cmd: "agentchrome connect --status".into(),
                     description: "Check current connection status".into(),
                     flags: Some(vec!["--status".into()]),
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli connect --disconnect".into(),
+                    cmd: "agentchrome connect --disconnect".into(),
                     description: "Disconnect and remove the session file".into(),
                     flags: Some(vec!["--disconnect".into()]),
                 },
@@ -68,27 +68,27 @@ fn all_examples() -> Vec<CommandGroupSummary> {
             description: "Tab management (list, create, close, activate)".into(),
             examples: vec![
                 ExampleEntry {
-                    cmd: "chrome-cli tabs list".into(),
+                    cmd: "agentchrome tabs list".into(),
                     description: "List all open tabs".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli tabs create https://example.com".into(),
+                    cmd: "agentchrome tabs create https://example.com".into(),
                     description: "Open a new tab with a URL".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli tabs close ABC123".into(),
+                    cmd: "agentchrome tabs close ABC123".into(),
                     description: "Close a tab by its ID".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli tabs activate ABC123".into(),
+                    cmd: "agentchrome tabs activate ABC123".into(),
                     description: "Activate (focus) a tab by its ID".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli tabs list --all".into(),
+                    cmd: "agentchrome tabs list --all".into(),
                     description: "List all tabs including internal Chrome pages".into(),
                     flags: Some(vec!["--all".into()]),
                 },
@@ -99,23 +99,23 @@ fn all_examples() -> Vec<CommandGroupSummary> {
             description: "URL navigation and history".into(),
             examples: vec![
                 ExampleEntry {
-                    cmd: "chrome-cli navigate https://example.com".into(),
+                    cmd: "agentchrome navigate https://example.com".into(),
                     description: "Navigate to a URL and wait for load".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli navigate https://app.example.com --wait-until networkidle"
+                    cmd: "agentchrome navigate https://app.example.com --wait-until networkidle"
                         .into(),
                     description: "Navigate and wait for network idle (for SPAs)".into(),
                     flags: Some(vec!["--wait-until".into()]),
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli navigate back".into(),
+                    cmd: "agentchrome navigate back".into(),
                     description: "Go back in browser history".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli navigate reload --ignore-cache".into(),
+                    cmd: "agentchrome navigate reload --ignore-cache".into(),
                     description: "Reload the page without cache".into(),
                     flags: Some(vec!["--ignore-cache".into()]),
                 },
@@ -126,27 +126,27 @@ fn all_examples() -> Vec<CommandGroupSummary> {
             description: "Page inspection (screenshot, text, accessibility tree, find)".into(),
             examples: vec![
                 ExampleEntry {
-                    cmd: "chrome-cli page text".into(),
+                    cmd: "agentchrome page text".into(),
                     description: "Extract all visible text from the page".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli page snapshot".into(),
+                    cmd: "agentchrome page snapshot".into(),
                     description: "Capture the accessibility tree with element UIDs".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli page screenshot --full-page --file page.png".into(),
+                    cmd: "agentchrome page screenshot --full-page --file page.png".into(),
                     description: "Take a full-page screenshot".into(),
                     flags: Some(vec!["--full-page".into(), "--file".into()]),
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli page find \"Sign in\"".into(),
+                    cmd: "agentchrome page find \"Sign in\"".into(),
                     description: "Find elements by text".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli page resize 1280x720".into(),
+                    cmd: "agentchrome page resize 1280x720".into(),
                     description: "Resize the viewport to specific dimensions".into(),
                     flags: None,
                 },
@@ -157,27 +157,27 @@ fn all_examples() -> Vec<CommandGroupSummary> {
             description: "DOM inspection and manipulation".into(),
             examples: vec![
                 ExampleEntry {
-                    cmd: "chrome-cli dom select \"h1\"".into(),
+                    cmd: "agentchrome dom select \"h1\"".into(),
                     description: "Select elements by CSS selector".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli dom select \"//a[@href]\" --xpath".into(),
+                    cmd: "agentchrome dom select \"//a[@href]\" --xpath".into(),
                     description: "Select elements by XPath expression".into(),
                     flags: Some(vec!["--xpath".into()]),
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli dom get-attribute s3 href".into(),
+                    cmd: "agentchrome dom get-attribute s3 href".into(),
                     description: "Get an element's attribute by UID".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli dom get-text css:h1".into(),
+                    cmd: "agentchrome dom get-text css:h1".into(),
                     description: "Get the text content of an element".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli dom tree --depth 3".into(),
+                    cmd: "agentchrome dom tree --depth 3".into(),
                     description: "View the DOM tree with limited depth".into(),
                     flags: Some(vec!["--depth".into()]),
                 },
@@ -188,22 +188,22 @@ fn all_examples() -> Vec<CommandGroupSummary> {
             description: "JavaScript execution in page context".into(),
             examples: vec![
                 ExampleEntry {
-                    cmd: "chrome-cli js exec \"document.title\"".into(),
+                    cmd: "agentchrome js exec \"document.title\"".into(),
                     description: "Get the page title".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli js exec --file script.js".into(),
+                    cmd: "agentchrome js exec --file script.js".into(),
                     description: "Execute a JavaScript file".into(),
                     flags: Some(vec!["--file".into()]),
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli js exec --uid s3 \"(el) => el.textContent\"".into(),
+                    cmd: "agentchrome js exec --uid s3 \"(el) => el.textContent\"".into(),
                     description: "Run code on a specific element by UID".into(),
                     flags: Some(vec!["--uid".into()]),
                 },
                 ExampleEntry {
-                    cmd: "echo 'document.URL' | chrome-cli js exec -".into(),
+                    cmd: "echo 'document.URL' | agentchrome js exec -".into(),
                     description: "Read JavaScript from stdin".into(),
                     flags: None,
                 },
@@ -214,22 +214,22 @@ fn all_examples() -> Vec<CommandGroupSummary> {
             description: "Console message reading and monitoring".into(),
             examples: vec![
                 ExampleEntry {
-                    cmd: "chrome-cli console read".into(),
+                    cmd: "agentchrome console read".into(),
                     description: "Read recent console messages".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli console read --errors-only".into(),
+                    cmd: "agentchrome console read --errors-only".into(),
                     description: "Show only error messages".into(),
                     flags: Some(vec!["--errors-only".into()]),
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli console follow".into(),
+                    cmd: "agentchrome console follow".into(),
                     description: "Stream console messages in real time".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli console follow --errors-only --timeout 10000".into(),
+                    cmd: "agentchrome console follow --errors-only --timeout 10000".into(),
                     description: "Stream errors for 10 seconds".into(),
                     flags: Some(vec!["--errors-only".into(), "--timeout".into()]),
                 },
@@ -240,22 +240,22 @@ fn all_examples() -> Vec<CommandGroupSummary> {
             description: "Network request monitoring and interception".into(),
             examples: vec![
                 ExampleEntry {
-                    cmd: "chrome-cli network list".into(),
+                    cmd: "agentchrome network list".into(),
                     description: "List recent network requests".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli network list --type xhr,fetch".into(),
+                    cmd: "agentchrome network list --type xhr,fetch".into(),
                     description: "Filter requests by resource type".into(),
                     flags: Some(vec!["--type".into()]),
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli network get 42".into(),
+                    cmd: "agentchrome network get 42".into(),
                     description: "Get details of a specific request by ID".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli network follow --url api.example.com".into(),
+                    cmd: "agentchrome network follow --url api.example.com".into(),
                     description: "Stream network requests matching a URL pattern".into(),
                     flags: Some(vec!["--url".into()]),
                 },
@@ -266,27 +266,27 @@ fn all_examples() -> Vec<CommandGroupSummary> {
             description: "Mouse, keyboard, and scroll interactions".into(),
             examples: vec![
                 ExampleEntry {
-                    cmd: "chrome-cli interact click s5".into(),
+                    cmd: "agentchrome interact click s5".into(),
                     description: "Click an element by UID".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli interact click css:#submit-btn".into(),
+                    cmd: "agentchrome interact click css:#submit-btn".into(),
                     description: "Click an element by CSS selector".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli interact type \"Hello, world!\"".into(),
+                    cmd: "agentchrome interact type \"Hello, world!\"".into(),
                     description: "Type text into the focused element".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli interact key Control+A".into(),
+                    cmd: "agentchrome interact key Control+A".into(),
                     description: "Press a key combination".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli interact scroll --to-bottom".into(),
+                    cmd: "agentchrome interact scroll --to-bottom".into(),
                     description: "Scroll to the bottom of the page".into(),
                     flags: Some(vec!["--to-bottom".into()]),
                 },
@@ -297,22 +297,22 @@ fn all_examples() -> Vec<CommandGroupSummary> {
             description: "Form input and submission".into(),
             examples: vec![
                 ExampleEntry {
-                    cmd: "chrome-cli form fill s5 \"hello@example.com\"".into(),
+                    cmd: "agentchrome form fill s5 \"hello@example.com\"".into(),
                     description: "Fill a form field by UID".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli form fill css:#email \"user@example.com\"".into(),
+                    cmd: "agentchrome form fill css:#email \"user@example.com\"".into(),
                     description: "Fill a form field by CSS selector".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli form clear s5".into(),
+                    cmd: "agentchrome form clear s5".into(),
                     description: "Clear a form field".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli form upload s10 ./photo.jpg".into(),
+                    cmd: "agentchrome form upload s10 ./photo.jpg".into(),
                     description: "Upload a file to a file input element".into(),
                     flags: None,
                 },
@@ -323,7 +323,7 @@ fn all_examples() -> Vec<CommandGroupSummary> {
             description: "Device and network emulation".into(),
             examples: vec![
                 ExampleEntry {
-                    cmd: "chrome-cli emulate set --viewport 375x667 --device-scale 2 --mobile"
+                    cmd: "agentchrome emulate set --viewport 375x667 --device-scale 2 --mobile"
                         .into(),
                     description: "Emulate a mobile device".into(),
                     flags: Some(vec![
@@ -333,22 +333,22 @@ fn all_examples() -> Vec<CommandGroupSummary> {
                     ]),
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli emulate set --network 3g".into(),
+                    cmd: "agentchrome emulate set --network 3g".into(),
                     description: "Simulate slow 3G network".into(),
                     flags: Some(vec!["--network".into()]),
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli emulate set --color-scheme dark".into(),
+                    cmd: "agentchrome emulate set --color-scheme dark".into(),
                     description: "Force dark mode".into(),
                     flags: Some(vec!["--color-scheme".into()]),
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli emulate status".into(),
+                    cmd: "agentchrome emulate status".into(),
                     description: "Check current emulation settings".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli emulate reset".into(),
+                    cmd: "agentchrome emulate reset".into(),
                     description: "Clear all emulation overrides".into(),
                     flags: None,
                 },
@@ -359,22 +359,22 @@ fn all_examples() -> Vec<CommandGroupSummary> {
             description: "Performance tracing and metrics".into(),
             examples: vec![
                 ExampleEntry {
-                    cmd: "chrome-cli perf vitals".into(),
+                    cmd: "agentchrome perf vitals".into(),
                     description: "Quick Core Web Vitals measurement".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli perf record --duration 5000".into(),
+                    cmd: "agentchrome perf record --duration 5000".into(),
                     description: "Record a trace for 5 seconds".into(),
                     flags: Some(vec!["--duration".into()]),
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli perf record --reload --duration 5000".into(),
+                    cmd: "agentchrome perf record --reload --duration 5000".into(),
                     description: "Record a trace with page reload".into(),
                     flags: Some(vec!["--reload".into(), "--duration".into()]),
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli perf analyze RenderBlocking --trace-file trace.json".into(),
+                    cmd: "agentchrome perf analyze RenderBlocking --trace-file trace.json".into(),
                     description: "Analyze render-blocking resources from a trace".into(),
                     flags: Some(vec!["--trace-file".into()]),
                 },
@@ -385,22 +385,22 @@ fn all_examples() -> Vec<CommandGroupSummary> {
             description: "Browser dialog handling (alert, confirm, prompt, beforeunload)".into(),
             examples: vec![
                 ExampleEntry {
-                    cmd: "chrome-cli dialog info".into(),
+                    cmd: "agentchrome dialog info".into(),
                     description: "Check if a dialog is currently open".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli dialog handle accept".into(),
+                    cmd: "agentchrome dialog handle accept".into(),
                     description: "Accept an alert or confirm dialog".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli dialog handle dismiss".into(),
+                    cmd: "agentchrome dialog handle dismiss".into(),
                     description: "Dismiss a dialog".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli dialog handle accept --text \"my input\"".into(),
+                    cmd: "agentchrome dialog handle accept --text \"my input\"".into(),
                     description: "Accept a prompt dialog with text".into(),
                     flags: Some(vec!["--text".into()]),
                 },
@@ -411,22 +411,22 @@ fn all_examples() -> Vec<CommandGroupSummary> {
             description: "Configuration file management (show, init, path)".into(),
             examples: vec![
                 ExampleEntry {
-                    cmd: "chrome-cli config show".into(),
+                    cmd: "agentchrome config show".into(),
                     description: "Show the resolved configuration from all sources".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli config init".into(),
+                    cmd: "agentchrome config init".into(),
                     description: "Create a default config file".into(),
                     flags: None,
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli config init --path ./my-config.toml".into(),
+                    cmd: "agentchrome config init --path ./my-config.toml".into(),
                     description: "Create a config at a custom path".into(),
                     flags: Some(vec!["--path".into()]),
                 },
                 ExampleEntry {
-                    cmd: "chrome-cli config path".into(),
+                    cmd: "agentchrome config path".into(),
                     description: "Show the active config file path".into(),
                     flags: None,
                 },
@@ -695,7 +695,7 @@ mod tests {
     #[test]
     fn flags_field_omitted_when_none() {
         let entry = ExampleEntry {
-            cmd: "chrome-cli test".into(),
+            cmd: "agentchrome test".into(),
             description: "A test".into(),
             flags: None,
         };
@@ -709,7 +709,7 @@ mod tests {
     #[test]
     fn flags_field_present_when_some() {
         let entry = ExampleEntry {
-            cmd: "chrome-cli test --flag".into(),
+            cmd: "agentchrome test --flag".into(),
             description: "A test".into(),
             flags: Some(vec!["--flag".into()]),
         };

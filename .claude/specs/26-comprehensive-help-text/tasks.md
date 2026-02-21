@@ -53,7 +53,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] Contains "EXIT CODES" section documenting codes 0–5
 - [ ] Contains "ENVIRONMENT VARIABLES" section
 - [ ] `cargo build` succeeds
-- [ ] `chrome-cli --help` renders the new sections
+- [ ] `agentchrome --help` renders the new sections
 
 **Notes**: Use `after_long_help` (not `after_help`) so examples appear with `--help` but not `-h`. The string is a raw string literal in the `#[command(...)]` attribute on the `Cli` struct.
 
@@ -222,7 +222,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **Type**: Modify
 **Depends**: T008
 **Acceptance**:
-- [ ] Step definitions for running `chrome-cli --help` and capturing output
+- [ ] Step definitions for running `agentchrome --help` and capturing output
 - [ ] Step definitions for verifying content presence/absence
 - [ ] All scenarios pass: `cargo test --test bdd`
 

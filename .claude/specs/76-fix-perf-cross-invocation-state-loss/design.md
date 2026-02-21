@@ -88,7 +88,7 @@ The existing `perf start` and `perf stop` subcommands will be removed from the C
 
 | Option | Description | Why Not Selected |
 |--------|-------------|------------------|
-| **Persist session ID in state file** | Save the CDP session ID from `perf start` to `~/.chrome-cli/trace-state.json`, reattach in `perf stop` | Chrome terminates the trace when the WebSocket connection closes, regardless of session ID persistence. The connection itself cannot be persisted across process boundaries. |
+| **Persist session ID in state file** | Save the CDP session ID from `perf start` to `~/.agentchrome/trace-state.json`, reattach in `perf stop` | Chrome terminates the trace when the WebSocket connection closes, regardless of session ID persistence. The connection itself cannot be persisted across process boundaries. |
 | **Background daemon** | Spawn a background process that keeps the WebSocket alive between `perf start` and `perf stop` | Significantly more complex (process management, IPC, cleanup on crash). Overkill when a single long-running command solves the problem simply. |
 | **`--auto-stop` as default** | Make `perf start --auto-stop` the recommended workflow | Only works for page-load scenarios. Users need to trace arbitrary interactions (clicks, form submissions) which require manual stop. |
 

@@ -8,7 +8,7 @@ allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Task, AskUserQuestion, Skill
 
 # Executing Learning
 
-Build the debug binary, launch Chrome in **headed mode**, and explore a website to learn how to navigate it using chrome-cli. Exercise every relevant command group (navigate, page, interact, form, tabs, js, console, network, emulate, perf, dialog) against the site. Any bugs, broken commands, or missing functionality discovered during exploration should be filed as GitHub issues using `/creating-issues`.
+Build the debug binary, launch Chrome in **headed mode**, and explore a website to learn how to navigate it using agentchrome. Exercise every relevant command group (navigate, page, interact, form, tabs, js, console, network, emulate, perf, dialog) against the site. Any bugs, broken commands, or missing functionality discovered during exploration should be filed as GitHub issues using `/creating-issues`.
 
 ## Default Target
 
@@ -20,16 +20,16 @@ If an argument is provided, use that URL instead:
 
 ## When to Use
 
-- Learning how chrome-cli interacts with a new website
-- Exploratory testing of chrome-cli against real-world sites
+- Learning how agentchrome interacts with a new website
+- Exploratory testing of agentchrome against real-world sites
 - Discovering bugs through hands-on usage rather than systematic testing
-- Validating that chrome-cli can automate a specific site's workflows
+- Validating that agentchrome can automate a specific site's workflows
 
 ## Key Constraints
 
 1. **Headed mode** — launch Chrome without `--headless` so you can observe the browser
 2. **Explore organically** — navigate the site like a user would, don't follow a rigid script
-3. **Exercise breadth** — try as many chrome-cli commands as the site allows
+3. **Exercise breadth** — try as many agentchrome commands as the site allows
 4. **Note everything** — track what works, what fails, and what's missing
 5. **File bugs with `/creating-issues`** — use the existing skill for each defect found
 6. **Do NOT fix anything** — only observe, analyze, and report
@@ -73,24 +73,24 @@ If an argument is provided, use that URL instead:
 
 1. Run `cargo build` (debug mode)
 2. If the build fails, **stop immediately** and report the failure
-3. Set `CLI` to `./target/debug/chrome-cli` for all subsequent commands
+3. Set `CLI` to `./target/debug/agentchrome` for all subsequent commands
 
 ### Step 3: Launch Headed Chrome
 
-1. Run `./target/debug/chrome-cli connect --launch` (no `--headless` flag)
+1. Run `./target/debug/agentchrome connect --launch` (no `--headless` flag)
 2. Verify the connection succeeded by checking the output for a port number
 3. If launch fails, report the error and stop
 
 ### Step 4: Explore the Website
 
-Navigate to the target URL and explore it organically. The goal is to learn the site's structure and exercise chrome-cli's capabilities against real content.
+Navigate to the target URL and explore it organically. The goal is to learn the site's structure and exercise agentchrome's capabilities against real content.
 
 #### 4a: Initial Reconnaissance
 
-1. Navigate to the target URL: `chrome-cli navigate <url>`
-2. Take an accessibility snapshot: `chrome-cli page snapshot`
-3. Take a screenshot: `chrome-cli page screenshot --file /tmp/learning-initial.png`
-4. Extract page text: `chrome-cli page text`
+1. Navigate to the target URL: `agentchrome navigate <url>`
+2. Take an accessibility snapshot: `agentchrome page snapshot`
+3. Take a screenshot: `agentchrome page screenshot --file /tmp/learning-initial.png`
+4. Extract page text: `agentchrome page text`
 5. Read the snapshot to understand the page structure and available interactive elements
 
 #### 4b: Navigate the Site
@@ -145,7 +145,7 @@ For each finding, note:
 
 ### Step 5: Clean Up Chrome
 
-1. Disconnect: `chrome-cli connect disconnect`
+1. Disconnect: `agentchrome connect disconnect`
 2. Kill any orphaned Chrome processes: `pkill -f 'chrome.*--remote-debugging' || true`
 3. Verify cleanup: `pgrep -f 'chrome.*--remote-debugging' || echo "clean"`
 

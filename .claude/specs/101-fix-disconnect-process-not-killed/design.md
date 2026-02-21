@@ -68,9 +68,9 @@ On Windows, `taskkill /T /F /PID` already handles the process tree.
 
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
-| Killing a process group that chrome-cli didn't create | Low | Only kill the process group if the PID matches what was stored in the session file from `--launch` |
+| Killing a process group that agentchrome didn't create | Low | Only kill the process group if the PID matches what was stored in the session file from `--launch` |
 | Timeout too short for Chrome to shut down gracefully | Low | Use 2-second SIGTERM timeout before SIGKILL — sufficient for Chrome to flush state |
-| SIGKILL leaves Chrome profile in corrupt state | Low | Chrome is designed to recover from hard kills; profile corruption is Chrome's responsibility, not chrome-cli's |
+| SIGKILL leaves Chrome profile in corrupt state | Low | Chrome is designed to recover from hard kills; profile corruption is Chrome's responsibility, not agentchrome's |
 | Disconnect takes longer (up to ~2s) in the happy path | Low | Only waits if SIGTERM doesn't immediately terminate; most Chrome instances exit quickly on SIGTERM |
 
 ---

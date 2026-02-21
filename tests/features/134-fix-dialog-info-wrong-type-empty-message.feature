@@ -12,14 +12,14 @@ Feature: Dialog info and handle work correctly for open dialogs
   Page.navigate fallback for dialog dismissal.
 
   Background:
-    Given chrome-cli is built
+    Given agentchrome is built
 
   # --- Bug Is Fixed ---
 
   @regression
   Scenario: AC1 — dialog info returns correct type and message for alert
     Given a page has triggered an alert dialog with message "hello"
-    When I run "chrome-cli dialog info"
+    When I run "agentchrome dialog info"
     Then the output JSON should contain "open" equal to true
     And the output JSON should contain "type" equal to "alert"
     And the output JSON should contain "message" equal to "hello"
@@ -28,7 +28,7 @@ Feature: Dialog info and handle work correctly for open dialogs
   @regression
   Scenario: AC2 — dialog info reports confirm dialogs correctly
     Given a page has triggered a confirm dialog with message "proceed?"
-    When I run "chrome-cli dialog info"
+    When I run "agentchrome dialog info"
     Then the output JSON should contain "open" equal to true
     And the output JSON should contain "type" equal to "confirm"
     And the output JSON should contain "message" equal to "proceed?"
@@ -37,7 +37,7 @@ Feature: Dialog info and handle work correctly for open dialogs
   @regression
   Scenario: AC4 — dialog handle returns correct type and message
     Given a page has triggered an alert dialog with message "test"
-    When I run "chrome-cli dialog handle accept"
+    When I run "agentchrome dialog handle accept"
     Then the output JSON should contain "dialog_type" equal to "alert"
     And the output JSON should contain "message" equal to "test"
     And the exit code should be 0
@@ -45,9 +45,9 @@ Feature: Dialog info and handle work correctly for open dialogs
   @regression
   Scenario: AC5 — dialog handle dismisses pre-existing dialogs
     Given a page has triggered an alert dialog with message "dismiss me"
-    When I run "chrome-cli dialog handle accept"
+    When I run "agentchrome dialog handle accept"
     Then the exit code should be 0
-    When I run "chrome-cli dialog info"
+    When I run "agentchrome dialog info"
     Then the output JSON should contain "open" equal to false
 
   # --- Related Behavior Still Works ---
@@ -55,13 +55,13 @@ Feature: Dialog info and handle work correctly for open dialogs
   @regression
   Scenario: AC3 — dialog info still works when no dialog is open
     Given no dialog is currently open
-    When I run "chrome-cli dialog info"
+    When I run "agentchrome dialog info"
     Then the output JSON should contain "open" equal to false
     And the exit code should be 0
 
   @regression
   Scenario: AC6 — dialog handle returns error when no dialog is open
     Given no dialog is currently open
-    When I run "chrome-cli dialog handle accept"
+    When I run "agentchrome dialog handle accept"
     Then the exit code should be non-zero
     And the output should contain "No dialog is currently open"

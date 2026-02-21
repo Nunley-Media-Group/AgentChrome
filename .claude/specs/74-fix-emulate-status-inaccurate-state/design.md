@@ -36,7 +36,7 @@ The `emulate set` command (`execute_set` at line 263) correctly applies these ov
 
 ### Approach
 
-Introduce a lightweight emulation state file (`~/.chrome-cli/emulate-state.json`) that persists the CDP-only overrides across CLI invocations. This mirrors the existing `session.json` pattern in `src/session.rs`. When `emulate set` applies mobile, network, or CPU overrides, it writes the state to this file. When `emulate status` runs, it reads the persisted state to supplement the JavaScript-detected values. When `emulate reset` runs, it deletes the state file.
+Introduce a lightweight emulation state file (`~/.agentchrome/emulate-state.json`) that persists the CDP-only overrides across CLI invocations. This mirrors the existing `session.json` pattern in `src/session.rs`. When `emulate set` applies mobile, network, or CPU overrides, it writes the state to this file. When `emulate status` runs, it reads the persisted state to supplement the JavaScript-detected values. When `emulate reset` runs, it deletes the state file.
 
 This is the session-level state tracking approach suggested in the issue. It is minimal, follows existing project patterns, and avoids relying on non-existent CDP query APIs.
 
@@ -45,7 +45,7 @@ This is the session-level state tracking approach suggested in the issue. It is 
 | File | Change | Rationale |
 |------|--------|-----------|
 | `src/emulate.rs` — new struct `EmulateState` | Add a `Serialize`/`Deserialize` struct with `mobile: bool`, `network: Option<String>`, `cpu: Option<u32>` | Defines the shape of persisted emulation state |
-| `src/emulate.rs` — new functions `emulate_state_path()`, `write_emulate_state()`, `read_emulate_state()`, `delete_emulate_state()` | Add state file I/O helpers following the pattern from `src/session.rs` | Read/write/delete `~/.chrome-cli/emulate-state.json` |
+| `src/emulate.rs` — new functions `emulate_state_path()`, `write_emulate_state()`, `read_emulate_state()`, `delete_emulate_state()` | Add state file I/O helpers following the pattern from `src/session.rs` | Read/write/delete `~/.agentchrome/emulate-state.json` |
 | `src/emulate.rs` — `execute_set()` (line 263) | After applying CDP overrides, persist the state by calling `write_emulate_state()` | Saves mobile/network/cpu state for later retrieval |
 | `src/emulate.rs` — `execute_status()` (line 545) | Read persisted state via `read_emulate_state()` and populate `mobile`, `network`, `cpu` fields from it | Status now reflects actual emulation state |
 | `src/emulate.rs` — `execute_reset()` (line 464) | Call `delete_emulate_state()` after clearing CDP overrides | Clears persisted state so status returns to defaults |

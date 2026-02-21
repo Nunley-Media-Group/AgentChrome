@@ -48,10 +48,10 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **Type**: N/A
 **Depends**: None
 **Acceptance**:
-- [ ] `chrome-cli --help` output captured for command reference table
+- [ ] `agentchrome --help` output captured for command reference table
 - [ ] All 16 top-level commands identified with descriptions
 
-**Notes**: Run `chrome-cli --help` and use its output as the source of truth for command descriptions. This ensures the README stays synchronized with the actual implementation.
+**Notes**: Run `agentchrome --help` and use its output as the source of truth for command descriptions. This ensures the README stays synchronized with the actual implementation.
 
 ---
 
@@ -63,7 +63,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **Type**: Modify
 **Depends**: None
 **Acceptance**:
-- [ ] H1 heading contains "chrome-cli"
+- [ ] H1 heading contains "agentchrome"
 - [ ] One-line description matches Cargo.toml description
 - [ ] CI badge links to GitHub Actions ci.yml workflow
 - [ ] License badge displays "MIT/Apache-2.0"
@@ -76,7 +76,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **Depends**: T002
 **Acceptance**:
 - [ ] Bullet list covers: tab management, navigation, page inspection, screenshots, JavaScript execution, form filling, network monitoring, performance tracing, device emulation, dialog handling
-- [ ] Comparison table contrasts chrome-cli with alternatives (no Node.js, standalone binary, shell-native)
+- [ ] Comparison table contrasts agentchrome with alternatives (no Node.js, standalone binary, shell-native)
 
 ### T004: Write Installation section
 
@@ -85,7 +85,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **Depends**: T002
 **Acceptance**:
 - [ ] Pre-built binary download instructions with curl one-liner
-- [ ] `cargo install chrome-cli` command present
+- [ ] `cargo install agentchrome` command present
 - [ ] Build from source instructions (git clone, cargo build --release)
 - [ ] Supported platforms table lists all 5 release targets (macOS ARM, macOS Intel, Linux x64, Linux ARM, Windows)
 
@@ -96,9 +96,9 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **Depends**: T002
 **Acceptance**:
 - [ ] Contains numbered steps (at least 5)
-- [ ] Includes `chrome-cli connect` command
-- [ ] Includes `chrome-cli navigate` command
-- [ ] Includes `chrome-cli page snapshot` or equivalent inspection command
+- [ ] Includes `agentchrome connect` command
+- [ ] Includes `agentchrome navigate` command
+- [ ] Includes `agentchrome page snapshot` or equivalent inspection command
 - [ ] Each step has a code block with the actual command
 
 ### T006: Write Usage Examples section
@@ -120,7 +120,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **Acceptance**:
 - [ ] Table lists all 16 top-level commands (connect, tabs, navigate, page, dom, js, console, network, interact, form, emulate, perf, dialog, config, completions, man)
 - [ ] Each command has a brief description
-- [ ] Note directing users to `chrome-cli <command> --help` and man pages for details
+- [ ] Note directing users to `agentchrome <command> --help` and man pages for details
 
 ### T008: Write Architecture section
 

@@ -11,8 +11,8 @@ Feature: Scroll Interactions
   # --- CLI Argument Validation (no Chrome required) ---
 
   Scenario: Scroll accepts no mandatory arguments
-    Given chrome-cli is built
-    When I run "chrome-cli interact scroll --help"
+    Given agentchrome is built
+    When I run "agentchrome interact scroll --help"
     Then the exit code should be 0
     And stdout should contain "--direction"
     And stdout should contain "--amount"
@@ -24,38 +24,38 @@ Feature: Scroll Interactions
     And stdout should contain "--include-snapshot"
 
   Scenario: Interact help lists scroll subcommand
-    Given chrome-cli is built
-    When I run "chrome-cli interact --help"
+    Given agentchrome is built
+    When I run "agentchrome interact --help"
     Then the exit code should be 0
     And stdout should contain "scroll"
 
   Scenario: Conflicting flags --to-top and --to-bottom
-    Given chrome-cli is built
-    When I run "chrome-cli interact scroll --to-top --to-bottom"
+    Given agentchrome is built
+    When I run "agentchrome interact scroll --to-top --to-bottom"
     Then the exit code should be nonzero
     And stderr should contain "cannot be used with"
 
   Scenario: Conflicting flags --to-top and --direction
-    Given chrome-cli is built
-    When I run "chrome-cli interact scroll --to-top --direction up"
+    Given agentchrome is built
+    When I run "agentchrome interact scroll --to-top --direction up"
     Then the exit code should be nonzero
     And stderr should contain "cannot be used with"
 
   Scenario: Conflicting flags --to-element and --to-top
-    Given chrome-cli is built
-    When I run "chrome-cli interact scroll --to-element s1 --to-top"
+    Given agentchrome is built
+    When I run "agentchrome interact scroll --to-element s1 --to-top"
     Then the exit code should be nonzero
     And stderr should contain "cannot be used with"
 
   Scenario: Conflicting flags --to-element and --amount
-    Given chrome-cli is built
-    When I run "chrome-cli interact scroll --to-element s1 --amount 300"
+    Given agentchrome is built
+    When I run "agentchrome interact scroll --to-element s1 --amount 300"
     Then the exit code should be nonzero
     And stderr should contain "cannot be used with"
 
   Scenario: Invalid direction value
-    Given chrome-cli is built
-    When I run "chrome-cli interact scroll --direction diagonal"
+    Given agentchrome is built
+    When I run "agentchrome interact scroll --direction diagonal"
     Then the exit code should be nonzero
     And stderr should contain "invalid value"
 
@@ -64,7 +64,7 @@ Feature: Scroll Interactions
   Scenario: Scroll down by default
     Given Chrome is running with CDP enabled
     And a page is loaded with scrollable content
-    When I run "chrome-cli interact scroll"
+    When I run "agentchrome interact scroll"
     Then the output JSON should contain "scrolled"
     And the output JSON should contain "position"
     And the output JSON "scrolled.y" should be greater than 0
@@ -75,7 +75,7 @@ Feature: Scroll Interactions
   Scenario Outline: Scroll in a specified direction
     Given Chrome is running with CDP enabled
     And a page is loaded with scrollable content
-    When I run "chrome-cli interact scroll --direction <direction>"
+    When I run "agentchrome interact scroll --direction <direction>"
     Then the output JSON should contain "scrolled"
     And the output JSON should contain "position"
     And the exit code should be 0
@@ -92,7 +92,7 @@ Feature: Scroll Interactions
   Scenario: Scroll by a specific pixel amount
     Given Chrome is running with CDP enabled
     And a page is loaded with scrollable content
-    When I run "chrome-cli interact scroll --amount 300"
+    When I run "agentchrome interact scroll --amount 300"
     Then the output JSON should contain "scrolled"
     And the output JSON should contain "position"
     And the exit code should be 0
@@ -100,7 +100,7 @@ Feature: Scroll Interactions
   Scenario: Scroll horizontally by pixel amount
     Given Chrome is running with CDP enabled
     And a page is loaded with wide scrollable content
-    When I run "chrome-cli interact scroll --direction right --amount 200"
+    When I run "agentchrome interact scroll --direction right --amount 200"
     Then the output JSON should contain "scrolled"
     And the output JSON should contain "position"
     And the exit code should be 0
@@ -111,7 +111,7 @@ Feature: Scroll Interactions
     Given Chrome is running with CDP enabled
     And a page is loaded with scrollable content
     And the page is scrolled partway down
-    When I run "chrome-cli interact scroll --to-top"
+    When I run "agentchrome interact scroll --to-top"
     Then the output JSON "position.x" should be 0
     And the output JSON "position.y" should be 0
     And the exit code should be 0
@@ -119,7 +119,7 @@ Feature: Scroll Interactions
   Scenario: Scroll to bottom of page
     Given Chrome is running with CDP enabled
     And a page is loaded with scrollable content
-    When I run "chrome-cli interact scroll --to-bottom"
+    When I run "agentchrome interact scroll --to-bottom"
     Then the output JSON should contain "position"
     And the output JSON "position.y" should be greater than 0
     And the exit code should be 0
@@ -131,7 +131,7 @@ Feature: Scroll Interactions
     And a page is loaded with scrollable content
     And a snapshot has been taken with UIDs assigned
     And the page has an element with UID "s5" below the fold
-    When I run "chrome-cli interact scroll --to-element s5"
+    When I run "agentchrome interact scroll --to-element s5"
     Then the output JSON should contain "position"
     And the exit code should be 0
 
@@ -139,7 +139,7 @@ Feature: Scroll Interactions
     Given Chrome is running with CDP enabled
     And a page is loaded with scrollable content
     And the page has an element matching "css:#footer"
-    When I run "chrome-cli interact scroll --to-element css:#footer"
+    When I run "agentchrome interact scroll --to-element css:#footer"
     Then the output JSON should contain "position"
     And the exit code should be 0
 
@@ -148,7 +148,7 @@ Feature: Scroll Interactions
   Scenario: Scroll with smooth behavior
     Given Chrome is running with CDP enabled
     And a page is loaded with scrollable content
-    When I run "chrome-cli interact scroll --smooth --amount 500"
+    When I run "agentchrome interact scroll --smooth --amount 500"
     Then the output JSON should contain "scrolled"
     And the output JSON should contain "position"
     And the exit code should be 0
@@ -160,7 +160,7 @@ Feature: Scroll Interactions
     And a page is loaded with a scrollable container
     And a snapshot has been taken with UIDs assigned
     And the page has a scrollable container with UID "s3"
-    When I run "chrome-cli interact scroll --container s3 --amount 200"
+    When I run "agentchrome interact scroll --container s3 --amount 200"
     Then the output JSON should contain "scrolled"
     And the output JSON should contain "position"
     And the exit code should be 0
@@ -170,7 +170,7 @@ Feature: Scroll Interactions
   Scenario: Scroll targeting a specific tab
     Given Chrome is running with CDP enabled
     And multiple tabs are open
-    When I run "chrome-cli interact scroll --tab 1"
+    When I run "agentchrome interact scroll --tab 1"
     Then the output JSON should contain "scrolled"
     And the exit code should be 0
 
@@ -179,7 +179,7 @@ Feature: Scroll Interactions
   Scenario: Include snapshot after scroll
     Given Chrome is running with CDP enabled
     And a page is loaded with scrollable content
-    When I run "chrome-cli interact scroll --include-snapshot"
+    When I run "agentchrome interact scroll --include-snapshot"
     Then the output JSON should contain "scrolled"
     And the output JSON should contain a "snapshot" field
     And the snapshot should be a valid accessibility tree
@@ -192,7 +192,7 @@ Feature: Scroll Interactions
     And a page is loaded with scrollable content
     And a snapshot has been taken with UIDs assigned
     And no element matches UID "s999" in the snapshot state
-    When I run "chrome-cli interact scroll --to-element s999"
+    When I run "agentchrome interact scroll --to-element s999"
     Then stderr should contain "UID 's999' not found"
     And stderr should contain "page snapshot"
     And the exit code should be nonzero
@@ -201,7 +201,7 @@ Feature: Scroll Interactions
     Given Chrome is running with CDP enabled
     And a page is loaded with scrollable content
     And no snapshot has been taken
-    When I run "chrome-cli interact scroll --to-element s1"
+    When I run "agentchrome interact scroll --to-element s1"
     Then stderr should contain "No snapshot state found"
     And stderr should contain "page snapshot"
     And the exit code should be nonzero
@@ -209,7 +209,7 @@ Feature: Scroll Interactions
   Scenario: Scroll to nonexistent CSS selector errors
     Given Chrome is running with CDP enabled
     And a page is loaded with scrollable content
-    When I run "chrome-cli interact scroll --to-element css:#nonexistent-element"
+    When I run "agentchrome interact scroll --to-element css:#nonexistent-element"
     Then stderr should contain "Element not found"
     And the exit code should be nonzero
 
@@ -218,7 +218,7 @@ Feature: Scroll Interactions
   Scenario: Plain text output for scroll
     Given Chrome is running with CDP enabled
     And a page is loaded with scrollable content
-    When I run "chrome-cli interact scroll --plain"
+    When I run "agentchrome interact scroll --plain"
     Then the output should be plain text containing "Scrolled"
     And the exit code should be 0
 
@@ -226,6 +226,6 @@ Feature: Scroll Interactions
     Given Chrome is running with CDP enabled
     And a page is loaded with scrollable content
     And the page is scrolled partway down
-    When I run "chrome-cli interact scroll --to-top --plain"
+    When I run "agentchrome interact scroll --to-top --plain"
     Then the output should be plain text containing "Scrolled to top"
     And the exit code should be 0

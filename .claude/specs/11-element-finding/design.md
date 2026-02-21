@@ -9,7 +9,7 @@
 
 ## Overview
 
-The `page find` command adds element search to chrome-cli, enabling users and AI agents to locate elements by text query, CSS selector, or accessibility role. It builds on the existing snapshot infrastructure (issue #10), reusing `Accessibility.getFullAXTree` and the UID assignment system. For CSS selector searches, it uses CDP `DOM.querySelector`/`DOM.querySelectorAll`. Results include UIDs, roles, names, and bounding boxes for each matched element.
+The `page find` command adds element search to agentchrome, enabling users and AI agents to locate elements by text query, CSS selector, or accessibility role. It builds on the existing snapshot infrastructure (issue #10), reusing `Accessibility.getFullAXTree` and the UID assignment system. For CSS selector searches, it uses CDP `DOM.querySelector`/`DOM.querySelectorAll`. Results include UIDs, roles, names, and bounding boxes for each matched element.
 
 The command fits naturally into the existing `PageCommand` enum as a new `Find` variant, following the same session setup, domain enabling, and output formatting patterns used by `page text` and `page snapshot`.
 
@@ -54,7 +54,7 @@ stdout
 ### Data Flow
 
 **Accessibility text search** (default path):
-1. User runs `chrome-cli page find "Submit"`
+1. User runs `agentchrome page find "Submit"`
 2. CLI parses args into `PageFindArgs`
 3. `execute_find()` sets up CDP session
 4. Enables Accessibility, DOM, Runtime domains
@@ -66,7 +66,7 @@ stdout
 10. Serializes and outputs results
 
 **CSS selector search** (when `--selector` is provided):
-1. User runs `chrome-cli page find --selector "button.primary"`
+1. User runs `agentchrome page find --selector "button.primary"`
 2. Enables DOM domain
 3. Calls `DOM.getDocument` to get root node
 4. Calls `DOM.querySelectorAll` with the CSS selector
@@ -83,7 +83,7 @@ stdout
 ### New CLI Subcommand
 
 ```
-chrome-cli page find [QUERY] [OPTIONS]
+agentchrome page find [QUERY] [OPTIONS]
 
 Arguments:
   [QUERY]    Text to search for (searches accessible names, text content, labels)
@@ -160,7 +160,7 @@ The find command reuses the existing `SnapshotState` persistence from issue #10:
 
 1. Every `page find` invocation triggers a fresh `Accessibility.getFullAXTree`
 2. The snapshot tree is built via `build_tree()`, assigning UIDs
-3. The `uid_map` is persisted to `~/.chrome-cli/snapshot.json`
+3. The `uid_map` is persisted to `~/.agentchrome/snapshot.json`
 4. This ensures subsequent interaction commands (future #14-#17) can reference UIDs from the find results
 
 ### New Types

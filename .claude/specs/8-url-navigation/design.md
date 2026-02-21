@@ -9,7 +9,7 @@
 
 ## Overview
 
-This feature implements the `navigate` subcommand group (`<URL>`, `back`, `forward`, `reload`) by introducing session-level CDP communication to chrome-cli. Unlike `tabs`, which uses browser-level `CdpClient::send_command()` for Target domain operations, navigation requires attaching to a specific tab target via `CdpSession` and enabling the Page and Network domains.
+This feature implements the `navigate` subcommand group (`<URL>`, `back`, `forward`, `reload`) by introducing session-level CDP communication to agentchrome. Unlike `tabs`, which uses browser-level `CdpClient::send_command()` for Target domain operations, navigation requires attaching to a specific tab target via `CdpSession` and enabling the Page and Network domains.
 
 The key technical challenge is implementing wait strategies — configurable policies that determine when a navigation is "complete." These use CDP event subscriptions (`CdpSession::subscribe()`) to listen for `Page.loadEventFired`, `Page.domContentEventFired`, and network activity events. The network idle strategy introduces in-flight request tracking with a 500ms quiescence window.
 
@@ -157,7 +157,7 @@ pub struct NavigateArgs {
 
 However, clap doesn't natively support "optional subcommand with fallback to positional." The cleanest approach that avoids user confusion: keep all four as explicit subcommands but make the URL one named `to`:
 
-- `chrome-cli navigate to <URL>` — but the issue says `chrome-cli navigate <URL>`
+- `agentchrome navigate to <URL>` — but the issue says `agentchrome navigate <URL>`
 
 **Final approach**: Use a flat argument structure with mutual exclusion:
 
@@ -193,7 +193,7 @@ pub struct NavigateArgs {
 }
 ```
 
-This allows both `chrome-cli navigate https://example.com` and `chrome-cli navigate back`.
+This allows both `agentchrome navigate https://example.com` and `agentchrome navigate back`.
 
 ### Output Schemas
 

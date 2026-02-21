@@ -26,7 +26,7 @@ The navigation itself succeeds (verified by querying `window.location.href` afte
 ### Triggering Conditions
 
 - The browser has history entries created by `history.pushState()` (SPA client-side routing)
-- The user runs `chrome-cli navigate back` or `chrome-cli navigate forward` through those entries
+- The user runs `agentchrome navigate back` or `agentchrome navigate forward` through those entries
 - Chrome fires `Page.navigatedWithinDocument` instead of `Page.frameNavigated`
 - The `wait_for_event` function never receives the expected event and times out
 

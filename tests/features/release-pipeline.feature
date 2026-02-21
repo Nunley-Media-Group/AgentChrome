@@ -1,5 +1,5 @@
 Feature: Cross-platform release pipeline
-  As a developer contributing to chrome-cli
+  As a developer contributing to agentchrome
   I want automated CI/CD pipelines that build, test, lint, and release cross-platform binaries
   So that every PR is validated and releases produce optimized standalone binaries for all supported platforms
 

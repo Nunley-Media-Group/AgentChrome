@@ -84,13 +84,13 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] `find_config_file(explicit_path: Option<&Path>) -> Option<PathBuf>` checks 5 locations in priority order
 - [ ] `load_config(explicit_path: Option<&Path>) -> (Option<PathBuf>, ConfigFile)` loads and parses, returns defaults on error
 - [ ] Uses `dirs::config_dir()` for XDG/platform path
-- [ ] Checks `CHROME_CLI_CONFIG` environment variable
+- [ ] Checks `AGENTCHROME_CONFIG` environment variable
 - [ ] Invalid TOML prints warning to stderr and returns `ConfigFile::default()`
 - [ ] Unknown keys print warning to stderr (two-pass: strict then lenient)
 - [ ] Testable `_from` variants that accept explicit search paths
 - [ ] Unit tests for each search location, priority order, missing file, invalid TOML, unknown keys
 
-**Notes**: Search order: `explicit_path` → `$CHROME_CLI_CONFIG` → `./.chrome-cli.toml` → `dirs::config_dir()/chrome-cli/config.toml` → `home_dir()/.chrome-cli.toml`. Stop at first found file.
+**Notes**: Search order: `explicit_path` → `$AGENTCHROME_CONFIG` → `./.agentchrome.toml` → `dirs::config_dir()/agentchrome/config.toml` → `home_dir()/.agentchrome.toml`. Stop at first found file.
 
 ### T004: Implement config resolution (merge with CLI flags)
 
@@ -114,7 +114,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **Depends**: T002
 **Acceptance**:
 - [ ] `init_config(target_path: Option<&Path>) -> Result<PathBuf, ConfigError>` creates a default config file
-- [ ] Default path: `dirs::config_dir()/chrome-cli/config.toml` (or `~/.config/chrome-cli/config.toml`)
+- [ ] Default path: `dirs::config_dir()/agentchrome/config.toml` (or `~/.config/agentchrome/config.toml`)
 - [ ] Generated file includes all sections with commented-out example values
 - [ ] Refuses to overwrite existing file (returns error)
 - [ ] Creates parent directories if needed
@@ -205,9 +205,9 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] `Config` variant added to `Command` enum with `ConfigArgs` / `ConfigCommand` subcommand
 - [ ] `ConfigCommand` has `Show`, `Init`, `Path` variants
 - [ ] `Init` variant has optional `--path <PATH>` flag
-- [ ] `env = "CHROME_CLI_HOST"` added to `--host` arg attribute
-- [ ] `env = "CHROME_CLI_PORT"` added to `--port` arg attribute
-- [ ] `env = "CHROME_CLI_TIMEOUT"` added to `--timeout` arg attribute
+- [ ] `env = "AGENTCHROME_HOST"` added to `--host` arg attribute
+- [ ] `env = "AGENTCHROME_PORT"` added to `--port` arg attribute
+- [ ] `env = "AGENTCHROME_TIMEOUT"` added to `--timeout` arg attribute
 - [ ] Command dispatch in `run()` handles `Command::Config(args)` and delegates to config subcommand handlers
 - [ ] Config is loaded early in `main()` / `run()` and applied to `GlobalOpts` before other commands execute
 - [ ] `config show` outputs resolved config as JSON

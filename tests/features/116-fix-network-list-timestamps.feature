@@ -18,7 +18,7 @@ Feature: Network list timestamps show real wall-clock time
   @regression @requires-chrome
   Scenario: Network timestamps reflect real wall-clock time
     Given a page is loaded that has made network requests
-    When I run "chrome-cli network list"
+    When I run "agentchrome network list"
     Then the timestamp fields show dates from the current year
     And the timestamps are within the last few minutes
 
@@ -27,7 +27,7 @@ Feature: Network list timestamps show real wall-clock time
   @regression @requires-chrome
   Scenario: Network timestamps are valid ISO 8601 in UTC
     Given a page is loaded that has made network requests
-    When I run "chrome-cli network list"
+    When I run "agentchrome network list"
     Then all timestamp values match the ISO 8601 format
     And all timestamps end with Z indicating UTC
 
@@ -36,5 +36,5 @@ Feature: Network list timestamps show real wall-clock time
   @regression @requires-chrome
   Scenario: Console timestamps are not regressed
     Given a page is loaded that has made network requests
-    When I run "chrome-cli console read"
+    When I run "agentchrome console read"
     Then console timestamps show correct wall-clock times

@@ -111,9 +111,9 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] `run()` matches on all 13 `Command` variants
 - [ ] Each match arm returns `Err(AppError::not_implemented("<command-name>"))`
 - [ ] On error: prints JSON to stderr via `AppError::print_json_stderr()` and exits with correct code
-- [ ] `chrome-cli --help` produces comprehensive output
-- [ ] `chrome-cli --version` prints name and version
-- [ ] `chrome-cli <any-subcommand>` prints error JSON to stderr and exits with code 1
+- [ ] `agentchrome --help` produces comprehensive output
+- [ ] `agentchrome --version` prints name and version
+- [ ] `agentchrome <any-subcommand>` prints error JSON to stderr and exits with code 1
 - [ ] `cargo clippy` passes with no warnings
 - [ ] `cargo fmt --check` passes
 
@@ -185,14 +185,14 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **Type**: Verify
 **Depends**: T004
 **Acceptance**:
-- [ ] `chrome-cli --help` lists all 13 subcommands with descriptions
-- [ ] `chrome-cli --version` displays version
-- [ ] `chrome-cli connect` outputs `{"error":"...","code":1}` to stderr with exit code 1
-- [ ] `chrome-cli --port 9333 --host 192.168.1.100 tabs` parses without error (still exits 1 for stub)
-- [ ] `chrome-cli --json --plain tabs` is rejected by clap with a conflict error
-- [ ] `chrome-cli --ws-url ws://localhost:9222/devtools/browser/abc tabs` parses without error
-- [ ] `chrome-cli --timeout 5000 tabs` parses without error
-- [ ] `chrome-cli --tab abc123 js` parses without error
+- [ ] `agentchrome --help` lists all 13 subcommands with descriptions
+- [ ] `agentchrome --version` displays version
+- [ ] `agentchrome connect` outputs `{"error":"...","code":1}` to stderr with exit code 1
+- [ ] `agentchrome --port 9333 --host 192.168.1.100 tabs` parses without error (still exits 1 for stub)
+- [ ] `agentchrome --json --plain tabs` is rejected by clap with a conflict error
+- [ ] `agentchrome --ws-url ws://localhost:9222/devtools/browser/abc tabs` parses without error
+- [ ] `agentchrome --timeout 5000 tabs` parses without error
+- [ ] `agentchrome --tab abc123 js` parses without error
 - [ ] `cargo build` produces binary < 10MB
 - [ ] `cargo test --lib` passes (if any unit tests exist)
 
@@ -219,7 +219,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **Depends**: T006
 **Acceptance**:
 - [ ] New `CliWorld` struct (or extend existing `WorkflowWorld`) with fields for command output, exit code, stderr
-- [ ] Step definitions for running `chrome-cli` via `std::process::Command`
+- [ ] Step definitions for running `agentchrome` via `std::process::Command`
 - [ ] Steps for asserting stdout content, stderr content, and exit codes
 - [ ] Steps for asserting JSON structure in stderr
 - [ ] All scenarios in `cli-skeleton.feature` pass

@@ -197,10 +197,10 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **Type**: Verify
 **Depends**: T005
 **Acceptance**:
-- [ ] `chrome-cli interact --help` lists `scroll` subcommand
-- [ ] `chrome-cli interact scroll --help` shows all flags: `--direction`, `--amount`, `--to-element`, `--to-top`, `--to-bottom`, `--smooth`, `--container`, `--include-snapshot`
-- [ ] `chrome-cli interact scroll --to-top --to-bottom` produces a clap conflict error
-- [ ] `chrome-cli interact scroll` (no args) is accepted (uses defaults)
+- [ ] `agentchrome interact --help` lists `scroll` subcommand
+- [ ] `agentchrome interact scroll --help` shows all flags: `--direction`, `--amount`, `--to-element`, `--to-top`, `--to-bottom`, `--smooth`, `--container`, `--include-snapshot`
+- [ ] `agentchrome interact scroll --to-top --to-bottom` produces a clap conflict error
+- [ ] `agentchrome interact scroll` (no args) is accepted (uses defaults)
 
 ---
 

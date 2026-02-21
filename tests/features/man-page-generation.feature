@@ -4,30 +4,30 @@
 # Issue: #27
 
 Feature: Man Page Generation
-  As a developer or automation engineer using chrome-cli
+  As a developer or automation engineer using agentchrome
   I want Unix man pages generated from the CLI definition
   So that I can access documentation through the standard man command or inline
 
   # --- Happy Path ---
 
   Scenario: Display top-level man page inline
-    Given chrome-cli is built
-    When I run "chrome-cli man"
-    Then stdout should contain "chrome-cli"
+    Given agentchrome is built
+    When I run "agentchrome man"
+    Then stdout should contain "agentchrome"
     And the exit code should be 0
 
   Scenario: Top-level man page contains standard sections
-    Given chrome-cli is built
-    When I run "chrome-cli man"
+    Given agentchrome is built
+    When I run "agentchrome man"
     Then stdout should contain "SYNOPSIS"
     And stdout should contain "OPTIONS"
 
   # --- Subcommand Man Pages ---
 
   Scenario Outline: Display subcommand man page inline
-    Given chrome-cli is built
-    When I run "chrome-cli man <subcommand>"
-    Then stdout should contain "chrome-cli-<subcommand>"
+    Given agentchrome is built
+    When I run "agentchrome man <subcommand>"
+    Then stdout should contain "agentchrome-<subcommand>"
     And the exit code should be 0
 
     Examples:
@@ -50,14 +50,14 @@ Feature: Man Page Generation
   # --- Error Handling ---
 
   Scenario: Invalid subcommand produces error
-    Given chrome-cli is built
-    When I run "chrome-cli man nonexistent"
+    Given agentchrome is built
+    When I run "agentchrome man nonexistent"
     Then the exit code should be 1
 
   # --- Help Text ---
 
   Scenario: Man subcommand help text describes usage
-    Given chrome-cli is built
-    When I run "chrome-cli man --help"
+    Given agentchrome is built
+    When I run "agentchrome man --help"
     Then stdout should contain "man"
     And the exit code should be 0

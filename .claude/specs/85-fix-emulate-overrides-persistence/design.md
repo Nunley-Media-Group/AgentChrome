@@ -9,9 +9,9 @@
 
 ## Root Cause
 
-Each chrome-cli command creates an independent CDP WebSocket session via the per-module `setup_session()` function. CDP emulation overrides (e.g., `Emulation.setUserAgentOverride`, `Emulation.setDeviceMetricsOverride`, `Emulation.setGeolocationOverride`, `Emulation.setEmulatedMedia`) are session-scoped: they apply only for the lifetime of the WebSocket connection that issued them. When the `emulate set` command completes and its session closes, all overrides are lost.
+Each agentchrome command creates an independent CDP WebSocket session via the per-module `setup_session()` function. CDP emulation overrides (e.g., `Emulation.setUserAgentOverride`, `Emulation.setDeviceMetricsOverride`, `Emulation.setGeolocationOverride`, `Emulation.setEmulatedMedia`) are session-scoped: they apply only for the lifetime of the WebSocket connection that issued them. When the `emulate set` command completes and its session closes, all overrides are lost.
 
-Issue #74 introduced a persistence mechanism (`EmulateState` struct serialized to `~/.chrome-cli/emulate-state.json`) but only for three fields: `mobile`, `network`, and `cpu`. These fields were chosen because they cannot be queried via JavaScript and were needed for accurate `emulate status` reporting. However, the persistence was read-only — `emulate status` reads the file but no other command re-applies the persisted state to new sessions.
+Issue #74 introduced a persistence mechanism (`EmulateState` struct serialized to `~/.agentchrome/emulate-state.json`) but only for three fields: `mobile`, `network`, and `cpu`. These fields were chosen because they cannot be queried via JavaScript and were needed for accurate `emulate status` reporting. However, the persistence was read-only — `emulate status` reads the file but no other command re-applies the persisted state to new sessions.
 
 The bug has two dimensions: (1) the `EmulateState` struct is incomplete — it lacks `user_agent`, `device_scale_factor`, `geolocation`, `color_scheme`, and `viewport`; and (2) no code exists to re-apply persisted overrides when new CDP sessions are created by other commands (navigate, js, interact, etc.).
 
@@ -51,7 +51,7 @@ Expand `EmulateState` to include all emulation override fields, persist them in 
 
 The helper function will be defined as a public function in `src/emulate.rs` (where `EmulateState` and its I/O functions already live). Each command module already imports from `emulate.rs` or can easily do so. The helper will:
 
-1. Read `~/.chrome-cli/emulate-state.json` via `read_emulate_state()`
+1. Read `~/.agentchrome/emulate-state.json` via `read_emulate_state()`
 2. If state exists and has active overrides, issue the corresponding CDP commands
 3. Skip overrides that are at their default values (e.g., `mobile: false`, `user_agent: None`)
 4. Require `Network` domain enablement only if network throttling is active
@@ -102,7 +102,7 @@ This is the minimal fix: it keeps the existing per-module `setup_session()` patt
 | Option | Description | Why Not Selected |
 |--------|-------------|------------------|
 | Browser-level target attachment | Attach to browser target instead of page target, so overrides persist across page sessions | Requires significant architectural change to CDP client; not all emulation commands work at browser level; higher blast radius |
-| Shared session pool | Keep a long-lived CDP session and reuse it across commands | Contradicts chrome-cli's stateless per-invocation design; adds complexity for process management |
+| Shared session pool | Keep a long-lived CDP session and reuse it across commands | Contradicts agentchrome's stateless per-invocation design; adds complexity for process management |
 | Only persist to file, don't re-apply | Expand `EmulateState` but only use it for `emulate status` reporting | Doesn't actually fix the bug — overrides still wouldn't be active in subsequent commands |
 
 ---

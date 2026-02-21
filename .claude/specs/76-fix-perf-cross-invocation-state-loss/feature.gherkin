@@ -18,7 +18,7 @@ Feature: perf record replaces broken perf start/stop workflow
   Scenario: perf record captures a complete trace in a single session
     Given Chrome is running with CDP enabled
     And a page is loaded at "https://example.com"
-    When I run "chrome-cli perf record --duration 2000"
+    When I run "agentchrome perf record --duration 2000"
     Then the exit code should be 0
     And the trace file should exist
     And the trace file should contain valid Chrome Trace Event Format data
@@ -30,7 +30,7 @@ Feature: perf record replaces broken perf start/stop workflow
   Scenario: perf record with --reload reloads before recording
     Given Chrome is running with CDP enabled
     And a page is loaded at "https://example.com"
-    When I run "chrome-cli perf record --reload --duration 3000"
+    When I run "agentchrome perf record --reload --duration 3000"
     Then the exit code should be 0
     And the trace file should exist
     And the trace file should contain valid Chrome Trace Event Format data
@@ -39,7 +39,7 @@ Feature: perf record replaces broken perf start/stop workflow
   Scenario: perf record stops gracefully on Ctrl+C
     Given Chrome is running with CDP enabled
     And a page is loaded at "https://example.com"
-    When I start "chrome-cli perf record" in the background
+    When I start "agentchrome perf record" in the background
     And I wait 2 seconds
     And I send SIGINT to the process
     Then the exit code should be 0
@@ -52,6 +52,6 @@ Feature: perf record replaces broken perf start/stop workflow
   Scenario: perf vitals still works as a single-invocation command
     Given Chrome is running with CDP enabled
     And a page is loaded at "https://example.com"
-    When I run "chrome-cli perf vitals"
+    When I run "agentchrome perf vitals"
     Then the exit code should be 0
     And the output should include "lcp_ms" and "cls" and "ttfb_ms"

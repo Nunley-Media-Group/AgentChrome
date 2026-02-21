@@ -2,9 +2,9 @@ use std::time::Duration;
 
 use serde::Serialize;
 
-use chrome_cli::cdp::{CdpClient, CdpConfig};
-use chrome_cli::connection::{ManagedSession, resolve_connection, resolve_target};
-use chrome_cli::error::{AppError, ExitCode};
+use agentchrome::cdp::{CdpClient, CdpConfig};
+use agentchrome::connection::{ManagedSession, resolve_connection, resolve_target};
+use agentchrome::error::{AppError, ExitCode};
 
 use crate::cli::{DialogAction, DialogArgs, DialogCommand, DialogHandleArgs, GlobalOpts};
 
@@ -313,7 +313,7 @@ const NAV_DISMISS_TIMEOUT_MS: u64 = 2000;
 /// `Page.getNavigationHistory` and `Page.navigate` both work without
 /// `Page.enable` and are not blocked by the dialog.
 async fn dismiss_via_navigation(managed: &ManagedSession) -> Result<(), AppError> {
-    let map_err = |e: chrome_cli::cdp::CdpError| AppError::dialog_handle_failed(&e.to_string());
+    let map_err = |e: agentchrome::cdp::CdpError| AppError::dialog_handle_failed(&e.to_string());
 
     // Get the current URL from navigation history (works while dialog is blocking)
     let history = managed
@@ -353,7 +353,7 @@ async fn dismiss_via_navigation(managed: &ManagedSession) -> Result<(), AppError
 }
 
 /// Cookie name used by the dialog interceptor script to store metadata.
-const DIALOG_COOKIE_NAME: &str = "__chrome_cli_dialog";
+const DIALOG_COOKIE_NAME: &str = "__agentchrome_dialog";
 
 /// Timeout for reading cookies via CDP (milliseconds).
 const COOKIE_READ_TIMEOUT_MS: u64 = 500;

@@ -19,7 +19,7 @@
 
 AI agents and automation scripts need to interact with page elements — clicking buttons, hovering over menus, dragging items. The Chrome DevTools Protocol provides `Input.dispatchMouseEvent` for low-level mouse simulation and `DOM.getBoxModel`/`DOM.getContentQuads` for computing element coordinates. The MCP server already exposes `click`, `clickAt`, `hover`, and `drag` tools; this feature brings equivalent capabilities to the CLI under an `interact` subcommand group.
 
-Targets are identified either by accessibility UID (from `page snapshot`, e.g., `s1`) or by CSS selector (prefixed with `css:`). The UID system is already implemented in `snapshot.rs` and persisted to `~/.chrome-cli/snapshot.json`.
+Targets are identified either by accessibility UID (from `page snapshot`, e.g., `s1`) or by CSS selector (prefixed with `css:`). The UID system is already implemented in `snapshot.rs` and persisted to `~/.agentchrome/snapshot.json`.
 
 ---
 
@@ -28,65 +28,65 @@ Targets are identified either by accessibility UID (from `page snapshot`, e.g., 
 ### AC1: Click an element by UID
 
 **Given** a page with a button that has snapshot UID `s1`
-**When** I run `chrome-cli interact click s1`
+**When** I run `agentchrome interact click s1`
 **Then** the button is clicked
 **And** JSON output is returned: `{"clicked": "s1", "url": "...", "navigated": false}`
 **And** the exit code is 0
 
 **Example**:
 - Given: page has `<button>Submit</button>` with UID `s1`
-- When: `chrome-cli interact click s1`
+- When: `agentchrome interact click s1`
 - Then: `{"clicked": "s1", "url": "https://example.com", "navigated": false}`
 
 ### AC2: Click an element by CSS selector
 
 **Given** a page with a button matching `css:#submit-btn`
-**When** I run `chrome-cli interact click "css:#submit-btn"`
+**When** I run `agentchrome interact click "css:#submit-btn"`
 **Then** the button is clicked
 **And** JSON output is returned: `{"clicked": "css:#submit-btn", "url": "...", "navigated": false}`
 
 **Example**:
 - Given: page has `<button id="submit-btn">Submit</button>`
-- When: `chrome-cli interact click "css:#submit-btn"`
+- When: `agentchrome interact click "css:#submit-btn"`
 - Then: `{"clicked": "css:#submit-btn", "url": "https://example.com", "navigated": false}`
 
 ### AC3: Click triggers navigation
 
 **Given** a page with a link that navigates to another page
-**When** I run `chrome-cli interact click s1` and the click triggers navigation
+**When** I run `agentchrome interact click s1` and the click triggers navigation
 **Then** the command waits for navigation to complete
 **And** JSON output contains `"navigated": true` with the new URL
 
 **Example**:
 - Given: page has `<a href="/about">About</a>` with UID `s1`
-- When: `chrome-cli interact click s1`
+- When: `agentchrome interact click s1`
 - Then: `{"clicked": "s1", "url": "https://example.com/about", "navigated": true}`
 
 ### AC4: Double-click an element
 
 **Given** a page with an element that has snapshot UID `s1`
-**When** I run `chrome-cli interact click s1 --double`
+**When** I run `agentchrome interact click s1 --double`
 **Then** a double-click is performed on the element
 **And** JSON output includes `"double_click": true`
 
 ### AC5: Right-click an element
 
 **Given** a page with an element that has snapshot UID `s1`
-**When** I run `chrome-cli interact click s1 --right`
+**When** I run `agentchrome interact click s1 --right`
 **Then** a right-click (context menu click) is performed on the element
 **And** JSON output includes `"right_click": true`
 
 ### AC6: Click with include-snapshot flag
 
 **Given** a page with a button that has snapshot UID `s1`
-**When** I run `chrome-cli interact click s1 --include-snapshot`
+**When** I run `agentchrome interact click s1 --include-snapshot`
 **Then** the button is clicked
 **And** the JSON output includes an updated accessibility snapshot in the `snapshot` field
 
 ### AC7: Click at viewport coordinates
 
 **Given** a page is loaded
-**When** I run `chrome-cli interact click-at 100 200`
+**When** I run `agentchrome interact click-at 100 200`
 **Then** a click is dispatched at viewport coordinates (100, 200)
 **And** JSON output is returned: `{"clicked_at": {"x": 100, "y": 200}}`
 **And** the exit code is 0
@@ -94,14 +94,14 @@ Targets are identified either by accessibility UID (from `page snapshot`, e.g., 
 ### AC8: Click-at with double and right flags
 
 **Given** a page is loaded
-**When** I run `chrome-cli interact click-at 100 200 --double`
+**When** I run `agentchrome interact click-at 100 200 --double`
 **Then** a double-click is dispatched at coordinates (100, 200)
 **And** JSON output includes `"double_click": true`
 
 ### AC9: Hover over an element
 
 **Given** a page with a menu item that has snapshot UID `s3`
-**When** I run `chrome-cli interact hover s3`
+**When** I run `agentchrome interact hover s3`
 **Then** the cursor is moved over the element
 **And** JSON output is returned: `{"hovered": "s3"}`
 **And** the exit code is 0
@@ -109,21 +109,21 @@ Targets are identified either by accessibility UID (from `page snapshot`, e.g., 
 ### AC10: Hover with CSS selector
 
 **Given** a page with a menu item matching `css:.dropdown-trigger`
-**When** I run `chrome-cli interact hover "css:.dropdown-trigger"`
+**When** I run `agentchrome interact hover "css:.dropdown-trigger"`
 **Then** the cursor is moved over the element
 **And** JSON output is returned: `{"hovered": "css:.dropdown-trigger"}`
 
 ### AC11: Hover with include-snapshot flag
 
 **Given** a page with an element that has snapshot UID `s3`
-**When** I run `chrome-cli interact hover s3 --include-snapshot`
+**When** I run `agentchrome interact hover s3 --include-snapshot`
 **Then** the cursor is moved over the element
 **And** the JSON output includes an updated accessibility snapshot in the `snapshot` field
 
 ### AC12: Drag from one element to another
 
 **Given** a page with a draggable item (UID `s1`) and a drop target (UID `s2`)
-**When** I run `chrome-cli interact drag s1 s2`
+**When** I run `agentchrome interact drag s1 s2`
 **Then** a drag operation is performed from `s1` to `s2`
 **And** JSON output is returned: `{"dragged": {"from": "s1", "to": "s2"}}`
 **And** the exit code is 0
@@ -131,67 +131,67 @@ Targets are identified either by accessibility UID (from `page snapshot`, e.g., 
 ### AC13: Drag with CSS selectors
 
 **Given** a page with elements matching `css:#item` and `css:#target`
-**When** I run `chrome-cli interact drag "css:#item" "css:#target"`
+**When** I run `agentchrome interact drag "css:#item" "css:#target"`
 **Then** a drag operation is performed between the elements
 **And** JSON output is returned: `{"dragged": {"from": "css:#item", "to": "css:#target"}}`
 
 ### AC14: Drag with include-snapshot flag
 
 **Given** a page with draggable elements
-**When** I run `chrome-cli interact drag s1 s2 --include-snapshot`
+**When** I run `agentchrome interact drag s1 s2 --include-snapshot`
 **Then** the drag is performed
 **And** the JSON output includes an updated accessibility snapshot in the `snapshot` field
 
 ### AC15: Target element by --tab flag
 
 **Given** a specific tab with ID "ABC123" contains an element with UID `s1`
-**When** I run `chrome-cli interact click s1 --tab ABC123`
+**When** I run `agentchrome interact click s1 --tab ABC123`
 **Then** the click is performed on the element in that specific tab
 
 ### AC16: Element not found error
 
 **Given** no element matches UID `s99`
-**When** I run `chrome-cli interact click s99`
-**Then** an error is returned to stderr: `{"error": "UID 's99' not found. Run 'chrome-cli page snapshot' first.", "code": 1}`
+**When** I run `agentchrome interact click s99`
+**Then** an error is returned to stderr: `{"error": "UID 's99' not found. Run 'agentchrome page snapshot' first.", "code": 1}`
 **And** the exit code is non-zero
 
 ### AC17: CSS selector not found error
 
 **Given** no element matches `css:#nonexistent`
-**When** I run `chrome-cli interact click "css:#nonexistent"`
+**When** I run `agentchrome interact click "css:#nonexistent"`
 **Then** an error is returned to stderr: `{"error": "Element not found for selector: #nonexistent", "code": 1}`
 **And** the exit code is non-zero
 
 ### AC18: No snapshot state error
 
-**Given** no snapshot has been taken (no `~/.chrome-cli/snapshot.json`)
-**When** I run `chrome-cli interact click s1`
-**Then** an error is returned advising the user to run `chrome-cli page snapshot` first
+**Given** no snapshot has been taken (no `~/.agentchrome/snapshot.json`)
+**When** I run `agentchrome interact click s1`
+**Then** an error is returned advising the user to run `agentchrome page snapshot` first
 **And** the exit code is non-zero
 
 ### AC19: Element scrolled into view before click
 
 **Given** an element with UID `s5` that is not currently visible in the viewport
-**When** I run `chrome-cli interact click s5`
+**When** I run `agentchrome interact click s5`
 **Then** the element is scrolled into view before the click is dispatched
 **And** the click succeeds
 
 ### AC20: Plain text output for click
 
 **Given** a page with a button that has UID `s1`
-**When** I run `chrome-cli interact click s1 --plain`
+**When** I run `agentchrome interact click s1 --plain`
 **Then** plain text output is returned (e.g., `Clicked s1`)
 
 ### AC21: Plain text output for hover
 
 **Given** a page with an element that has UID `s3`
-**When** I run `chrome-cli interact hover s3 --plain`
+**When** I run `agentchrome interact hover s3 --plain`
 **Then** plain text output is returned (e.g., `Hovered s3`)
 
 ### AC22: Plain text output for drag
 
 **Given** a page with draggable elements
-**When** I run `chrome-cli interact drag s1 s2 --plain`
+**When** I run `agentchrome interact drag s1 s2 --plain`
 **Then** plain text output is returned (e.g., `Dragged s1 to s2`)
 
 ### Generated Gherkin Preview
@@ -208,103 +208,103 @@ Feature: Mouse Interactions
 
   Scenario: Click an element by UID
     Given the page has a button with snapshot UID "s1"
-    When I run "chrome-cli interact click s1"
+    When I run "agentchrome interact click s1"
     Then the output JSON should contain "clicked" equal to "s1"
     And the output JSON should contain "navigated" equal to false
     And the exit code should be 0
 
   Scenario: Click an element by CSS selector
     Given the page has a button matching "css:#submit-btn"
-    When I run "chrome-cli interact click css:#submit-btn"
+    When I run "agentchrome interact click css:#submit-btn"
     Then the output JSON should contain "clicked" equal to "css:#submit-btn"
 
   Scenario: Click triggers navigation
     Given the page has a link that navigates away
-    When I run "chrome-cli interact click s1"
+    When I run "agentchrome interact click s1"
     Then the output JSON should contain "navigated" equal to true
     And the output JSON "url" should be the new page URL
 
   Scenario: Double-click an element
-    When I run "chrome-cli interact click s1 --double"
+    When I run "agentchrome interact click s1 --double"
     Then the output JSON should contain "double_click" equal to true
 
   Scenario: Right-click an element
-    When I run "chrome-cli interact click s1 --right"
+    When I run "agentchrome interact click s1 --right"
     Then the output JSON should contain "right_click" equal to true
 
   Scenario: Click with include-snapshot
-    When I run "chrome-cli interact click s1 --include-snapshot"
+    When I run "agentchrome interact click s1 --include-snapshot"
     Then the output JSON should contain a "snapshot" field
 
   Scenario: Click at viewport coordinates
-    When I run "chrome-cli interact click-at 100 200"
+    When I run "agentchrome interact click-at 100 200"
     Then the output JSON "clicked_at.x" should be 100
     And the output JSON "clicked_at.y" should be 200
 
   Scenario: Click-at with double flag
-    When I run "chrome-cli interact click-at 100 200 --double"
+    When I run "agentchrome interact click-at 100 200 --double"
     Then the output JSON should contain "double_click" equal to true
 
   Scenario: Hover over an element by UID
-    When I run "chrome-cli interact hover s3"
+    When I run "agentchrome interact hover s3"
     Then the output JSON should contain "hovered" equal to "s3"
 
   Scenario: Hover with CSS selector
-    When I run "chrome-cli interact hover css:.dropdown-trigger"
+    When I run "agentchrome interact hover css:.dropdown-trigger"
     Then the output JSON should contain "hovered" equal to "css:.dropdown-trigger"
 
   Scenario: Hover with include-snapshot
-    When I run "chrome-cli interact hover s3 --include-snapshot"
+    When I run "agentchrome interact hover s3 --include-snapshot"
     Then the output JSON should contain a "snapshot" field
 
   Scenario: Drag from one element to another
-    When I run "chrome-cli interact drag s1 s2"
+    When I run "agentchrome interact drag s1 s2"
     Then the output JSON "dragged.from" should be "s1"
     And the output JSON "dragged.to" should be "s2"
 
   Scenario: Drag with CSS selectors
-    When I run "chrome-cli interact drag css:#item css:#target"
+    When I run "agentchrome interact drag css:#item css:#target"
     Then the output JSON "dragged.from" should be "css:#item"
 
   Scenario: Drag with include-snapshot
-    When I run "chrome-cli interact drag s1 s2 --include-snapshot"
+    When I run "agentchrome interact drag s1 s2 --include-snapshot"
     Then the output JSON should contain a "snapshot" field
 
   Scenario: Click with tab targeting
-    When I run "chrome-cli interact click s1 --tab ABC123"
+    When I run "agentchrome interact click s1 --tab ABC123"
     Then the click is performed on the specified tab
 
   Scenario: UID not found error
-    When I run "chrome-cli interact click s99"
+    When I run "agentchrome interact click s99"
     Then stderr should contain "UID 's99' not found"
     And the exit code should be non-zero
 
   Scenario: CSS selector not found error
-    When I run "chrome-cli interact click css:#nonexistent"
+    When I run "agentchrome interact click css:#nonexistent"
     Then stderr should contain "Element not found for selector"
     And the exit code should be non-zero
 
   Scenario: No snapshot state error
     Given no snapshot has been taken
-    When I run "chrome-cli interact click s1"
+    When I run "agentchrome interact click s1"
     Then stderr should contain "page snapshot"
     And the exit code should be non-zero
 
   Scenario: Element scrolled into view before click
     Given an element is not visible in the viewport
-    When I run "chrome-cli interact click s5"
+    When I run "agentchrome interact click s5"
     Then the element is scrolled into view and clicked
 
   Scenario: Plain text output for click
-    When I run "chrome-cli interact click s1 --plain"
+    When I run "agentchrome interact click s1 --plain"
     Then the output should be plain text "Clicked s1"
 
   Scenario: Plain text output for hover
-    When I run "chrome-cli interact hover s3 --plain"
+    When I run "agentchrome interact hover s3 --plain"
     Then the output should be plain text "Hovered s3"
 
   Scenario: Plain text output for drag
-    When I run "chrome-cli interact drag s1 s2 --plain"
+    When I run "agentchrome interact drag s1 s2 --plain"
     Then the output should be plain text "Dragged s1 to s2"
 ```
 

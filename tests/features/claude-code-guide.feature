@@ -1,7 +1,7 @@
 Feature: Claude Code Integration Guide
   As a developer using Claude Code for browser automation
   I want a comprehensive integration guide and CLAUDE.md template
-  So that Claude Code can immediately discover and use chrome-cli
+  So that Claude Code can immediately discover and use agentchrome
 
   # --- File Existence ---
 
@@ -9,16 +9,16 @@ Feature: Claude Code Integration Guide
     Given the file "docs/claude-code.md" exists in the repository
     When I read the integration guide
     Then it contains a "Discovery" or "Setup" section
-    And it mentions "chrome-cli capabilities" for machine-readable discovery
-    And it mentions "chrome-cli examples" for learning commands
+    And it mentions "agentchrome capabilities" for machine-readable discovery
+    And it mentions "agentchrome examples" for learning commands
     And it provides a setup checklist
 
   Scenario: CLAUDE.md template is provided as a drop-in example
     Given the file "examples/CLAUDE.md.example" exists in the repository
     When I read the template file
-    Then it contains "chrome-cli connect" for launching Chrome
-    And it contains "chrome-cli page snapshot" for page inspection
-    And it contains "chrome-cli interact" or "chrome-cli form fill" for interaction
+    Then it contains "agentchrome connect" for launching Chrome
+    And it contains "agentchrome page snapshot" for page inspection
+    And it contains "agentchrome interact" or "agentchrome form fill" for interaction
     And it contains a workflow loop description
 
   # --- Workflow Documentation ---
@@ -74,8 +74,8 @@ Feature: Claude Code Integration Guide
   Scenario: Example conversation demonstrates real-world usage
     Given the file "docs/claude-code.md" exists in the repository
     When I read the "Example Conversation" section of the guide
-    Then the guide shows "chrome-cli connect" in the example
-    And the guide shows "chrome-cli page snapshot" in the example
+    Then the guide shows "agentchrome connect" in the example
+    And the guide shows "agentchrome page snapshot" in the example
     And the guide shows a form fill or interaction command in the example
     And the guide shows verification of the result in the example
 

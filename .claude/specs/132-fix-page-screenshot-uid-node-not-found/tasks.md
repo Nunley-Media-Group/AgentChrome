@@ -49,11 +49,11 @@
 **Depends**: T001
 **Acceptance**:
 - [x] Build debug binary: `cargo build`
-- [x] Launch headless Chrome: `./target/debug/chrome-cli connect --launch --headless`
-- [x] Navigate to a page: `./target/debug/chrome-cli navigate https://www.google.com`
-- [x] Run snapshot: `./target/debug/chrome-cli page snapshot`
-- [x] Run screenshot by UID: `./target/debug/chrome-cli page screenshot --uid s1 --file /tmp/element.png` — succeeds (36x16 PNG)
-- [x] Run js exec by UID: `./target/debug/chrome-cli js exec --uid s1 "(el) => el.tagName"` — succeeds (returns "A")
+- [x] Launch headless Chrome: `./target/debug/agentchrome connect --launch --headless`
+- [x] Navigate to a page: `./target/debug/agentchrome navigate https://www.google.com`
+- [x] Run snapshot: `./target/debug/agentchrome page snapshot`
+- [x] Run screenshot by UID: `./target/debug/agentchrome page screenshot --uid s1 --file /tmp/element.png` — succeeds (36x16 PNG)
+- [x] Run js exec by UID: `./target/debug/agentchrome js exec --uid s1 "(el) => el.tagName"` — succeeds (returns "A")
 - [x] SauceDemo smoke test: navigate to https://www.saucedemo.com/, run `page snapshot`, screenshot Login button by UID (450x21 PNG)
 - [x] Disconnect and kill orphaned Chrome processes
 

@@ -3,11 +3,11 @@ use std::time::Duration;
 
 use serde::Serialize;
 
-use chrome_cli::cdp::{CdpClient, CdpConfig};
-use chrome_cli::chrome::{TargetInfo, activate_target, query_targets};
-use chrome_cli::connection::{resolve_connection, select_target};
-use chrome_cli::error::{AppError, ExitCode};
-use chrome_cli::session;
+use agentchrome::cdp::{CdpClient, CdpConfig};
+use agentchrome::chrome::{TargetInfo, activate_target, query_targets};
+use agentchrome::connection::{resolve_connection, select_target};
+use agentchrome::error::{AppError, ExitCode};
+use agentchrome::session;
 
 use crate::cli::{GlobalOpts, TabsArgs, TabsCommand};
 

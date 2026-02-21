@@ -11,7 +11,7 @@
 
 The bug has two contributing factors that combine to create unreliable behavior across CLI invocations:
 
-**1. No cross-invocation state for active tab.** Each `chrome-cli` command is a separate OS process. When `tabs activate <id>` runs, it sends `Target.activateTarget` via CDP and polls `/json/list` until the activated tab appears first. But after the process exits and the WebSocket closes, there is no mechanism to communicate which tab was activated to the next CLI invocation. The session file (`~/.chrome-cli/session.json`) stores `ws_url`, `port`, `pid`, and `timestamp` — but not which tab is active.
+**1. No cross-invocation state for active tab.** Each `agentchrome` command is a separate OS process. When `tabs activate <id>` runs, it sends `Target.activateTarget` via CDP and polls `/json/list` until the activated tab appears first. But after the process exits and the WebSocket closes, there is no mechanism to communicate which tab was activated to the next CLI invocation. The session file (`~/.agentchrome/session.json`) stores `ws_url`, `port`, `pid`, and `timestamp` — but not which tab is active.
 
 **2. Default target selection relies on `/json/list` ordering.** In `resolve_target()`, when `--tab` is not specified, `select_target()` picks the first target with `target_type == "page"` from Chrome's `/json/list` HTTP endpoint. This endpoint does not reliably reflect CDP-driven activation changes across process boundaries, especially in headless mode. The result is that page commands attach a CDP session to whichever tab Chrome happens to list first — which may be `about:blank`, the previously active tab, or an unrelated tab.
 
@@ -75,7 +75,7 @@ This approach avoids modifying `select_target()` (which remains a pure function 
 | Option | Description | Why Not Selected |
 |--------|-------------|------------------|
 | Use CDP `document.visibilityState` query in `resolve_target()` | Query each target's visibility state to find the active tab (similar to `tabs list` approach) | Requires establishing a CDP session per target and evaluating JS in each — adds latency and complexity to every command invocation. Session file approach is zero-overhead for the common case. |
-| Store active tab in a separate file (not session.json) | Write active tab ID to a dedicated file like `~/.chrome-cli/active-tab` | Unnecessary fragmentation — `SessionData` already exists for cross-invocation state. Adding a field is simpler and atomic. |
+| Store active tab in a separate file (not session.json) | Write active tab ID to a dedicated file like `~/.agentchrome/active-tab` | Unnecessary fragmentation — `SessionData` already exists for cross-invocation state. Adding a field is simpler and atomic. |
 
 ---
 

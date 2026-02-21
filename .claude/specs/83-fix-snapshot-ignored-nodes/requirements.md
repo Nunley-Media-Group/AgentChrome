@@ -13,16 +13,16 @@
 
 ### Steps to Reproduce
 
-1. Launch Chrome: `chrome-cli connect --launch`
-2. Navigate to any real-world page: `chrome-cli navigate "https://example.com"`
-3. Take a snapshot: `chrome-cli page snapshot --pretty`
+1. Launch Chrome: `agentchrome connect --launch`
+2. Navigate to any real-world page: `agentchrome navigate "https://example.com"`
+3. Take a snapshot: `agentchrome page snapshot --pretty`
 
 ### Environment
 
 | Factor | Value |
 |--------|-------|
 | **OS / Platform** | macOS (Darwin 25.2.0) |
-| **Version / Commit** | chrome-cli 0.1.0 (commit 01989d5) |
+| **Version / Commit** | agentchrome 0.1.0 (commit 01989d5) |
 | **Browser / Runtime** | Chrome Stable channel |
 | **Configuration** | Default settings, no custom flags |
 

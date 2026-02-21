@@ -13,9 +13,9 @@
 
 ### Steps to Reproduce
 
-1. `chrome-cli connect --launch --headless`
-2. `chrome-cli navigate https://www.google.com`
-3. `chrome-cli perf vitals`
+1. `agentchrome connect --launch --headless`
+2. `agentchrome navigate https://www.google.com`
+3. `agentchrome perf vitals`
 4. Observe output: `{"url":"https://www.google.com/","lcp_ms":219.638,"cls":null,"ttfb_ms":null}`
 
 ### Environment
@@ -57,19 +57,19 @@ No error on stderr; exit code is 0. The command "succeeds" but returns incomplet
 ### AC1: CLS returns 0.0 when no layout shifts occur
 
 **Given** a page with no layout shifts has been loaded (e.g., google.com)
-**When** I run `chrome-cli perf vitals`
+**When** I run `agentchrome perf vitals`
 **Then** the `cls` field in the JSON output is `0.0` (not `null`)
 
 ### AC2: TTFB is measured for loaded pages
 
 **Given** a successfully loaded page
-**When** I run `chrome-cli perf vitals`
+**When** I run `agentchrome perf vitals`
 **Then** the `ttfb_ms` field in the JSON output is a positive number (not `null`)
 
 ### AC3: LCP continues to work correctly
 
 **Given** a loaded page
-**When** I run `chrome-cli perf vitals`
+**When** I run `agentchrome perf vitals`
 **Then** the `lcp_ms` field in the JSON output is a positive number
 **And** the metric is not affected by the CLS/TTFB fixes
 

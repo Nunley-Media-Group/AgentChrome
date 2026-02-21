@@ -2,9 +2,9 @@ use std::time::Duration;
 
 use serde::Serialize;
 
-use chrome_cli::cdp::{CdpClient, CdpConfig};
-use chrome_cli::connection::{ManagedSession, resolve_connection, resolve_target};
-use chrome_cli::error::{AppError, ExitCode};
+use agentchrome::cdp::{CdpClient, CdpConfig};
+use agentchrome::connection::{ManagedSession, resolve_connection, resolve_target};
+use agentchrome::error::{AppError, ExitCode};
 
 use crate::cli::{
     GlobalOpts, PageArgs, PageCommand, PageFindArgs, PageResizeArgs, PageScreenshotArgs,
@@ -269,7 +269,7 @@ async fn execute_snapshot(global: &GlobalOpts, args: &PageSnapshotArgs) -> Resul
     // Persist UID mapping
     let state = crate::snapshot::SnapshotState {
         url,
-        timestamp: chrome_cli::session::now_iso8601(),
+        timestamp: agentchrome::session::now_iso8601(),
         uid_map: build.uid_map,
     };
     if let Err(e) = crate::snapshot::write_snapshot_state(&state) {
@@ -499,7 +499,7 @@ async fn capture_snapshot(
     let (url, _title) = get_page_info(managed).await?;
     let state = crate::snapshot::SnapshotState {
         url,
-        timestamp: chrome_cli::session::now_iso8601(),
+        timestamp: agentchrome::session::now_iso8601(),
         uid_map: build.uid_map.clone(),
     };
     if let Err(e) = crate::snapshot::write_snapshot_state(&state) {
@@ -698,7 +698,7 @@ async fn resolve_uid_clip(managed: &mut ManagedSession, uid: &str) -> Result<Cli
     let state = crate::snapshot::read_snapshot_state()
         .map_err(|e| AppError::screenshot_failed(&format!("Failed to read snapshot state: {e}")))?
         .ok_or_else(|| AppError {
-            message: "No snapshot state found. Run 'chrome-cli page snapshot' first.".to_string(),
+            message: "No snapshot state found. Run 'agentchrome page snapshot' first.".to_string(),
             code: ExitCode::GeneralError,
             custom_json: None,
         })?;

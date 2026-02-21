@@ -29,7 +29,7 @@ The `form` subcommand provides three operations: `fill` (set a single field's va
 
 **Given** Chrome is running with a page containing a text input field
 **And** an accessibility snapshot has been taken with UIDs assigned
-**When** I run `chrome-cli form fill <UID> <VALUE>`
+**When** I run `agentchrome form fill <UID> <VALUE>`
 **Then** the input field's value is set to the provided value
 **And** `input` and `change` events are dispatched on the element
 **And** JSON output is returned: `{"filled": "<UID>", "value": "<VALUE>"}`
@@ -38,7 +38,7 @@ The `form` subcommand provides three operations: `fill` (set a single field's va
 ### AC2: Fill a text input field by CSS selector
 
 **Given** Chrome is running with a page containing a text input with id "email"
-**When** I run `chrome-cli form fill css:#email user@example.com`
+**When** I run `agentchrome form fill css:#email user@example.com`
 **Then** the input field's value is set to "user@example.com"
 **And** JSON output is returned: `{"filled": "css:#email", "value": "user@example.com"}`
 
@@ -46,7 +46,7 @@ The `form` subcommand provides three operations: `fill` (set a single field's va
 
 **Given** Chrome is running with a page containing a `<select>` element with UID "s3"
 **And** the select has options including one with value "option2"
-**When** I run `chrome-cli form fill s3 option2`
+**When** I run `agentchrome form fill s3 option2`
 **Then** the matching `<option>` is selected
 **And** `change` events are dispatched
 **And** JSON output is returned: `{"filled": "s3", "value": "option2"}`
@@ -54,14 +54,14 @@ The `form` subcommand provides three operations: `fill` (set a single field's va
 ### AC4: Fill a textarea
 
 **Given** Chrome is running with a page containing a `<textarea>` element
-**When** I run `chrome-cli form fill <UID> "Multi-line\ntext content"`
+**When** I run `agentchrome form fill <UID> "Multi-line\ntext content"`
 **Then** the textarea's value is set to the provided text
 **And** appropriate events are dispatched
 
 ### AC5: Toggle a checkbox to checked
 
 **Given** Chrome is running with a page containing an unchecked checkbox with UID "s5"
-**When** I run `chrome-cli form fill s5 true`
+**When** I run `agentchrome form fill s5 true`
 **Then** the checkbox becomes checked
 **And** `input` and `change` events are dispatched
 **And** JSON output confirms the value
@@ -69,20 +69,20 @@ The `form` subcommand provides three operations: `fill` (set a single field's va
 ### AC6: Toggle a checkbox to unchecked
 
 **Given** Chrome is running with a page containing a checked checkbox with UID "s5"
-**When** I run `chrome-cli form fill s5 false`
+**When** I run `agentchrome form fill s5 false`
 **Then** the checkbox becomes unchecked
 
 ### AC7: Fill with --include-snapshot flag
 
 **Given** Chrome is running with a page containing a form field
-**When** I run `chrome-cli form fill <UID> <VALUE> --include-snapshot`
+**When** I run `agentchrome form fill <UID> <VALUE> --include-snapshot`
 **Then** the JSON output includes a `snapshot` field with the updated accessibility tree
 **And** the snapshot state file is updated with new UID mappings
 
 ### AC8: Fill multiple fields at once
 
 **Given** Chrome is running with a page containing multiple form fields
-**When** I run `chrome-cli form fill-many '[{"uid":"s1","value":"John"},{"uid":"s2","value":"Doe"}]'`
+**When** I run `agentchrome form fill-many '[{"uid":"s1","value":"John"},{"uid":"s2","value":"Doe"}]'`
 **Then** all specified fields are filled with their respective values
 **And** JSON array output is returned with results for each field
 **And** the exit code is 0
@@ -91,13 +91,13 @@ The `form` subcommand provides three operations: `fill` (set a single field's va
 
 **Given** Chrome is running with a page containing form fields
 **And** a JSON file exists at `fields.json` with contents `[{"uid":"s1","value":"John"}]`
-**When** I run `chrome-cli form fill-many --file fields.json`
+**When** I run `agentchrome form fill-many --file fields.json`
 **Then** the fields are filled from the file contents
 
 ### AC10: Clear a form field
 
 **Given** Chrome is running with a page containing a text input with value "old" and UID "s1"
-**When** I run `chrome-cli form clear s1`
+**When** I run `agentchrome form clear s1`
 **Then** the input field's value is set to empty string
 **And** `input` and `change` events are dispatched
 **And** JSON output is returned: `{"cleared": "s1"}`
@@ -106,14 +106,14 @@ The `form` subcommand provides three operations: `fill` (set a single field's va
 ### AC11: Fill nonexistent UID returns error
 
 **Given** Chrome is running with a snapshot taken
-**When** I run `chrome-cli form fill s999 "value"`
+**When** I run `agentchrome form fill s999 "value"`
 **Then** the exit code is nonzero
 **And** stderr contains an error about the UID not being found
 
 ### AC12: Fill without required arguments
 
-**Given** chrome-cli is built
-**When** I run `chrome-cli form fill`
+**Given** agentchrome is built
+**When** I run `agentchrome form fill`
 **Then** the exit code is nonzero
 **And** stderr contains usage information about required arguments
 
@@ -121,20 +121,20 @@ The `form` subcommand provides three operations: `fill` (set a single field's va
 
 **Given** Chrome is running with multiple tabs open
 **And** a form field exists in a specific tab
-**When** I run `chrome-cli form fill <UID> <VALUE> --tab <TAB_ID>`
+**When** I run `agentchrome form fill <UID> <VALUE> --tab <TAB_ID>`
 **Then** the field is filled in the specified tab
 
 ### AC14: Fill dispatches events for framework compatibility
 
 **Given** Chrome is running with a React-controlled input field
-**When** I run `chrome-cli form fill <UID> <VALUE>`
+**When** I run `agentchrome form fill <UID> <VALUE>`
 **Then** the React state is updated to reflect the new value
 **And** the `input` event is dispatched with `bubbles: true`
 
 ### AC15: Fill-many with --include-snapshot flag
 
 **Given** Chrome is running with a page containing form fields
-**When** I run `chrome-cli form fill-many '<JSON>' --include-snapshot`
+**When** I run `agentchrome form fill-many '<JSON>' --include-snapshot`
 **Then** the JSON output includes a `snapshot` field with the updated accessibility tree
 
 ---

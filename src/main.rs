@@ -20,14 +20,14 @@ use std::time::Duration;
 use clap::{CommandFactory, Parser, error::ErrorKind};
 use serde::Serialize;
 
-use chrome_cli::chrome::{
+use agentchrome::chrome::{
     self, Channel, LaunchConfig, discover_chrome, find_available_port, find_chrome_executable,
     launch_chrome, query_version,
 };
-use chrome_cli::config;
-use chrome_cli::connection::{self, extract_port_from_ws_url};
-use chrome_cli::error::{AppError, ExitCode};
-use chrome_cli::session::{self, SessionData};
+use agentchrome::config;
+use agentchrome::connection::{self, extract_port_from_ws_url};
+use agentchrome::error::{AppError, ExitCode};
+use agentchrome::session::{self, SessionData};
 
 use cli::{
     ChromeChannel, Cli, Command, CompletionsArgs, ConfigCommand, ConnectArgs, GlobalOpts, ManArgs,
@@ -155,7 +155,7 @@ fn apply_config_defaults(cli_global: &GlobalOpts, config: &config::ConfigFile) -
     // fields. For Option fields, None means unset; for host (which has default_value), we
     // check whether it matches the built-in default.
     let host_is_default =
-        cli_global.host == "127.0.0.1" && std::env::var("CHROME_CLI_HOST").is_err();
+        cli_global.host == "127.0.0.1" && std::env::var("AGENTCHROME_HOST").is_err();
 
     GlobalOpts {
         port: cli_global.port.or(config.connection.port),
@@ -220,7 +220,7 @@ fn execute_config(cmd: &ConfigCommand, resolved: &config::ResolvedConfig) -> Res
 #[allow(clippy::unnecessary_wraps)]
 fn execute_completions(args: &CompletionsArgs) -> Result<(), AppError> {
     let mut cmd = Cli::command();
-    clap_complete::generate(args.shell, &mut cmd, "chrome-cli", &mut std::io::stdout());
+    clap_complete::generate(args.shell, &mut cmd, "agentchrome", &mut std::io::stdout());
     Ok(())
 }
 

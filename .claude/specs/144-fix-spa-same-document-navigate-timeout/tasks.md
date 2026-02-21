@@ -52,7 +52,7 @@
 **Depends**: T001, T002
 **Acceptance**:
 - [ ] Build debug binary: `cargo build`
-- [ ] Launch headless Chrome: `./target/debug/chrome-cli connect --launch --headless`
+- [ ] Launch headless Chrome: `./target/debug/agentchrome connect --launch --headless`
 - [ ] Reproduce the original bug steps from requirements.md against saucedemo.com and confirm `navigate back` now succeeds (exit code 0, correct URL in output)
 - [ ] Verify `navigate forward` also works after navigating back
 - [ ] Verify cross-document `navigate back` still works (navigate to two different URLs, then back)

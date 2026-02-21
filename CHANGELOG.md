@@ -11,7 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Navigate back/forward/reload commands now respect the global `--timeout` flag and `CHROME_CLI_TIMEOUT` environment variable instead of always using the hardcoded 30-second default (#145)
+- Navigate back/forward/reload commands now respect the global `--timeout` flag and `AGENTCHROME_TIMEOUT` environment variable instead of always using the hardcoded 30-second default (#145)
 
 ## [1.2.1] - 2026-02-19
 

@@ -2,9 +2,9 @@ use std::time::Duration;
 
 use serde::Serialize;
 
-use chrome_cli::cdp::{CdpClient, CdpConfig, CdpEvent};
-use chrome_cli::connection::{ManagedSession, resolve_connection, resolve_target};
-use chrome_cli::error::{AppError, ExitCode};
+use agentchrome::cdp::{CdpClient, CdpConfig, CdpEvent};
+use agentchrome::connection::{ManagedSession, resolve_connection, resolve_target};
+use agentchrome::error::{AppError, ExitCode};
 
 use crate::cli::{
     GlobalOpts, NavigateArgs, NavigateCommand, NavigateReloadArgs, NavigateUrlArgs, WaitUntil,
@@ -108,7 +108,7 @@ async fn setup_session(global: &GlobalOpts) -> Result<(CdpClient, ManagedSession
 
 async fn execute_url(global: &GlobalOpts, args: &NavigateUrlArgs) -> Result<(), AppError> {
     let url = args.url.as_deref().ok_or_else(|| AppError {
-        message: "URL is required. Usage: chrome-cli navigate <URL>".into(),
+        message: "URL is required. Usage: agentchrome navigate <URL>".into(),
         code: ExitCode::GeneralError,
         custom_json: None,
     })?;

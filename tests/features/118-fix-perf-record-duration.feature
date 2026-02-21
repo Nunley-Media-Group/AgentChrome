@@ -16,7 +16,7 @@ Feature: perf record reports correct recording duration
   @regression @requires-chrome
   Scenario: perf record duration reflects actual recording time
     Given Chrome is connected and navigated to "https://www.google.com/"
-    When I run "chrome-cli perf record --duration 2000 --file /tmp/trace-118a.json"
+    When I run "agentchrome perf record --duration 2000 --file /tmp/trace-118a.json"
     Then the JSON output contains the key "duration_ms"
     And the "duration_ms" value is approximately 2000 within 500ms tolerance
     And the exit code should be 0
@@ -24,7 +24,7 @@ Feature: perf record reports correct recording duration
   @regression @requires-chrome
   Scenario: perf record duration includes reload time
     Given Chrome is connected and navigated to "https://www.google.com/"
-    When I run "chrome-cli perf record --reload --duration 3000 --file /tmp/trace-118b.json"
+    When I run "agentchrome perf record --reload --duration 3000 --file /tmp/trace-118b.json"
     Then the JSON output contains the key "duration_ms"
     And the "duration_ms" value is at least 3000
     And the exit code should be 0
@@ -34,7 +34,7 @@ Feature: perf record reports correct recording duration
   @regression @requires-chrome
   Scenario: perf record output structure is preserved
     Given Chrome is connected and navigated to "https://www.google.com/"
-    When I run "chrome-cli perf record --duration 1000 --file /tmp/trace-118c.json"
+    When I run "agentchrome perf record --duration 1000 --file /tmp/trace-118c.json"
     Then the JSON output contains the key "file"
     And the JSON output contains the key "duration_ms"
     And the JSON output contains the key "size_bytes"

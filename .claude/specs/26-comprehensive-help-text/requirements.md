@@ -9,7 +9,7 @@
 
 ## User Story
 
-**As a** developer or AI agent using chrome-cli
+**As a** developer or AI agent using agentchrome
 **I want** rich, detailed `--help` documentation for every command, subcommand, and flag
 **So that** I can fully understand all capabilities, parameters, return values, and common workflows without needing external documentation
 
@@ -17,9 +17,9 @@
 
 ## Background
 
-chrome-cli's primary consumer is Claude Code and other AI agents. The `--help` output is the primary discovery mechanism for understanding what the CLI can do. Currently, the CLI has short `about` strings and `long_about` paragraphs at the command-group level, but lacks `after_help` / `after_long_help` sections with usage examples, exit code documentation, quick-start workflows, and detailed leaf-command descriptions that explain return values and how commands compose together.
+agentchrome's primary consumer is Claude Code and other AI agents. The `--help` output is the primary discovery mechanism for understanding what the CLI can do. Currently, the CLI has short `about` strings and `long_about` paragraphs at the command-group level, but lacks `after_help` / `after_long_help` sections with usage examples, exit code documentation, quick-start workflows, and detailed leaf-command descriptions that explain return values and how commands compose together.
 
-This feature adds comprehensive help text using clap's `about`, `long_about`, `after_help`, and `after_long_help` attributes so that an agent reading `chrome-cli --help` or `chrome-cli <cmd> --help` knows exactly what each command does, what parameters it takes, what it returns, and how to combine commands for common workflows.
+This feature adds comprehensive help text using clap's `about`, `long_about`, `after_help`, and `after_long_help` attributes so that an agent reading `agentchrome --help` or `agentchrome <cmd> --help` knows exactly what each command does, what parameters it takes, what it returns, and how to combine commands for common workflows.
 
 ---
 
@@ -27,7 +27,7 @@ This feature adds comprehensive help text using clap's `about`, `long_about`, `a
 
 ### AC1: Top-level help displays complete overview
 
-**Given** a user runs `chrome-cli --help`
+**Given** a user runs `agentchrome --help`
 **When** the help text is rendered
 **Then** it displays a one-line description of the tool
 **And** it lists all subcommand groups with descriptions
@@ -37,7 +37,7 @@ This feature adds comprehensive help text using clap's `about`, `long_about`, `a
 
 ### AC2: Subcommand group help shows commands and examples
 
-**Given** a user runs `chrome-cli <group> --help` for any command group (e.g., `tabs`, `navigate`, `page`)
+**Given** a user runs `agentchrome <group> --help` for any command group (e.g., `tabs`, `navigate`, `page`)
 **When** the help text is rendered
 **Then** it displays a description of what the group does
 **And** it lists all subcommands with descriptions
@@ -45,7 +45,7 @@ This feature adds comprehensive help text using clap's `about`, `long_about`, `a
 
 ### AC3: Leaf command help shows detailed usage
 
-**Given** a user runs `chrome-cli <group> <command> --help` for any leaf command (e.g., `tabs list`, `page screenshot`)
+**Given** a user runs `agentchrome <group> <command> --help` for any leaf command (e.g., `tabs list`, `page screenshot`)
 **When** the help text is rendered
 **Then** it displays a one-line `about` summary
 **And** it displays a multi-line `long_about` description covering what the command does, what it returns (JSON structure), common use cases, and interaction with other commands
@@ -63,7 +63,7 @@ This feature adds comprehensive help text using clap's `about`, `long_about`, `a
 
 ### AC5: Exit codes documented in top-level help
 
-**Given** a user runs `chrome-cli --help`
+**Given** a user runs `agentchrome --help`
 **When** the help text is rendered
 **Then** the `after_help` section includes a list of exit codes:
   - 0: Success
@@ -85,7 +85,7 @@ This feature adds comprehensive help text using clap's `about`, `long_about`, `a
 ### AC7: Help text verified by running CLI
 
 **Given** all help text has been written
-**When** `chrome-cli --help`, `chrome-cli <cmd> --help`, and `chrome-cli <cmd> <subcmd> --help` are run for every command
+**When** `agentchrome --help`, `agentchrome <cmd> --help`, and `agentchrome <cmd> <subcmd> --help` are run for every command
 **Then** all commands produce valid help output without errors
 **And** no placeholder or TODO text remains
 
@@ -93,33 +93,33 @@ This feature adds comprehensive help text using clap's `about`, `long_about`, `a
 
 ```gherkin
 Feature: Comprehensive help text
-  As a developer or AI agent using chrome-cli
+  As a developer or AI agent using agentchrome
   I want rich, detailed --help documentation for every command, subcommand, and flag
   So that I can fully understand all capabilities without external documentation
 
   Scenario: Top-level help displays complete overview
-    Given the chrome-cli binary is built
-    When I run "chrome-cli --help"
+    Given the agentchrome binary is built
+    When I run "agentchrome --help"
     Then the output contains "Browser automation via the Chrome DevTools Protocol"
     And the output contains all top-level subcommand names
     And the output contains a quick-start examples section
     And the output contains an exit codes section
 
   Scenario: Subcommand group help shows commands and examples
-    Given the chrome-cli binary is built
-    When I run "chrome-cli tabs --help"
+    Given the agentchrome binary is built
+    When I run "agentchrome tabs --help"
     Then the output contains a description of the tabs group
     And the output lists all tabs subcommands
     And the output contains usage examples
 
   Scenario: Leaf command help shows detailed usage
-    Given the chrome-cli binary is built
-    When I run "chrome-cli tabs list --help"
+    Given the agentchrome binary is built
+    When I run "agentchrome tabs list --help"
     Then the output contains a detailed description
     And the output contains usage examples
 
   Scenario: Help text is consistent across all commands
-    Given the chrome-cli binary is built
+    Given the agentchrome binary is built
     When I run --help for every command and subcommand
     Then no output contains placeholder or TODO text
     And all output renders without errors

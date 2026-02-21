@@ -19,7 +19,7 @@ Feature: JS execution errors emit single JSON on stderr
 
   @regression
   Scenario: Thrown error produces exactly one JSON object on stderr
-    When I run "chrome-cli js exec 'throw new Error(\"test\")'"
+    When I run "agentchrome js exec 'throw new Error(\"test\")'"
     Then stderr contains exactly 1 JSON object
     And the stderr JSON has key "error" containing "Error: test"
     And the stderr JSON has key "stack"
@@ -29,7 +29,7 @@ Feature: JS execution errors emit single JSON on stderr
 
   @regression
   Scenario: ReferenceError produces exactly one JSON object on stderr
-    When I run "chrome-cli js exec 'nonExistentVar'"
+    When I run "agentchrome js exec 'nonExistentVar'"
     Then stderr contains exactly 1 JSON object
     And the stderr JSON has key "error" containing "ReferenceError"
     And the stderr JSON has key "code" with value 1
@@ -40,7 +40,7 @@ Feature: JS execution errors emit single JSON on stderr
 
   @regression
   Scenario: Successful JS execution still returns result on stdout
-    When I run "chrome-cli js exec 'document.title'"
+    When I run "agentchrome js exec 'document.title'"
     Then stdout contains JSON with keys "result", "type"
     And the "result" field is "Example Domain"
     And stderr is empty

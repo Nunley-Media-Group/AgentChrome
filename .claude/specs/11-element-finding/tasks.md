@@ -51,7 +51,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] `PageFindArgs` struct defined with: `query: Option<String>`, `--selector`, `--role`, `--exact`, `--limit` (default 10)
 - [ ] `PageCommand::Find(PageFindArgs)` variant added to `PageCommand` enum
 - [ ] `--selector` documented as alternative to text query
-- [ ] `chrome-cli page find --help` displays correct usage
+- [ ] `agentchrome page find --help` displays correct usage
 - [ ] Compiles without errors or clippy warnings
 
 **Notes**: Follow the same patterns as `PageTextArgs` and `PageSnapshotArgs`. The `query` argument is positional and optional (required only when `--selector` is not provided). Validation of "at least one of query/selector" happens at runtime in the executor, not in clap.
@@ -195,7 +195,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
   2. Sets up CDP session via existing `setup_session()`
   3. If `--selector` provided: calls CSS selector path (T004) — also triggers full snapshot for UID assignment
   4. If text query provided: captures snapshot via `Accessibility.getFullAXTree`, builds tree, searches (T003), resolves bounding boxes (T005)
-  5. Persists snapshot state (uid_map) to `~/.chrome-cli/snapshot.json`
+  5. Persists snapshot state (uid_map) to `~/.agentchrome/snapshot.json`
   6. Outputs results as JSON array (default) or plain text (`--plain`)
 - [ ] `PageCommand::Find` arm added to `execute_page()` dispatcher
 - [ ] JSON output: `Vec<FindMatch>` serialized directly (compact or pretty based on flags)

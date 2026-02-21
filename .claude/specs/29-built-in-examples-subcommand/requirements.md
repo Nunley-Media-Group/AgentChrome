@@ -9,7 +9,7 @@
 
 ## User Story
 
-**As a** developer or AI agent using chrome-cli
+**As a** developer or AI agent using agentchrome
 **I want** a dedicated `examples` subcommand that prints usage examples for each command group
 **So that** I can quickly discover working CLI invocations without parsing `--help` output or reading external documentation
 
@@ -17,7 +17,7 @@
 
 ## Background
 
-AI agents benefit from being able to query examples programmatically. The existing `--help` and `after_long_help` text in clap provides examples, but they are interleaved with flag descriptions and not easily machine-parseable. A dedicated `chrome-cli examples` command provides a focused, structured view of real usage patterns — in both plain text (human-readable) and JSON (machine-readable) formats.
+AI agents benefit from being able to query examples programmatically. The existing `--help` and `after_long_help` text in clap provides examples, but they are interleaved with flag descriptions and not easily machine-parseable. A dedicated `agentchrome examples` command provides a focused, structured view of real usage patterns — in both plain text (human-readable) and JSON (machine-readable) formats.
 
 This aligns with the M6 milestone (Documentation & AI Discoverability) and the product principle of scriptability.
 
@@ -27,70 +27,70 @@ This aligns with the M6 milestone (Documentation & AI Discoverability) and the p
 
 ### AC1: List all command groups with summary examples
 
-**Given** chrome-cli is installed
-**When** I run `chrome-cli examples`
+**Given** agentchrome is installed
+**When** I run `agentchrome examples`
 **Then** the output lists every command group with a brief description and one representative example each
 **And** the exit code is 0
 
 **Example**:
-- Given: chrome-cli binary is on PATH
-- When: `chrome-cli examples`
+- Given: agentchrome binary is on PATH
+- When: `agentchrome examples`
 - Then: Output includes all command groups (connect, tabs, navigate, page, js, console, network, interact, form, emulate, perf, dialog, config) each with a one-line description and one example command
 
 ### AC2: Show detailed examples for a specific command group
 
-**Given** chrome-cli is installed
-**When** I run `chrome-cli examples <COMMAND>` (e.g., `chrome-cli examples navigate`)
+**Given** agentchrome is installed
+**When** I run `agentchrome examples <COMMAND>` (e.g., `agentchrome examples navigate`)
 **Then** the output shows 3–5 detailed examples for that command group
 **And** each example includes the command string and a description comment
 **And** the exit code is 0
 
 **Example**:
-- Given: chrome-cli binary is on PATH
-- When: `chrome-cli examples navigate`
-- Then: Output includes examples like "Navigate to a URL and wait for load" with `chrome-cli navigate https://example.com --wait-until load`
+- Given: agentchrome binary is on PATH
+- When: `agentchrome examples navigate`
+- Then: Output includes examples like "Navigate to a URL and wait for load" with `agentchrome navigate https://example.com --wait-until load`
 
 ### AC3: JSON output for summary listing
 
-**Given** chrome-cli is installed
-**When** I run `chrome-cli examples --json`
+**Given** agentchrome is installed
+**When** I run `agentchrome examples --json`
 **Then** the output is a valid JSON array of objects with `command`, `description`, and `examples` fields
 **And** each example object contains `cmd` and `description` fields
 **And** the exit code is 0
 
 ### AC4: JSON output for a specific command group
 
-**Given** chrome-cli is installed
-**When** I run `chrome-cli examples navigate --json`
+**Given** agentchrome is installed
+**When** I run `agentchrome examples navigate --json`
 **Then** the output is a valid JSON object with `command`, `description`, and `examples` fields
 **And** each example includes `cmd`, `description`, and optional `flags` fields
 **And** the exit code is 0
 
 ### AC5: Error on unknown command group
 
-**Given** chrome-cli is installed
-**When** I run `chrome-cli examples nonexistent`
+**Given** agentchrome is installed
+**When** I run `agentchrome examples nonexistent`
 **Then** the output is an error message indicating the command group is not recognized
 **And** the exit code is non-zero
 
 ### AC6: All command groups have examples
 
-**Given** chrome-cli is installed
-**When** I run `chrome-cli examples --json`
+**Given** agentchrome is installed
+**When** I run `agentchrome examples --json`
 **Then** the output contains entries for all command groups: connect, tabs, navigate, page, js, console, network, interact, form, emulate, perf, dialog, config
 **And** each command group has at least 3 examples
 
 ### AC7: Plain text output is the default
 
-**Given** chrome-cli is installed
-**When** I run `chrome-cli examples` without any output flags
+**Given** agentchrome is installed
+**When** I run `agentchrome examples` without any output flags
 **Then** the output is human-readable plain text (not JSON)
 **And** examples are formatted with comment-style descriptions (# prefix)
 
 ### AC8: Pretty-printed JSON output
 
-**Given** chrome-cli is installed
-**When** I run `chrome-cli examples --pretty`
+**Given** agentchrome is installed
+**When** I run `agentchrome examples --pretty`
 **Then** the output is a pretty-printed (indented) JSON array
 **And** the exit code is 0
 
@@ -103,27 +103,27 @@ Feature: Built-in Examples Subcommand
   So that I can discover working CLI invocations without parsing --help output
 
   Scenario: List all command groups with summary examples
-    Given chrome-cli is installed
-    When I run "chrome-cli examples"
+    Given agentchrome is installed
+    When I run "agentchrome examples"
     Then the output lists every command group with a description and example
     And the exit code is 0
 
   Scenario: Show detailed examples for a specific command group
-    Given chrome-cli is installed
-    When I run "chrome-cli examples navigate"
+    Given agentchrome is installed
+    When I run "agentchrome examples navigate"
     Then the output shows 3-5 detailed examples for "navigate"
     And each example includes a command and description
     And the exit code is 0
 
   Scenario: JSON output for summary listing
-    Given chrome-cli is installed
-    When I run "chrome-cli examples --json"
+    Given agentchrome is installed
+    When I run "agentchrome examples --json"
     Then the output is a valid JSON array
     And each entry has "command", "description", and "examples" fields
 
   Scenario: Error on unknown command group
-    Given chrome-cli is installed
-    When I run "chrome-cli examples nonexistent"
+    Given agentchrome is installed
+    When I run "agentchrome examples nonexistent"
     Then the output contains an error message
     And the exit code is non-zero
 ```
@@ -134,13 +134,13 @@ Feature: Built-in Examples Subcommand
 
 | ID | Requirement | Priority | Notes |
 |----|-------------|----------|-------|
-| FR1 | `chrome-cli examples` lists all command groups with one example each | Must | Default plain text output |
-| FR2 | `chrome-cli examples <COMMAND>` shows detailed examples for one group | Must | 3–5 examples per group |
+| FR1 | `agentchrome examples` lists all command groups with one example each | Must | Default plain text output |
+| FR2 | `agentchrome examples <COMMAND>` shows detailed examples for one group | Must | 3–5 examples per group |
 | FR3 | `--json` flag produces structured JSON output | Must | Follows existing OutputFormat pattern |
 | FR4 | `--pretty` flag produces pretty-printed JSON | Must | Follows existing OutputFormat pattern |
 | FR5 | `--plain` flag forces plain text output | Must | Follows existing OutputFormat pattern |
 | FR6 | Every command group (connect, tabs, navigate, page, js, console, network, interact, form, emulate, perf, dialog, config) has examples | Must | At least 3 examples each |
-| FR7 | Examples are syntactically valid chrome-cli commands | Should | Verified at test time |
+| FR7 | Examples are syntactically valid agentchrome commands | Should | Verified at test time |
 | FR8 | Error on unknown command group names | Must | Non-zero exit code |
 
 ---
@@ -151,7 +151,7 @@ Feature: Built-in Examples Subcommand
 |--------|-------------|
 | **Performance** | Command should respond in < 10ms (no Chrome connection needed) |
 | **Security** | No security implications — purely informational, no network/CDP calls |
-| **Platforms** | Same as chrome-cli: macOS, Linux, Windows |
+| **Platforms** | Same as agentchrome: macOS, Linux, Windows |
 | **Reliability** | Static data, no external dependencies — always works |
 
 ---
@@ -212,7 +212,7 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - Workflow/recipe examples that chain multiple commands (future enhancement)
 - Generating examples from test fixtures or golden files (future enhancement)
 - Markdown or HTML output formats
-- Man page generation for examples (covered by `chrome-cli man`)
+- Man page generation for examples (covered by `agentchrome man`)
 
 ---
 

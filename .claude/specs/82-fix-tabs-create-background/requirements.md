@@ -13,17 +13,17 @@
 
 ### Steps to Reproduce
 
-1. Launch Chrome: `chrome-cli connect --launch`
-2. Create a foreground tab: `chrome-cli tabs create "https://www.google.com"`
-3. Create a background tab: `chrome-cli tabs create "https://example.com" --background`
-4. List tabs: `chrome-cli tabs list`
+1. Launch Chrome: `agentchrome connect --launch`
+2. Create a foreground tab: `agentchrome tabs create "https://www.google.com"`
+3. Create a background tab: `agentchrome tabs create "https://example.com" --background`
+4. List tabs: `agentchrome tabs list`
 
 ### Environment
 
 | Factor | Value |
 |--------|-------|
 | **OS / Platform** | macOS (Darwin 25.2.0) |
-| **Version / Commit** | chrome-cli 0.1.0 (commit 01989d5) |
+| **Version / Commit** | agentchrome 0.1.0 (commit 01989d5) |
 | **Browser / Runtime** | Chrome Stable, launched via `connect --launch` |
 | **Configuration** | Default (no custom flags) |
 
@@ -49,20 +49,20 @@ Always — Chrome consistently ignores the `background: true` parameter in `Targ
 ### AC1: Bug Is Fixed
 
 **Given** Chrome is running with an active tab (TAB_A)
-**When** I run `chrome-cli tabs create --background https://example.com`
+**When** I run `agentchrome tabs create --background https://example.com`
 **Then** a new tab is created navigating to the URL
 **And** TAB_A remains the active tab (verified via `tabs list`)
 
 ### AC2: Non-background create still activates
 
 **Given** Chrome is running with an active tab
-**When** I run `chrome-cli tabs create https://example.com` (without `--background`)
+**When** I run `agentchrome tabs create https://example.com` (without `--background`)
 **Then** the new tab becomes the active tab (existing behavior preserved)
 
 ### AC3: No regression on tab create output
 
 **Given** Chrome is running
-**When** I run `chrome-cli tabs create --background https://example.com`
+**When** I run `agentchrome tabs create --background https://example.com`
 **Then** stdout contains a JSON object with `id`, `url`, and `title` fields
 **And** the exit code is 0
 

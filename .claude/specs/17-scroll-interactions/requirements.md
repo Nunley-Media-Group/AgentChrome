@@ -28,7 +28,7 @@ Scrolling is a fundamental browser interaction needed for accessing elements tha
 ### AC1: Scroll down by default
 
 **Given** Chrome is running with CDP enabled and a page is loaded
-**When** I run `chrome-cli interact scroll`
+**When** I run `agentchrome interact scroll`
 **Then** the page scrolls down by one viewport height
 **And** the output JSON contains `scrolled.x` and `scrolled.y` with the scroll delta
 **And** the output JSON contains `position.x` and `position.y` with the new scroll position
@@ -37,33 +37,33 @@ Scrolling is a fundamental browser interaction needed for accessing elements tha
 ### AC2: Scroll in a specified direction
 
 **Given** Chrome is running with CDP enabled and a page is loaded
-**When** I run `chrome-cli interact scroll --direction up`
+**When** I run `agentchrome interact scroll --direction up`
 **Then** the page scrolls up by one viewport height
 **And** the output JSON contains the scroll delta and new position
 
 **Example**:
 - Given: a tall page scrolled halfway down
-- When: `chrome-cli interact scroll --direction up`
+- When: `agentchrome interact scroll --direction up`
 - Then: `{"scrolled": {"x": 0, "y": -N}, "position": {"x": 0, "y": M}}`
 
 ### AC3: Scroll by a specific pixel amount
 
 **Given** Chrome is running with CDP enabled and a page is loaded
-**When** I run `chrome-cli interact scroll --amount 300`
+**When** I run `agentchrome interact scroll --amount 300`
 **Then** the page scrolls down by 300 pixels
 **And** the output JSON reflects the 300-pixel scroll delta
 
 ### AC4: Scroll to top of page
 
 **Given** Chrome is running with CDP enabled and a page scrolled partway down
-**When** I run `chrome-cli interact scroll --to-top`
+**When** I run `agentchrome interact scroll --to-top`
 **Then** the page scroll position is `(0, 0)`
 **And** the output JSON shows position `{"x": 0, "y": 0}`
 
 ### AC5: Scroll to bottom of page
 
 **Given** Chrome is running with CDP enabled and a page is loaded
-**When** I run `chrome-cli interact scroll --to-bottom`
+**When** I run `agentchrome interact scroll --to-bottom`
 **Then** the page scroll position is at the maximum vertical scroll offset
 **And** the output JSON shows the final position
 
@@ -71,21 +71,21 @@ Scrolling is a fundamental browser interaction needed for accessing elements tha
 
 **Given** Chrome is running with CDP enabled and a snapshot has been taken with UIDs assigned
 **And** the page has an element with UID "s5" below the fold
-**When** I run `chrome-cli interact scroll --to-element s5`
+**When** I run `agentchrome interact scroll --to-element s5`
 **Then** the element with UID "s5" is scrolled into the viewport
 **And** the output JSON contains the new scroll position
 
 ### AC7: Scroll to a specific element by CSS selector
 
 **Given** Chrome is running with CDP enabled and a page is loaded
-**When** I run `chrome-cli interact scroll --to-element "css:#footer"`
+**When** I run `agentchrome interact scroll --to-element "css:#footer"`
 **Then** the element matching `#footer` is scrolled into the viewport
 **And** the output JSON contains the new scroll position
 
 ### AC8: Scroll with smooth behavior
 
 **Given** Chrome is running with CDP enabled and a page is loaded
-**When** I run `chrome-cli interact scroll --smooth`
+**When** I run `agentchrome interact scroll --smooth`
 **Then** the page scrolls with smooth scrolling behavior
 **And** the command waits for the smooth scroll to complete before returning
 
@@ -93,48 +93,48 @@ Scrolling is a fundamental browser interaction needed for accessing elements tha
 
 **Given** Chrome is running with CDP enabled and a snapshot has been taken with UIDs assigned
 **And** the page has a scrollable container with UID "s3"
-**When** I run `chrome-cli interact scroll --container s3 --amount 200`
+**When** I run `agentchrome interact scroll --container s3 --amount 200`
 **Then** the container element scrolls down by 200 pixels (not the page)
 **And** the output JSON reflects the container's scroll position
 
 ### AC10: Scroll targeting a specific tab
 
 **Given** Chrome is running with CDP enabled and multiple tabs are open
-**When** I run `chrome-cli interact scroll --tab 2`
+**When** I run `agentchrome interact scroll --tab 2`
 **Then** the scroll is performed on tab 2
 **And** the output reflects the scroll position of tab 2
 
 ### AC11: Include snapshot after scroll
 
 **Given** Chrome is running with CDP enabled and a page is loaded
-**When** I run `chrome-cli interact scroll --include-snapshot`
+**When** I run `agentchrome interact scroll --include-snapshot`
 **Then** the page scrolls and the output JSON includes a `snapshot` field with the accessibility tree
 
 ### AC12: Scroll with conflicting flags errors
 
-**Given** chrome-cli is built
-**When** I run `chrome-cli interact scroll --to-top --to-bottom`
+**Given** agentchrome is built
+**When** I run `agentchrome interact scroll --to-top --to-bottom`
 **Then** the exit code is nonzero
 **And** stderr contains an error about conflicting options
 
 ### AC13: Scroll to nonexistent UID errors
 
 **Given** Chrome is running with CDP enabled and a snapshot has been taken
-**When** I run `chrome-cli interact scroll --to-element s999`
+**When** I run `agentchrome interact scroll --to-element s999`
 **Then** the exit code is nonzero
 **And** the output contains an error that UID "s999" was not found
 
 ### AC14: Scroll with horizontal direction
 
 **Given** Chrome is running with CDP enabled and a wide page is loaded
-**When** I run `chrome-cli interact scroll --direction right --amount 200`
+**When** I run `agentchrome interact scroll --direction right --amount 200`
 **Then** the page scrolls right by 200 pixels
 **And** the output JSON reflects the horizontal scroll delta and position
 
 ### AC15: Scroll subcommand requires no mandatory arguments
 
-**Given** chrome-cli is built
-**When** I run `chrome-cli interact scroll`
+**Given** agentchrome is built
+**When** I run `agentchrome interact scroll`
 **Then** the command succeeds with default behavior (scroll down by viewport height)
 **And** the exit code is 0
 
@@ -151,17 +151,17 @@ Feature: Scroll Interactions
     And a page is loaded with scrollable content
 
   Scenario: Scroll down by default
-    When I run "chrome-cli interact scroll"
+    When I run "agentchrome interact scroll"
     Then the output JSON should contain "scrolled"
     And the output JSON should contain "position"
     And the exit code should be 0
 
   Scenario: Scroll to top of page
-    When I run "chrome-cli interact scroll --to-top"
+    When I run "agentchrome interact scroll --to-top"
     Then the output JSON "position.y" should be 0
 
   Scenario: Scroll to bottom of page
-    When I run "chrome-cli interact scroll --to-bottom"
+    When I run "agentchrome interact scroll --to-bottom"
     Then the scroll position should be at the page bottom
 
   # ... all ACs become scenarios
@@ -192,7 +192,7 @@ Feature: Scroll Interactions
 |--------|-------------|
 | **Performance** | Scroll command should complete in < 500ms (excluding smooth scroll wait) |
 | **Reliability** | Scroll position reported must match actual browser scroll position |
-| **Platforms** | macOS, Linux, Windows (all platforms supported by chrome-cli) |
+| **Platforms** | macOS, Linux, Windows (all platforms supported by agentchrome) |
 | **Compatibility** | Works with Chrome/Chromium versions supporting CDP |
 
 ---

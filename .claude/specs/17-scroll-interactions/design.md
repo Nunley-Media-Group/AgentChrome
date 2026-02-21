@@ -55,7 +55,7 @@ The command integrates naturally into the existing `InteractCommand` enum as a n
 ### Data Flow
 
 ```
-1. User runs: chrome-cli interact scroll [options]
+1. User runs: agentchrome interact scroll [options]
 2. Clap parses args into ScrollArgs
 3. execute_scroll() sets up CDP session via setup_session()
 4. Read initial scroll position via Runtime.evaluate (window.scrollX/Y)
@@ -79,7 +79,7 @@ The command integrates naturally into the existing `InteractCommand` enum as a n
 
 | Command | Purpose |
 |---------|---------|
-| `chrome-cli interact scroll [OPTIONS]` | Scroll the page or a container element |
+| `agentchrome interact scroll [OPTIONS]` | Scroll the page or a container element |
 
 ### ScrollArgs (Clap Struct)
 

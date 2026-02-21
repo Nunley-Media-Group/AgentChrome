@@ -9,7 +9,7 @@
 
 ## Overview
 
-This feature adds an `upload` subcommand to the existing `form` command group in chrome-cli. The implementation follows the same architecture as the existing `fill`, `fill-many`, and `clear` operations in `src/form.rs` -- a new `FormCommand::Upload` variant with corresponding `FormUploadArgs` struct and an `execute_upload` function.
+This feature adds an `upload` subcommand to the existing `form` command group in agentchrome. The implementation follows the same architecture as the existing `fill`, `fill-many`, and `clear` operations in `src/form.rs` -- a new `FormCommand::Upload` variant with corresponding `FormUploadArgs` struct and an `execute_upload` function.
 
 File upload uses CDP's `DOM.setFileInputFiles` to programmatically set files on `<input type="file">` elements. Before calling CDP, the implementation validates that all file paths exist and are readable, and verifies that the target element is a file input by inspecting its type via `Runtime.callFunctionOn`. Target elements are resolved from UIDs (via the snapshot UID map) or CSS selectors, reusing the existing target resolution pattern from `form.rs`.
 
@@ -20,7 +20,7 @@ File upload uses CDP's `DOM.setFileInputFiles` to programmatically set files on 
 ### Component Diagram
 
 ```
-CLI Input (chrome-cli form upload s5 /tmp/photo.jpg)
+CLI Input (agentchrome form upload s5 /tmp/photo.jpg)
     |
 +------------------+
 |   CLI Layer      |  <- Parse args: FormArgs -> FormCommand::Upload(FormUploadArgs)
@@ -43,7 +43,7 @@ CLI Input (chrome-cli form upload s5 /tmp/photo.jpg)
 ### Data Flow
 
 ```
-1. User runs: chrome-cli form upload s5 /tmp/photo.jpg
+1. User runs: agentchrome form upload s5 /tmp/photo.jpg
 2. CLI layer parses args into FormUploadArgs { target: "s5", files: ["/tmp/photo.jpg"], ... }
 3. form.rs dispatcher calls execute_upload()
 4. Validate all file paths exist and are readable; compute total size
@@ -119,8 +119,8 @@ With `--include-snapshot`:
 | File not found | `"File not found: /nonexistent/file.txt"` |
 | File not readable | `"File not readable: /tmp/secret.txt"` |
 | Element is not a file input | `"Element is not a file input: s2"` |
-| UID not found in snapshot | `"UID 's999' not found. Run 'chrome-cli page snapshot' first."` |
-| No snapshot state | `"No snapshot state found. Run 'chrome-cli page snapshot' first to assign UIDs to interactive elements."` |
+| UID not found in snapshot | `"UID 's999' not found. Run 'agentchrome page snapshot' first."` |
+| No snapshot state | `"No snapshot state found. Run 'agentchrome page snapshot' first to assign UIDs to interactive elements."` |
 | CSS selector matches no element | `"Element not found for selector: #nonexistent"` |
 | CDP setFileInputFiles failed | `"Interaction failed (setFileInputFiles): <CDP error>"` |
 
@@ -129,8 +129,8 @@ With `--include-snapshot`:
 ## State Management
 
 No new persistent state. The feature reuses:
-- **Snapshot state** (`~/.chrome-cli/snapshot.json`) -- read UID-to-backendNodeId mappings
-- **Session state** (`~/.chrome-cli/session.json`) -- resolve CDP connection
+- **Snapshot state** (`~/.agentchrome/snapshot.json`) -- read UID-to-backendNodeId mappings
+- **Session state** (`~/.agentchrome/session.json`) -- resolve CDP connection
 
 When `--include-snapshot` is used, snapshot state is updated (same pattern as `form fill`).
 

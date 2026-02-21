@@ -65,7 +65,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] `PageTextArgs` struct with `--selector` (`Option<String>`) argument
 - [ ] `Command::Page` variant changed from unit to `Page(PageArgs)`
 - [ ] `cargo build` compiles without errors
-- [ ] `chrome-cli page text --help` shows the selector option and global flags
+- [ ] `agentchrome page text --help` shows the selector option and global flags
 
 **Notes**: Follow `TabsArgs`/`TabsCommand` pattern. The `--plain`, `--pretty`, `--json`, `--tab` flags are already global.
 
@@ -185,7 +185,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] `cargo fmt --check` passes
 - [ ] `cargo test --lib` passes (all unit tests including new ones)
 - [ ] `cargo build` succeeds
-- [ ] `chrome-cli page text --help` displays expected usage info
+- [ ] `agentchrome page text --help` displays expected usage info
 
 ---
 

@@ -77,7 +77,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **Depends**: T002
 **Acceptance**:
 - [ ] `execute_completions()` function defined that takes `&CompletionsArgs`
-- [ ] Uses `clap_complete::generate()` with `Cli::command()`, the shell, binary name `"chrome-cli"`, and `std::io::stdout()`
+- [ ] Uses `clap_complete::generate()` with `Cli::command()`, the shell, binary name `"agentchrome"`, and `std::io::stdout()`
 - [ ] Returns `Result<(), AppError>` (though it should always succeed)
 - [ ] Function is synchronous — no async/CDP/Chrome needed
 
@@ -89,8 +89,8 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **Acceptance**:
 - [ ] `Command::Completions(args) => execute_completions(args)` arm added to the `match` in `run()`
 - [ ] The completions arm does NOT load config or establish a Chrome connection
-- [ ] Running `chrome-cli completions bash` produces a non-empty completion script on stdout
-- [ ] Running `chrome-cli completions zsh` produces a non-empty completion script on stdout
+- [ ] Running `agentchrome completions bash` produces a non-empty completion script on stdout
+- [ ] Running `agentchrome completions zsh` produces a non-empty completion script on stdout
 - [ ] Exit code is 0 for all valid shells
 
 ---
@@ -188,7 +188,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **Depends**: T006
 **Acceptance**:
 - [ ] `CliWorld::run("tests/features/shell-completions.feature")` or equivalent added to `main()`
-- [ ] Existing step definitions in `CliWorld` are reused (Given chrome-cli is built / When I run / Then exit code / Then stdout should contain)
+- [ ] Existing step definitions in `CliWorld` are reused (Given agentchrome is built / When I run / Then exit code / Then stdout should contain)
 - [ ] New step definition added if needed for "stdout should not be empty" or similar
 - [ ] All completions BDD scenarios pass: `cargo test --test bdd`
 

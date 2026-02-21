@@ -9,7 +9,7 @@
 
 ## User Story
 
-**As a** developer or automation engineer using chrome-cli
+**As a** developer or automation engineer using agentchrome
 **I want** commands to automatically find and reuse a Chrome connection, manage CDP sessions per tab, and persist connection state across CLI invocations
 **So that** I don't have to pass connection details to every command, and I can efficiently target specific tabs
 
@@ -17,7 +17,7 @@
 
 ## Background
 
-Each chrome-cli invocation needs a connection to Chrome. Today, `chrome-cli connect` discovers or launches Chrome and outputs connection info, but that info is not persisted — the next command would need to rediscover Chrome from scratch. This is inefficient and fragile.
+Each agentchrome invocation needs a connection to Chrome. Today, `agentchrome connect` discovers or launches Chrome and outputs connection info, but that info is not persisted — the next command would need to rediscover Chrome from scratch. This is inefficient and fragile.
 
 This feature adds a lightweight session file (similar to `docker context` or `kubectl config`) so that after a successful `connect` or `--launch`, subsequent commands can automatically reconnect. It also adds CDP session management for targeting specific tabs, lazy domain enabling, and robust connection health checks before executing commands.
 
@@ -30,44 +30,44 @@ This feature adds a lightweight session file (similar to `docker context` or `ku
 ### AC1: Write session file after successful connect
 
 **Given** Chrome is running with remote debugging enabled
-**When** I run `chrome-cli connect`
-**Then** the tool connects to Chrome and writes a session file to `~/.chrome-cli/session.json`
+**When** I run `agentchrome connect`
+**Then** the tool connects to Chrome and writes a session file to `~/.agentchrome/session.json`
 **And** the session file contains `{"ws_url": "ws://...", "port": N, "pid": null, "timestamp": "..."}`
 **And** the exit code is 0
 
 **Example**:
 - Given: Chrome running on port 9222
-- When: `chrome-cli connect --port 9222`
-- Then: `~/.chrome-cli/session.json` contains `{"ws_url":"ws://127.0.0.1:9222/devtools/browser/abc","port":9222,"pid":null,"timestamp":"2026-02-11T12:00:00Z"}`
+- When: `agentchrome connect --port 9222`
+- Then: `~/.agentchrome/session.json` contains `{"ws_url":"ws://127.0.0.1:9222/devtools/browser/abc","port":9222,"pid":null,"timestamp":"2026-02-11T12:00:00Z"}`
 
 ### AC2: Write session file after successful launch
 
 **Given** Chrome is installed on the system
-**When** I run `chrome-cli connect --launch`
-**Then** the tool launches Chrome and writes a session file to `~/.chrome-cli/session.json`
+**When** I run `agentchrome connect --launch`
+**Then** the tool launches Chrome and writes a session file to `~/.agentchrome/session.json`
 **And** the session file contains the WebSocket URL, port, Chrome PID, and timestamp
 **And** the exit code is 0
 
 ### AC3: Subsequent commands auto-read session file
 
-**Given** a valid session file exists at `~/.chrome-cli/session.json`
+**Given** a valid session file exists at `~/.agentchrome/session.json`
 **And** no explicit `--ws-url` or `--port` flags are provided
-**When** I run a command that needs Chrome (e.g., `chrome-cli tabs list`)
+**When** I run a command that needs Chrome (e.g., `agentchrome tabs list`)
 **Then** the tool reads the session file and connects using the stored WebSocket URL
 **And** the command executes successfully
 
 ### AC4: Explicit flags override session file
 
-**Given** a valid session file exists at `~/.chrome-cli/session.json` pointing to port 9222
+**Given** a valid session file exists at `~/.agentchrome/session.json` pointing to port 9222
 **And** Chrome is also running on port 9333
-**When** I run `chrome-cli tabs list --port 9333`
+**When** I run `agentchrome tabs list --port 9333`
 **Then** the tool connects to port 9333, ignoring the session file
 **And** the command executes successfully
 
 ### AC5: Show connection status
 
 **Given** a valid session file exists
-**When** I run `chrome-cli connect --status`
+**When** I run `agentchrome connect --status`
 **Then** the tool reads the session file and displays connection info
 **And** indicates whether Chrome is still reachable at the stored address
 **And** the exit code is 0
@@ -75,21 +75,21 @@ This feature adds a lightweight session file (similar to `docker context` or `ku
 ### AC6: Show connection status when no session exists
 
 **Given** no session file exists
-**When** I run `chrome-cli connect --status`
+**When** I run `agentchrome connect --status`
 **Then** the tool reports that no active session was found
 **And** the exit code is non-zero
 
 ### AC7: Disconnect removes session file
 
 **Given** a valid session file exists
-**When** I run `chrome-cli connect --disconnect`
+**When** I run `agentchrome connect --disconnect`
 **Then** the session file is removed
 **And** the exit code is 0
 
 ### AC8: Disconnect kills launched Chrome process
 
 **Given** a session file exists with a PID (from a `--launch`)
-**When** I run `chrome-cli connect --disconnect`
+**When** I run `agentchrome connect --disconnect`
 **Then** the session file is removed
 **And** the Chrome process identified by the PID is sent SIGTERM (or equivalent)
 **And** if the process doesn't exist, it is silently ignored
@@ -104,7 +104,7 @@ This feature adds a lightweight session file (similar to `docker context` or `ku
   3. Check for session file (not present)
   4. Attempt auto-discovery (try port 9222)
   5. Return clear error if no Chrome found
-**And** the error message suggests using `chrome-cli connect` or `chrome-cli connect --launch`
+**And** the error message suggests using `agentchrome connect` or `agentchrome connect --launch`
 
 ### AC10: Connection health check before command execution
 
@@ -120,7 +120,7 @@ This feature adds a lightweight session file (similar to `docker context` or `ku
 **When** I run a command that needs Chrome
 **Then** the tool detects the stale session
 **And** outputs an error indicating the session is stale
-**And** suggests running `chrome-cli connect` to establish a new connection
+**And** suggests running `agentchrome connect` to establish a new connection
 
 ### AC12: Create CDP session for a tab
 
@@ -146,7 +146,7 @@ This feature adds a lightweight session file (similar to `docker context` or `ku
 ### AC15: Target tab by CDP target ID
 
 **Given** a connected Chrome instance with tabs
-**When** I run `chrome-cli tabs list` and get target IDs
+**When** I run `agentchrome tabs list` and get target IDs
 **And** I run a command with `--tab <target-id>`
 **Then** the command targets the tab with that CDP target ID
 
@@ -169,7 +169,7 @@ This feature adds a lightweight session file (similar to `docker context` or `ku
 **Given** a connected Chrome instance
 **When** I run a command with `--tab nonexistent-id`
 **Then** the tool reports that the specified tab was not found
-**And** suggests using `chrome-cli tabs list` to see available tabs
+**And** suggests using `agentchrome tabs list` to see available tabs
 **And** the exit code is non-zero
 
 ### AC19: Connection health check is fast
@@ -197,14 +197,14 @@ Feature: Session and connection management
 
   Scenario: Write session file after connect
     Given a Chrome instance is running with remote debugging
-    When I run "chrome-cli connect"
-    Then a session file should exist at "~/.chrome-cli/session.json"
+    When I run "agentchrome connect"
+    Then a session file should exist at "~/.agentchrome/session.json"
     And the session file should contain "ws_url" and "port" fields
     And the exit code should be 0
 
   Scenario: Write session file after launch
     Given Chrome is installed on the system
-    When I run "chrome-cli connect --launch"
+    When I run "agentchrome connect --launch"
     Then a session file should exist with a "pid" field
     And the exit code should be 0
 
@@ -222,22 +222,22 @@ Feature: Session and connection management
 
   Scenario: Show connection status
     Given a valid session file exists
-    When I run "chrome-cli connect --status"
+    When I run "agentchrome connect --status"
     Then the output shows connection info and reachability
 
   Scenario: No active session status
     Given no session file exists
-    When I run "chrome-cli connect --status"
+    When I run "agentchrome connect --status"
     Then the output indicates no active session
 
   Scenario: Disconnect removes session
     Given a valid session file exists
-    When I run "chrome-cli connect --disconnect"
+    When I run "agentchrome connect --disconnect"
     Then the session file is removed
 
   Scenario: Disconnect kills launched process
     Given a session file exists with a PID
-    When I run "chrome-cli connect --disconnect"
+    When I run "agentchrome connect --disconnect"
     Then the Chrome process is terminated
 
   # --- Connection Resolution ---
@@ -245,7 +245,7 @@ Feature: Session and connection management
   Scenario: Connection resolution chain with no Chrome found
     Given no flags, no session file, and no Chrome running
     When I run a command that needs Chrome
-    Then the error suggests using "chrome-cli connect"
+    Then the error suggests using "agentchrome connect"
 
   Scenario: Health check before command execution
     Given a valid session file exists
@@ -305,7 +305,7 @@ Feature: Session and connection management
 
 | ID | Requirement | Priority | Notes |
 |----|-------------|----------|-------|
-| FR1 | Write session file to `~/.chrome-cli/session.json` after successful connect/launch | Must | Contains ws_url, port, pid, timestamp |
+| FR1 | Write session file to `~/.agentchrome/session.json` after successful connect/launch | Must | Contains ws_url, port, pid, timestamp |
 | FR2 | Read session file as fallback when no explicit flags given | Must | Auto-reconnect pattern |
 | FR3 | `connect --status` shows current session info and reachability | Must | Status inspection |
 | FR4 | `connect --disconnect` removes session file and optionally kills Chrome | Must | Clean teardown |
@@ -317,7 +317,7 @@ Feature: Session and connection management
 | FR10 | `--tab <ID>` flag for targeting by target ID or numeric index | Must | Tab targeting |
 | FR11 | Default to first "page" type target when no `--tab` specified | Must | Sensible default |
 | FR12 | Graceful error on Chrome process death mid-session | Must | No panics or hangs |
-| FR13 | Session file directory creation (`~/.chrome-cli/`) if missing | Should | First-run experience |
+| FR13 | Session file directory creation (`~/.agentchrome/`) if missing | Should | First-run experience |
 
 ---
 
@@ -329,7 +329,7 @@ Feature: Session and connection management
 | **Security** | Session file readable only by the current user (mode 0600); no secrets stored |
 | **Reliability** | Graceful degradation when Chrome dies; stale session detection; no panics on invalid session files |
 | **Platforms** | macOS, Linux, Windows (session file path adapts per platform) |
-| **Error Messages** | Actionable messages: suggest `chrome-cli connect` for stale sessions, `tabs list` for invalid tab IDs |
+| **Error Messages** | Actionable messages: suggest `agentchrome connect` for stale sessions, `tabs list` for invalid tab IDs |
 
 ---
 
@@ -432,7 +432,7 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 
 ## Open Questions
 
-- [ ] Should the session file location be configurable (e.g., `CHROME_CLI_SESSION` env var)? — Nice to have, can defer
+- [ ] Should the session file location be configurable (e.g., `AGENTCHROME_SESSION` env var)? — Nice to have, can defer
 - [x] Should `connect --disconnect` require confirmation before killing Chrome? — No, CLI tools should be non-interactive; the `--disconnect` flag is explicit intent
 
 ---

@@ -69,7 +69,7 @@ Key architectural decisions:
 ### Data Flow
 
 ```
-1. User runs: chrome-cli connect [--port|--ws-url|--launch|...]
+1. User runs: agentchrome connect [--port|--ws-url|--launch|...]
 2. CLI layer parses ConnectArgs from clap
 3. Command layer (connect::execute) determines strategy:
    a. If --ws-url provided → skip discovery, connect directly

@@ -4,7 +4,7 @@
 # Issue: #4
 
 Feature: CDP WebSocket Client
-  As a developer using chrome-cli
+  As a developer using agentchrome
   I want a reliable CDP client that communicates with Chrome over WebSocket
   So that CLI commands can send DevTools Protocol messages to the browser
 

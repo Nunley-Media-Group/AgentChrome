@@ -17,7 +17,7 @@
 
 ## Background
 
-Chrome DevTools Protocol provides the `Tracing` domain for recording detailed performance traces. These traces capture page loading, rendering, script execution, and network activity. The MCP server already exposes `performance_start_trace`, `performance_stop_trace`, and `performance_analyze_insight` tools — chrome-cli needs equivalent CLI commands.
+Chrome DevTools Protocol provides the `Tracing` domain for recording detailed performance traces. These traces capture page loading, rendering, script execution, and network activity. The MCP server already exposes `performance_start_trace`, `performance_stop_trace`, and `performance_analyze_insight` tools — agentchrome needs equivalent CLI commands.
 
 Performance tracing is essential for developers who want to measure page load speed, identify render-blocking resources, and track Core Web Vitals (LCP, CLS, TTFB) in automated workflows. Trace files produced should be compatible with `chrome://tracing` and Chrome DevTools for deeper manual analysis.
 
@@ -28,7 +28,7 @@ Performance tracing is essential for developers who want to measure page load sp
 ### AC1: Start a performance trace with default options
 
 **Given** Chrome is running with CDP enabled and a page is loaded
-**When** I run `chrome-cli perf start`
+**When** I run `agentchrome perf start`
 **Then** a performance trace begins recording
 **And** the output contains `{"tracing": true, "file": "<path>"}`
 **And** the exit code is 0
@@ -36,7 +36,7 @@ Performance tracing is essential for developers who want to measure page load sp
 ### AC2: Start a trace with reload
 
 **Given** Chrome is running with CDP enabled and a page is loaded
-**When** I run `chrome-cli perf start --reload`
+**When** I run `agentchrome perf start --reload`
 **Then** the page reloads before the trace begins
 **And** a performance trace begins recording
 **And** the output confirms tracing is active
@@ -44,7 +44,7 @@ Performance tracing is essential for developers who want to measure page load sp
 ### AC3: Start a trace with auto-stop
 
 **Given** Chrome is running with CDP enabled and a page is loaded
-**When** I run `chrome-cli perf start --auto-stop`
+**When** I run `agentchrome perf start --auto-stop`
 **Then** a performance trace begins recording
 **And** the trace automatically stops after the page load completes
 **And** trace data is saved to a file
@@ -53,21 +53,21 @@ Performance tracing is essential for developers who want to measure page load sp
 ### AC4: Start a trace with a custom output file path
 
 **Given** Chrome is running with CDP enabled
-**When** I run `chrome-cli perf start --file /tmp/my-trace.json`
+**When** I run `agentchrome perf start --file /tmp/my-trace.json`
 **Then** the trace file is written to `/tmp/my-trace.json`
 **And** the output confirms the file path
 
 ### AC5: Start a trace targeting a specific tab
 
 **Given** Chrome is running with multiple tabs open
-**When** I run `chrome-cli perf start --tab <ID>`
+**When** I run `agentchrome perf start --tab <ID>`
 **Then** the trace is recorded for the specified tab
 **And** the exit code is 0
 
 ### AC6: Stop an active trace
 
 **Given** a performance trace is currently recording
-**When** I run `chrome-cli perf stop`
+**When** I run `agentchrome perf stop`
 **Then** the trace stops recording
 **And** trace data is collected and saved to a file
 **And** the output contains a trace summary with:
@@ -79,28 +79,28 @@ Performance tracing is essential for developers who want to measure page load sp
 ### AC7: Stop a trace with custom output file
 
 **Given** a performance trace is currently recording
-**When** I run `chrome-cli perf stop --file /tmp/output-trace.json`
+**When** I run `agentchrome perf stop --file /tmp/output-trace.json`
 **Then** the trace data is saved to `/tmp/output-trace.json`
 **And** the output confirms the file path
 
 ### AC8: Analyze a specific performance insight
 
 **Given** a trace file exists at a known path
-**When** I run `chrome-cli perf analyze LCPBreakdown --trace-file /tmp/trace.json`
+**When** I run `agentchrome perf analyze LCPBreakdown --trace-file /tmp/trace.json`
 **Then** the output contains a detailed breakdown of the LCP insight
 **And** the exit code is 0
 
 ### AC9: Analyze with an invalid insight name
 
 **Given** a trace file exists
-**When** I run `chrome-cli perf analyze InvalidInsight --trace-file /tmp/trace.json`
+**When** I run `agentchrome perf analyze InvalidInsight --trace-file /tmp/trace.json`
 **Then** an error message indicates the insight name is not recognized
 **And** the exit code is non-zero
 
 ### AC10: Quick Core Web Vitals measurement
 
 **Given** Chrome is running with CDP enabled and a page is loaded
-**When** I run `chrome-cli perf vitals`
+**When** I run `agentchrome perf vitals`
 **Then** a trace is started, the page is reloaded, the trace is stopped
 **And** the output contains Core Web Vitals metrics as JSON:
   - `lcp_ms` (Largest Contentful Paint)
@@ -111,7 +111,7 @@ Performance tracing is essential for developers who want to measure page load sp
 ### AC11: Stop when no trace is active
 
 **Given** no performance trace is currently recording
-**When** I run `chrome-cli perf stop`
+**When** I run `agentchrome perf stop`
 **Then** an error message indicates no trace is active
 **And** the exit code is non-zero
 
@@ -124,14 +124,14 @@ Performance tracing is essential for developers who want to measure page load sp
 ### AC13: JSON output format
 
 **Given** Chrome is running with CDP enabled
-**When** I run any `chrome-cli perf` subcommand with `--json`
+**When** I run any `agentchrome perf` subcommand with `--json`
 **Then** the output is valid JSON matching the documented schema
 **And** errors are reported as `{"error": "...", "code": N}`
 
 ### AC14: Plain text output format
 
 **Given** Chrome is running with CDP enabled
-**When** I run `chrome-cli perf vitals --plain`
+**When** I run `agentchrome perf vitals --plain`
 **Then** the output is human-readable plain text with labeled metrics
 
 ---

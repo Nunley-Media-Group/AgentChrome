@@ -51,7 +51,7 @@
 **Depends**: T001, T002
 **Acceptance**:
 - [ ] Build in debug mode: `cargo build`
-- [ ] Launch headless Chrome: `./target/debug/chrome-cli connect --launch --headless`
+- [ ] Launch headless Chrome: `./target/debug/agentchrome connect --launch --headless`
 - [ ] Navigate to a page, then navigate back with `--timeout 5000` — verify it completes successfully
 - [ ] Navigate forward with `--timeout 5000` — verify it completes successfully
 - [ ] Reload with `--timeout 5000` — verify it completes successfully

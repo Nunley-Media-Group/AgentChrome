@@ -28,32 +28,32 @@ The existing codebase already provides the building blocks: `query_targets()` re
 ### AC1: List all open tabs
 
 **Given** Chrome is running with CDP enabled and has open tabs
-**When** I run `chrome-cli tabs list`
+**When** I run `agentchrome tabs list`
 **Then** stdout contains a JSON array of tab objects with `id`, `url`, `title`, and `active` fields
 **And** the exit code is 0
 
 **Example**:
 - Given: Chrome has two tabs open (Google, GitHub)
-- When: `chrome-cli tabs list`
+- When: `agentchrome tabs list`
 - Then: `[{"id":"ABC123","url":"https://google.com","title":"Google","active":true},{"id":"DEF456","url":"https://github.com","title":"GitHub","active":false}]`
 
 ### AC2: List filters internal pages by default
 
 **Given** Chrome is running with tabs including `chrome://extensions/` and `chrome://newtab/`
-**When** I run `chrome-cli tabs list`
+**When** I run `agentchrome tabs list`
 **Then** tabs with `chrome://` URLs are excluded from the output (except `chrome://newtab/`)
 **And** tabs with `chrome-extension://` URLs are excluded from the output
 
 ### AC3: List all pages including internal ones
 
 **Given** Chrome is running with tabs including `chrome://extensions/`
-**When** I run `chrome-cli tabs list --all`
+**When** I run `agentchrome tabs list --all`
 **Then** all targets of type "page" are included, including `chrome://` and `chrome-extension://` URLs
 
 ### AC4: Create a new tab with URL
 
 **Given** Chrome is running with CDP enabled
-**When** I run `chrome-cli tabs create https://example.com`
+**When** I run `agentchrome tabs create https://example.com`
 **Then** a new tab opens and navigates to `https://example.com`
 **And** stdout contains a JSON object with `id`, `url`, and `title` fields
 **And** the exit code is 0
@@ -61,21 +61,21 @@ The existing codebase already provides the building blocks: `query_targets()` re
 ### AC5: Create a blank tab
 
 **Given** Chrome is running with CDP enabled
-**When** I run `chrome-cli tabs create`
+**When** I run `agentchrome tabs create`
 **Then** a new blank tab opens
 **And** stdout contains a JSON object with `id`, `url`, and `title` fields
 
 ### AC6: Create a tab in the background
 
 **Given** Chrome is running with CDP enabled
-**When** I run `chrome-cli tabs create --background https://example.com`
+**When** I run `agentchrome tabs create --background https://example.com`
 **Then** a new tab opens navigating to the URL
 **And** the previously active tab remains focused
 
 ### AC7: Close a tab by ID
 
 **Given** Chrome has multiple tabs open and tab "ABC123" exists
-**When** I run `chrome-cli tabs close ABC123`
+**When** I run `agentchrome tabs close ABC123`
 **Then** the tab with ID "ABC123" is closed
 **And** stdout contains a JSON object with `closed` and `remaining` fields
 **And** the exit code is 0
@@ -83,28 +83,28 @@ The existing codebase already provides the building blocks: `query_targets()` re
 ### AC8: Close a tab by index
 
 **Given** Chrome has at least 3 tabs open
-**When** I run `chrome-cli tabs close 1`
+**When** I run `agentchrome tabs close 1`
 **Then** the tab at index 1 (0-based) is closed
 **And** stdout contains a JSON object with `closed` and `remaining` fields
 
 ### AC9: Close multiple tabs
 
 **Given** Chrome has tabs "ABC123", "DEF456", and "GHI789" open
-**When** I run `chrome-cli tabs close ABC123 DEF456`
+**When** I run `agentchrome tabs close ABC123 DEF456`
 **Then** both tabs are closed
 **And** stdout contains a JSON object with `closed` (array of closed IDs) and `remaining` count
 
 ### AC10: Prevent closing the last tab
 
 **Given** Chrome has exactly one tab open
-**When** I run `chrome-cli tabs close <tab_id>`
+**When** I run `agentchrome tabs close <tab_id>`
 **Then** the command fails with an error message indicating the last tab cannot be closed
 **And** the exit code is non-zero
 
 ### AC11: Activate a tab by ID
 
 **Given** Chrome has multiple tabs and tab "DEF456" is not active
-**When** I run `chrome-cli tabs activate DEF456`
+**When** I run `agentchrome tabs activate DEF456`
 **Then** tab "DEF456" becomes the foreground tab
 **And** stdout contains a JSON object with `activated`, `url`, and `title` fields
 **And** the exit code is 0
@@ -112,35 +112,35 @@ The existing codebase already provides the building blocks: `query_targets()` re
 ### AC12: Activate a tab by index
 
 **Given** Chrome has at least 3 tabs open
-**When** I run `chrome-cli tabs activate 2`
+**When** I run `agentchrome tabs activate 2`
 **Then** the tab at index 2 (0-based) becomes the foreground tab
 **And** stdout contains a JSON object with `activated`, `url`, and `title` fields
 
 ### AC13: Tab not found error
 
 **Given** Chrome is running
-**When** I run `chrome-cli tabs close nonexistent` or `chrome-cli tabs activate nonexistent`
+**When** I run `agentchrome tabs close nonexistent` or `agentchrome tabs activate nonexistent`
 **Then** the command fails with a "tab not found" error
 **And** the exit code is 3 (target error)
 
 ### AC14: No Chrome connection error
 
 **Given** no Chrome instance is running or reachable
-**When** I run any `chrome-cli tabs` subcommand
+**When** I run any `agentchrome tabs` subcommand
 **Then** the command fails with a connection error
-**And** the error message suggests running `chrome-cli connect`
+**And** the error message suggests running `agentchrome connect`
 **And** the exit code is 2 (connection error)
 
 ### AC15: Plain text output for list
 
 **Given** Chrome has tabs open
-**When** I run `chrome-cli tabs list --plain`
+**When** I run `agentchrome tabs list --plain`
 **Then** stdout contains a human-readable table of tabs (index, title, URL, active indicator)
 
 ### AC16: Tab IDs use CDP target IDs
 
 **Given** Chrome is running with tabs open
-**When** I run `chrome-cli tabs list` multiple times within the same browser session
+**When** I run `agentchrome tabs list` multiple times within the same browser session
 **Then** the `id` field for each tab is the CDP target ID and remains consistent
 
 ---

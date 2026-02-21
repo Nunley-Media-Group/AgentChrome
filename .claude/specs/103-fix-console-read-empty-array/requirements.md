@@ -13,13 +13,13 @@
 
 ### Steps to Reproduce
 
-1. `chrome-cli connect --launch --headless`
-2. `chrome-cli navigate https://www.google.com --wait-until load`
-3. `chrome-cli js exec "console.log('info msg'); console.error('err msg'); 42"` — the JS response includes `console: [{level: "log", text: "info msg"}]` inline
-4. `chrome-cli console read` → `[]`
-5. Inject page-level script: `chrome-cli js exec "var s = document.createElement('script'); s.textContent = 'console.log(\"page\")'; document.head.appendChild(s);"`
-6. `chrome-cli console read` → `[]`
-7. `chrome-cli console read --errors-only` → `[]`
+1. `agentchrome connect --launch --headless`
+2. `agentchrome navigate https://www.google.com --wait-until load`
+3. `agentchrome js exec "console.log('info msg'); console.error('err msg'); 42"` — the JS response includes `console: [{level: "log", text: "info msg"}]` inline
+4. `agentchrome console read` → `[]`
+5. Inject page-level script: `agentchrome js exec "var s = document.createElement('script'); s.textContent = 'console.log(\"page\")'; document.head.appendChild(s);"`
+6. `agentchrome console read` → `[]`
+7. `agentchrome console read --errors-only` → `[]`
 
 ### Environment
 
@@ -46,7 +46,7 @@ Always — 100% reproducible on any page that has generated console messages.
 ### Error Output
 
 ```
-$ chrome-cli console read
+$ agentchrome console read
 []
 ```
 
@@ -61,7 +61,7 @@ No error — the command succeeds with exit code 0 but returns an empty array re
 ### AC1: Console read returns captured messages
 
 **Given** a page has generated console messages (e.g., via injected script)
-**When** I run `chrome-cli console read`
+**When** I run `agentchrome console read`
 **Then** the output is a JSON array containing the messages
 **And** each entry has `id`, `type`, `text`, and `timestamp` fields
 **And** the exit code should be 0
@@ -69,7 +69,7 @@ No error — the command succeeds with exit code 0 but returns an empty array re
 ### AC2: Errors-only filter works on captured messages
 
 **Given** a page has generated log, warn, and error console messages
-**When** I run `chrome-cli console read --errors-only`
+**When** I run `agentchrome console read --errors-only`
 **Then** only error-level messages are returned
 **And** the result is non-empty
 
@@ -84,7 +84,7 @@ No error — the command succeeds with exit code 0 but returns an empty array re
 ### AC4: Console follow streaming still works
 
 **Given** Chrome is running with a page open
-**When** I run `chrome-cli console follow --timeout 2000` and console messages are generated
+**When** I run `agentchrome console follow --timeout 2000` and console messages are generated
 **Then** messages are streamed as JSON lines
 **And** the existing follow behavior is unchanged
 

@@ -178,8 +178,8 @@
 **Depends**: T005, T006, T007, T008, T009, T010
 **Acceptance**:
 - [ ] Build: `cargo build`
-- [ ] Connect: `./target/debug/chrome-cli connect --launch --headless`
-- [ ] Navigate: `./target/debug/chrome-cli navigate https://example.com`
+- [ ] Connect: `./target/debug/agentchrome connect --launch --headless`
+- [ ] Navigate: `./target/debug/agentchrome navigate https://example.com`
 - [ ] `dom select "h1"` returns JSON array with h1 element
 - [ ] `dom select --xpath "//h1"` returns same result
 - [ ] `dom get-attribute <nodeId> href` on a link returns the href value
@@ -199,7 +199,7 @@
 - [ ] `dom select ".nonexistent"` returns `[]`
 - [ ] `dom get-attribute 999999 href` returns error with exit code 3
 - [ ] SauceDemo smoke test: navigate to https://www.saucedemo.com/, run `page snapshot`, then `dom select "#user-name"`, `dom get-attribute <nodeId> placeholder`
-- [ ] Disconnect and kill Chrome: `./target/debug/chrome-cli connect disconnect && pkill -f 'chrome.*--remote-debugging' || true`
+- [ ] Disconnect and kill Chrome: `./target/debug/agentchrome connect disconnect && pkill -f 'chrome.*--remote-debugging' || true`
 
 ### T012: Verify no regressions
 

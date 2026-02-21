@@ -9,7 +9,7 @@
 
 ## Overview
 
-This feature adds a `chrome-cli examples` subcommand that prints usage examples for each command group. The command is a "meta" command (like `completions` and `man`) that requires no Chrome/CDP connection. It serves static, embedded example data in plain text or JSON format.
+This feature adds a `agentchrome examples` subcommand that prints usage examples for each command group. The command is a "meta" command (like `completions` and `man`) that requires no Chrome/CDP connection. It serves static, embedded example data in plain text or JSON format.
 
 The implementation follows the established patterns in the codebase: a new `Examples` variant in the `Command` enum, a new `examples.rs` module with static example data, and output formatting via the existing `OutputFormat` mechanism (--json, --pretty, --plain).
 
@@ -20,7 +20,7 @@ The implementation follows the established patterns in the codebase: a new `Exam
 ### Component Diagram
 
 ```
-CLI Input: chrome-cli examples [command] [--json|--pretty|--plain]
+CLI Input: agentchrome examples [command] [--json|--pretty|--plain]
     ↓
 ┌──────────────────────────────┐
 │       CLI Layer (clap)       │ ← Parse args: optional command name, output format
@@ -44,7 +44,7 @@ No CDP, Chrome, or session layers are involved.
 ### Data Flow
 
 ```
-1. User runs: chrome-cli examples [navigate] [--json]
+1. User runs: agentchrome examples [navigate] [--json]
 2. Clap parses into Command::Examples(ExamplesArgs { command: Option<String> })
 3. main.rs dispatches to examples::execute_examples(&global, &args)
 4. execute_examples() looks up example data:
@@ -64,7 +64,7 @@ No CDP, Chrome, or session layers are involved.
 ### New CLI Subcommand
 
 ```
-chrome-cli examples [COMMAND] [--json|--pretty|--plain]
+agentchrome examples [COMMAND] [--json|--pretty|--plain]
 ```
 
 | Argument | Type | Required | Description |
@@ -78,22 +78,22 @@ Added to `Command` enum in `src/cli/mod.rs`:
 ```rust
 /// Show usage examples for commands
 #[command(
-    long_about = "Show usage examples for chrome-cli commands. Without arguments, lists all \
+    long_about = "Show usage examples for agentchrome commands. Without arguments, lists all \
         command groups with a brief description and one example each. With a command name, \
         shows detailed examples for that specific command group.",
     after_long_help = "\
 EXAMPLES:
   # List all command groups with summary examples
-  chrome-cli examples
+  agentchrome examples
 
   # Show detailed examples for the navigate command
-  chrome-cli examples navigate
+  agentchrome examples navigate
 
   # Get all examples as JSON (for programmatic use)
-  chrome-cli examples --json
+  agentchrome examples --json
 
   # Pretty-printed JSON output
-  chrome-cli examples --pretty"
+  agentchrome examples --pretty"
 )]
 Examples(ExamplesArgs),
 ```
@@ -119,11 +119,11 @@ pub struct ExamplesArgs {
     "description": "Connect to or launch a Chrome instance",
     "examples": [
       {
-        "cmd": "chrome-cli connect",
+        "cmd": "agentchrome connect",
         "description": "Connect to Chrome on the default port"
       },
       {
-        "cmd": "chrome-cli connect --launch --headless",
+        "cmd": "agentchrome connect --launch --headless",
         "description": "Launch a new headless Chrome instance"
       }
     ]
@@ -139,12 +139,12 @@ pub struct ExamplesArgs {
   "description": "URL navigation and history",
   "examples": [
     {
-      "cmd": "chrome-cli navigate https://example.com --wait-until load",
+      "cmd": "agentchrome navigate https://example.com --wait-until load",
       "description": "Navigate to a URL and wait for load",
       "flags": ["--wait-until"]
     },
     {
-      "cmd": "chrome-cli navigate https://app.example.com --wait-until networkidle",
+      "cmd": "agentchrome navigate https://app.example.com --wait-until networkidle",
       "description": "Navigate and wait for network idle (for SPAs)",
       "flags": ["--wait-until"]
     }
@@ -156,13 +156,13 @@ pub struct ExamplesArgs {
 
 ```
 connect — Connect to or launch a Chrome instance
-  chrome-cli connect
+  agentchrome connect
 
 tabs — Tab management (list, create, close, activate)
-  chrome-cli tabs list
+  agentchrome tabs list
 
 navigate — URL navigation and history
-  chrome-cli navigate https://example.com
+  agentchrome navigate https://example.com
 ...
 ```
 
@@ -172,16 +172,16 @@ navigate — URL navigation and history
 navigate — URL navigation and history
 
   # Navigate to a URL and wait for load
-  chrome-cli navigate https://example.com --wait-until load
+  agentchrome navigate https://example.com --wait-until load
 
   # Navigate and wait for network idle (for SPAs)
-  chrome-cli navigate https://app.example.com --wait-until networkidle
+  agentchrome navigate https://app.example.com --wait-until networkidle
 
   # Go back in history
-  chrome-cli navigate back
+  agentchrome navigate back
 
   # Reload without cache
-  chrome-cli navigate reload --ignore-cache
+  agentchrome navigate reload --ignore-cache
 ```
 
 ### Errors

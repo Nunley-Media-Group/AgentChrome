@@ -13,18 +13,18 @@
 
 ### Steps to Reproduce
 
-1. Launch Chrome: `chrome-cli connect --launch`
-2. Navigate: `chrome-cli navigate "https://www.google.com"`
-3. Trigger alert: `chrome-cli js exec "setTimeout(() => alert('test'), 100)"`
+1. Launch Chrome: `agentchrome connect --launch`
+2. Navigate: `agentchrome navigate "https://www.google.com"`
+3. Trigger alert: `agentchrome js exec "setTimeout(() => alert('test'), 100)"`
 4. Wait 2 seconds for the dialog to appear
-5. Query dialog: `chrome-cli dialog info --pretty`
+5. Query dialog: `agentchrome dialog info --pretty`
 
 ### Environment
 
 | Factor | Value |
 |--------|-------|
 | **OS / Platform** | macOS (Darwin 25.2.0) |
-| **Version / Commit** | chrome-cli 0.1.0 (commit 01989d5) |
+| **Version / Commit** | agentchrome 0.1.0 (commit 01989d5) |
 | **Browser / Runtime** | Chrome with CDP enabled |
 | **Configuration** | Default (no emulate overrides) |
 
@@ -58,37 +58,37 @@ The same timeout occurs with `dialog handle accept`. Both `dialog info` and `dia
 ### AC1: dialog info works with open alert dialog
 
 **Given** a JavaScript alert dialog is open on the page
-**When** I run `chrome-cli dialog info --pretty`
+**When** I run `agentchrome dialog info --pretty`
 **Then** the output shows `"open": true`, the dialog type `"alert"`, and the dialog message
 
 ### AC2: dialog handle accept works with open alert dialog
 
 **Given** a JavaScript alert dialog is open on the page
-**When** I run `chrome-cli dialog handle accept --pretty`
+**When** I run `agentchrome dialog handle accept --pretty`
 **Then** the dialog is dismissed and the command returns `"action": "accept"` with exit code 0
 
 ### AC3: dialog handle dismiss works with open confirm dialog
 
 **Given** a JavaScript confirm dialog is open on the page
-**When** I run `chrome-cli dialog handle dismiss --pretty`
+**When** I run `agentchrome dialog handle dismiss --pretty`
 **Then** the dialog is dismissed with `"action": "dismiss"` and exit code 0
 
 ### AC4: dialog handle accept with text works for prompt dialog
 
 **Given** a JavaScript prompt dialog is open on the page
-**When** I run `chrome-cli dialog handle accept --text "answer" --pretty`
+**When** I run `agentchrome dialog handle accept --text "answer" --pretty`
 **Then** the dialog is accepted with the provided text and the command returns success
 
 ### AC5: dialog commands still work when no dialog is open
 
 **Given** no JavaScript dialog is currently open on the page
-**When** I run `chrome-cli dialog info`
+**When** I run `agentchrome dialog info`
 **Then** the output shows `"open": false` (no regression from the fix)
 
 ### AC6: dialog handle returns error when no dialog is open
 
 **Given** no JavaScript dialog is currently open on the page
-**When** I run `chrome-cli dialog handle accept`
+**When** I run `agentchrome dialog handle accept`
 **Then** the command returns an error indicating no dialog is open (existing behavior preserved)
 
 ---

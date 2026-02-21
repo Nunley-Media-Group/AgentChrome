@@ -12,7 +12,7 @@ Feature: Page screenshot --uid no longer fails with 'Could not find node'
   This was fixed by adding a `DOM.getDocument` call before `DOM.describeNode`.
 
   Background:
-    Given chrome-cli is built
+    Given agentchrome is built
 
   # --- Bug Is Fixed ---
 
@@ -38,6 +38,6 @@ Feature: Page screenshot --uid no longer fails with 'Could not find node'
 
   @regression
   Scenario: resolve_uid_clip passes backendNodeId directly to DOM.getBoxModel
-    Given chrome-cli is built
+    Given agentchrome is built
     When I check the resolve_uid_clip implementation
     Then it should pass backendNodeId directly to DOM.getBoxModel

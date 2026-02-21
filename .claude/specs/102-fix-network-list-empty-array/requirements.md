@@ -13,12 +13,12 @@
 
 ### Steps to Reproduce
 
-1. `chrome-cli connect --launch --headless`
-2. `chrome-cli navigate https://www.google.com --wait-until load`
-3. `chrome-cli navigate reload` (generates network traffic)
-4. `chrome-cli network list` — returns `[]`
-5. `chrome-cli network list --type document` — returns `[]`
-6. Meanwhile, `chrome-cli network follow --timeout 3000` during a reload DOES capture requests
+1. `agentchrome connect --launch --headless`
+2. `agentchrome navigate https://www.google.com --wait-until load`
+3. `agentchrome navigate reload` (generates network traffic)
+4. `agentchrome network list` — returns `[]`
+5. `agentchrome network list --type document` — returns `[]`
+6. Meanwhile, `agentchrome network follow --timeout 3000` during a reload DOES capture requests
 
 ### Environment
 
@@ -45,7 +45,7 @@ Always — 100% reproducible on any page that has finished loading.
 ### Error Output
 
 ```
-$ chrome-cli network list
+$ agentchrome network list
 []
 ```
 
@@ -60,34 +60,34 @@ No error — the command succeeds with exit code 0 but returns an empty array re
 ### AC1: Network list returns captured requests after page load
 
 **Given** Chrome is running and a page has been loaded (e.g., `https://www.google.com`)
-**When** I run `chrome-cli network list`
+**When** I run `agentchrome network list`
 **Then** the output is a JSON array containing at least one network request
 **And** each entry has `id`, `method`, `url`, `status`, and `type` fields
 
 ### AC2: Type filter works on captured requests
 
 **Given** Chrome is running and a page has been loaded with network requests of various types
-**When** I run `chrome-cli network list --type document`
+**When** I run `agentchrome network list --type document`
 **Then** only document-type requests are returned
 **And** the result is non-empty
 
 ### AC3: URL filter works on captured requests
 
 **Given** Chrome is running and a page at `https://www.google.com` has been loaded
-**When** I run `chrome-cli network list --url "google"`
+**When** I run `agentchrome network list --url "google"`
 **Then** only requests with "google" in the URL are returned
 **And** the result is non-empty
 
 ### AC4: Network get returns request details for captured requests
 
 **Given** Chrome is running and `network list` has returned request entries
-**When** I run `chrome-cli network get <request-id>` with a valid ID from the list
+**When** I run `agentchrome network get <request-id>` with a valid ID from the list
 **Then** detailed request, response, and timing information is returned
 
 ### AC5: Network follow streaming still works
 
 **Given** Chrome is running with a page open
-**When** I run `chrome-cli network follow --timeout 3000` and the page makes requests
+**When** I run `agentchrome network follow --timeout 3000` and the page makes requests
 **Then** completed requests are streamed as JSON lines
 **And** the existing follow behavior is unchanged
 

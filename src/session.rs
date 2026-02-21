@@ -62,7 +62,7 @@ impl From<SessionError> for crate::error::AppError {
     }
 }
 
-/// Returns the path to the session file: `~/.chrome-cli/session.json`.
+/// Returns the path to the session file: `~/.agentchrome/session.json`.
 ///
 /// Uses `$HOME` on Unix and `%USERPROFILE%` on Windows.
 ///
@@ -71,7 +71,7 @@ impl From<SessionError> for crate::error::AppError {
 /// Returns `SessionError::NoHomeDir` if the home directory cannot be determined.
 pub fn session_file_path() -> Result<PathBuf, SessionError> {
     let home = home_dir()?;
-    Ok(home.join(".chrome-cli").join("session.json"))
+    Ok(home.join(".agentchrome").join("session.json"))
 }
 
 fn home_dir() -> Result<PathBuf, SessionError> {
@@ -85,7 +85,7 @@ fn home_dir() -> Result<PathBuf, SessionError> {
         .map_err(|_| SessionError::NoHomeDir)
 }
 
-/// Write session data to the session file. Creates `~/.chrome-cli/` if needed.
+/// Write session data to the session file. Creates `~/.agentchrome/` if needed.
 ///
 /// Uses atomic write (write to temp file then rename) and sets file permissions
 /// to `0o600` on Unix.
@@ -236,7 +236,7 @@ mod tests {
     #[test]
     fn session_file_path_ends_with_expected_suffix() {
         let path = session_file_path().unwrap();
-        assert!(path.ends_with(".chrome-cli/session.json"));
+        assert!(path.ends_with(".agentchrome/session.json"));
     }
 
     #[test]
@@ -265,7 +265,7 @@ mod tests {
 
     #[test]
     fn write_read_round_trip() {
-        let dir = std::env::temp_dir().join("chrome-cli-test-session-rt");
+        let dir = std::env::temp_dir().join("agentchrome-test-session-rt");
         let _ = std::fs::remove_dir_all(&dir);
         let path = dir.join("session.json");
 
@@ -291,7 +291,7 @@ mod tests {
 
     #[test]
     fn write_read_round_trip_no_pid() {
-        let dir = std::env::temp_dir().join("chrome-cli-test-session-nopid");
+        let dir = std::env::temp_dir().join("agentchrome-test-session-nopid");
         let _ = std::fs::remove_dir_all(&dir);
         let path = dir.join("session.json");
 
@@ -315,14 +315,14 @@ mod tests {
 
     #[test]
     fn read_nonexistent_returns_none() {
-        let path = std::path::Path::new("/tmp/chrome-cli-test-nonexistent/session.json");
+        let path = std::path::Path::new("/tmp/agentchrome-test-nonexistent/session.json");
         let result = read_session_from(path).unwrap();
         assert!(result.is_none());
     }
 
     #[test]
     fn read_invalid_json_returns_error() {
-        let dir = std::env::temp_dir().join("chrome-cli-test-session-invalid");
+        let dir = std::env::temp_dir().join("agentchrome-test-session-invalid");
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("session.json");
@@ -336,13 +336,13 @@ mod tests {
 
     #[test]
     fn delete_nonexistent_returns_ok() {
-        let path = std::path::Path::new("/tmp/chrome-cli-test-del-nonexist/session.json");
+        let path = std::path::Path::new("/tmp/agentchrome-test-del-nonexist/session.json");
         assert!(delete_session_from(path).is_ok());
     }
 
     #[test]
     fn delete_existing_removes_file() {
-        let dir = std::env::temp_dir().join("chrome-cli-test-session-del");
+        let dir = std::env::temp_dir().join("agentchrome-test-session-del");
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("session.json");
@@ -373,7 +373,7 @@ mod tests {
 
     #[test]
     fn pid_preserved_when_ports_match() {
-        let dir = std::env::temp_dir().join("chrome-cli-test-pid-preserve");
+        let dir = std::env::temp_dir().join("agentchrome-test-pid-preserve");
         let _ = std::fs::remove_dir_all(&dir);
         let path = dir.join("session.json");
 
@@ -400,7 +400,7 @@ mod tests {
 
     #[test]
     fn pid_not_preserved_when_ports_differ() {
-        let dir = std::env::temp_dir().join("chrome-cli-test-pid-nopreserve");
+        let dir = std::env::temp_dir().join("agentchrome-test-pid-nopreserve");
         let _ = std::fs::remove_dir_all(&dir);
         let path = dir.join("session.json");
 
@@ -423,7 +423,7 @@ mod tests {
 
     #[test]
     fn pid_not_injected_when_no_prior_session() {
-        let dir = std::env::temp_dir().join("chrome-cli-test-pid-noinject");
+        let dir = std::env::temp_dir().join("agentchrome-test-pid-noinject");
         let _ = std::fs::remove_dir_all(&dir);
         // Do NOT create the session file
 
@@ -439,7 +439,7 @@ mod tests {
 
     #[test]
     fn incoming_pid_takes_priority_over_existing() {
-        let dir = std::env::temp_dir().join("chrome-cli-test-pid-priority");
+        let dir = std::env::temp_dir().join("agentchrome-test-pid-priority");
         let _ = std::fs::remove_dir_all(&dir);
         let path = dir.join("session.json");
 
@@ -462,7 +462,7 @@ mod tests {
 
     #[test]
     fn write_read_round_trip_with_active_tab_id() {
-        let dir = std::env::temp_dir().join("chrome-cli-test-session-active-tab");
+        let dir = std::env::temp_dir().join("agentchrome-test-session-active-tab");
         let _ = std::fs::remove_dir_all(&dir);
         let path = dir.join("session.json");
 
@@ -484,7 +484,7 @@ mod tests {
 
     #[test]
     fn active_tab_id_skipped_when_none() {
-        let dir = std::env::temp_dir().join("chrome-cli-test-session-no-active-tab");
+        let dir = std::env::temp_dir().join("agentchrome-test-session-no-active-tab");
         let _ = std::fs::remove_dir_all(&dir);
         let path = dir.join("session.json");
 
@@ -508,7 +508,7 @@ mod tests {
 
     #[test]
     fn old_session_without_active_tab_id_deserializes() {
-        let dir = std::env::temp_dir().join("chrome-cli-test-session-compat");
+        let dir = std::env::temp_dir().join("agentchrome-test-session-compat");
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("session.json");

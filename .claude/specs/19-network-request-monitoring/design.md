@@ -9,7 +9,7 @@
 
 ## Overview
 
-This feature adds a `network` subcommand group to chrome-cli with three subcommands: `list`, `get`, and `follow`. The implementation subscribes to CDP Network domain events, correlates request/response pairs by `requestId`, and provides filtering, pagination, and real-time streaming. The architecture follows the established command module pattern (identical to `console.rs`) with output types, a dispatcher function, and per-subcommand implementations.
+This feature adds a `network` subcommand group to agentchrome with three subcommands: `list`, `get`, and `follow`. The implementation subscribes to CDP Network domain events, correlates request/response pairs by `requestId`, and provides filtering, pagination, and real-time streaming. The architecture follows the established command module pattern (identical to `console.rs`) with output types, a dispatcher function, and per-subcommand implementations.
 
 The key technical challenge is correlating multiple asynchronous CDP events (`requestWillBeSent`, `responseReceived`, `loadingFinished`, `loadingFailed`) into coherent `NetworkRequest` objects. A `HashMap<String, NetworkRequest>` keyed by CDP `requestId` accumulates partial state as events arrive, with navigation tracking to segment requests by page load.
 
@@ -75,9 +75,9 @@ CDP Layer (src/connection.rs — ManagedSession)
 
 | Command | Type | Purpose |
 |---------|------|---------|
-| `chrome-cli network list` | GET-like | List network request summaries |
-| `chrome-cli network get <REQ_ID>` | GET-like | Get detailed request/response info |
-| `chrome-cli network follow` | Stream | Real-time network request stream |
+| `agentchrome network list` | GET-like | List network request summaries |
+| `agentchrome network get <REQ_ID>` | GET-like | Get detailed request/response info |
+| `agentchrome network follow` | Stream | Real-time network request stream |
 
 ### CLI Arguments
 

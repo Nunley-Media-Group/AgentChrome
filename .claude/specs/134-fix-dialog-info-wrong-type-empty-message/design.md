@@ -11,7 +11,7 @@
 
 The original analysis incorrectly assumed Chrome re-emits `Page.javascriptDialogOpening` when `Page.enable` is sent on a new session. **Chrome does not do this.** CDP events are ephemeral — they fire once at the moment the dialog opens and are never replayed.
 
-The actual root cause is an **architectural mismatch**: chrome-cli creates a fresh CDP connection per command invocation, but dialog metadata is only available via the `Page.javascriptDialogOpening` event, which fires exactly once. When `dialog info` runs, it connects to Chrome fresh — by that time, the dialog event has long since fired (during a previous command's lifetime or while no CLI process was connected) and is permanently lost.
+The actual root cause is an **architectural mismatch**: agentchrome creates a fresh CDP connection per command invocation, but dialog metadata is only available via the `Page.javascriptDialogOpening` event, which fires exactly once. When `dialog info` runs, it connects to Chrome fresh — by that time, the dialog event has long since fired (during a previous command's lifetime or while no CLI process was connected) and is permanently lost.
 
 The sequence:
 1. User runs `js exec "setTimeout(()=>alert('test'),100)" --no-await` — CLI connects, sends JS, disconnects
@@ -55,7 +55,7 @@ The approach has two parts:
 
 When commands that interact with pages run (navigate, js exec, etc.), inject a script via `Runtime.evaluate` that:
 1. Overrides `window.alert`, `window.confirm`, `window.prompt`
-2. Before calling the original function, stores `{type, message, defaultValue}` in a cookie named `__chrome_cli_dialog`
+2. Before calling the original function, stores `{type, message, defaultValue}` in a cookie named `__agentchrome_dialog`
 3. The cookie has a short max-age (e.g., 300s) to auto-expire
 
 Also register the script via `Page.addScriptToEvaluateOnNewDocument` so it persists across navigations within the session.
@@ -64,7 +64,7 @@ Also register the script via `Page.addScriptToEvaluateOnNewDocument` so it persi
 
 When `dialog info` or `dialog handle` runs:
 1. Detect dialog is open via `Runtime.evaluate` probe timeout (existing approach, works)
-2. Read `Network.getCookies` to extract the `__chrome_cli_dialog` cookie
+2. Read `Network.getCookies` to extract the `__agentchrome_dialog` cookie
 3. Parse the cookie JSON for type, message, and defaultValue
 4. Use this metadata for the response
 
@@ -72,7 +72,7 @@ When `dialog info` or `dialog handle` runs:
 
 | File | Change | Rationale |
 |------|--------|-----------|
-| `src/dialog.rs` | Add `read_dialog_cookie()` async fn that reads `Network.getCookies` and parses `__chrome_cli_dialog` | Provides dialog metadata from cookie side-channel |
+| `src/dialog.rs` | Add `read_dialog_cookie()` async fn that reads `Network.getCookies` and parses `__agentchrome_dialog` | Provides dialog metadata from cookie side-channel |
 | `src/dialog.rs` | Add `probe_dialog_open()` helper to detect dialog via `Runtime.evaluate` timeout | Shared helper for info and handle commands |
 | `src/dialog.rs` | Add `dismiss_via_navigation()` fallback for `dialog handle` | When `Page.handleJavaScriptDialog` fails (Page domain wasn't enabled before dialog), reload page via `Page.navigate` to dismiss dialog |
 | `src/dialog.rs` | Simplify `setup_dialog_session()` — no event subscription, just `Page.enable` with timeout | No longer returns event receiver since cookie approach replaces event-based metadata |
@@ -107,7 +107,7 @@ Limitations of the navigation fallback:
 | Risk | Likelihood | Mitigation |
 |------|------------|------------|
 | Interceptor script breaks page JavaScript | Very Low — the script wraps native functions and calls the originals | Interceptor is a simple closure that only adds a cookie before delegating |
-| Cookie conflicts with page cookies | Very Low — uses `__chrome_cli_` prefix unlikely to collide | Prefix is distinctive and cookie auto-expires in 300s |
+| Cookie conflicts with page cookies | Very Low — uses `__agentchrome_` prefix unlikely to collide | Prefix is distinctive and cookie auto-expires in 300s |
 | `Network.getCookies` blocked by dialog | Proven not to happen — tested and confirmed it works | Network domain bypasses the renderer |
 | Commands become slower due to interceptor install | Negligible — `Runtime.evaluate` for a small script is <5ms | Fire-and-forget with short timeout, non-blocking |
 | Interceptors not installed (Chrome launched externally) | Medium — falls back to `"unknown"` type | Acceptable degradation; users can run any command first to install |

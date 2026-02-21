@@ -13,10 +13,10 @@
 
 ### Steps to Reproduce
 
-1. `chrome-cli connect --launch --headless`
-2. `chrome-cli tabs create https://www.google.com` — Google tab becomes active
-3. `chrome-cli tabs create --background https://www.google.com/search?q=test`
-4. `chrome-cli tabs list` — the background tab is now `active: true`
+1. `agentchrome connect --launch --headless`
+2. `agentchrome tabs create https://www.google.com` — Google tab becomes active
+3. `agentchrome tabs create --background https://www.google.com/search?q=test`
+4. `agentchrome tabs list` — the background tab is now `active: true`
 
 ### Environment
 

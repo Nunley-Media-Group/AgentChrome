@@ -1,46 +1,46 @@
 # Claude Code Integration Guide
 
-Use chrome-cli to give Claude Code browser automation capabilities — navigate pages,
+Use agentchrome to give Claude Code browser automation capabilities — navigate pages,
 inspect content, fill forms, take screenshots, and debug web apps, all from the CLI.
 
 ## Prerequisites
 
-- **chrome-cli** installed and on your `PATH` ([Installation](../README.md#installation))
+- **agentchrome** installed and on your `PATH` ([Installation](../README.md#installation))
 - **Chrome or Chromium** installed (any channel: stable, beta, canary, dev)
 
 Verify your setup:
 
 ```sh
-# Confirm chrome-cli is available
-chrome-cli --help
+# Confirm agentchrome is available
+agentchrome --help
 
 # Machine-readable command manifest (JSON)
-chrome-cli capabilities
+agentchrome capabilities
 
 # See examples for any command
-chrome-cli examples navigate
+agentchrome examples navigate
 ```
 
 ## Discovery & Setup
 
-Claude Code discovers chrome-cli through three mechanisms:
+Claude Code discovers agentchrome through three mechanisms:
 
-1. **PATH lookup** — Claude Code runs shell commands, so chrome-cli must be on `PATH`.
+1. **PATH lookup** — Claude Code runs shell commands, so agentchrome must be on `PATH`.
 2. **`--help` text** — Every command and subcommand supports `--help` for usage details.
-3. **`capabilities` command** — `chrome-cli capabilities` outputs a complete JSON manifest of all commands, flags, arguments, and exit codes. This is the fastest way for an AI agent to learn the full CLI surface.
-4. **`examples` command** — `chrome-cli examples <command>` shows practical usage examples for each command group.
+3. **`capabilities` command** — `agentchrome capabilities` outputs a complete JSON manifest of all commands, flags, arguments, and exit codes. This is the fastest way for an AI agent to learn the full CLI surface.
+4. **`examples` command** — `agentchrome examples <command>` shows practical usage examples for each command group.
 
 ### Setup checklist
 
-1. Install chrome-cli (`cargo install chrome-cli` or download a release binary)
-2. Verify: `chrome-cli --help`
-3. Launch Chrome: `chrome-cli connect --launch --headless`
-4. Test the connection: `chrome-cli page text`
-5. Add chrome-cli to your project's `CLAUDE.md` (see [CLAUDE.md Template](#claudemd-template) below)
+1. Install agentchrome (`cargo install agentchrome` or download a release binary)
+2. Verify: `agentchrome --help`
+3. Launch Chrome: `agentchrome connect --launch --headless`
+4. Test the connection: `agentchrome page text`
+5. Add agentchrome to your project's `CLAUDE.md` (see [CLAUDE.md Template](#claudemd-template) below)
 
 ## CLAUDE.md Template
 
-Drop the file [`examples/CLAUDE.md.example`](../examples/CLAUDE.md.example) into your project root as `CLAUDE.md` (or append its contents to an existing one). This teaches Claude Code how to use chrome-cli for browser automation in your project.
+Drop the file [`examples/CLAUDE.md.example`](../examples/CLAUDE.md.example) into your project root as `CLAUDE.md` (or append its contents to an existing one). This teaches Claude Code how to use agentchrome for browser automation in your project.
 
 Customize the template:
 - Replace `http://localhost:3000` with your dev server URL
@@ -55,19 +55,19 @@ Verify that your web application renders correctly and interactive elements work
 
 ```sh
 # 1. Connect to Chrome (launches headless if not running)
-chrome-cli connect --launch --headless
+agentchrome connect --launch --headless
 
 # 2. Navigate to the app
-chrome-cli navigate http://localhost:3000 --wait-until networkidle
+agentchrome navigate http://localhost:3000 --wait-until networkidle
 
 # 3. Capture the accessibility tree to see the page structure
-chrome-cli page snapshot
+agentchrome page snapshot
 
 # 4. Click a button (using the UID from the snapshot)
-chrome-cli interact click s5
+agentchrome interact click s5
 
 # 5. Verify the result — take a new snapshot
-chrome-cli page snapshot
+agentchrome page snapshot
 ```
 
 ### Scraping Data
@@ -76,16 +76,16 @@ Extract structured content from web pages:
 
 ```sh
 # 1. Navigate to the target page
-chrome-cli navigate https://example.com/data --wait-until networkidle
+agentchrome navigate https://example.com/data --wait-until networkidle
 
 # 2. Get plain text content
-chrome-cli page text
+agentchrome page text
 
 # 3. Or get the accessibility tree for structured data
-chrome-cli page snapshot
+agentchrome page snapshot
 
 # 4. Run JavaScript to extract specific data
-chrome-cli js exec "JSON.stringify([...document.querySelectorAll('tr')].map(r => r.textContent))"
+agentchrome js exec "JSON.stringify([...document.querySelectorAll('tr')].map(r => r.textContent))"
 ```
 
 ### Debugging UI Issues
@@ -94,19 +94,19 @@ Investigate visual bugs, console errors, and network problems:
 
 ```sh
 # 1. Take a screenshot to see the current state
-chrome-cli page screenshot --file debug.png
+agentchrome page screenshot --file debug.png
 
 # 2. Check for console errors
-chrome-cli console read --errors-only
+agentchrome console read --errors-only
 
 # 3. Follow console messages in real time while reproducing the issue
-chrome-cli console follow --timeout 10000
+agentchrome console follow --timeout 10000
 
 # 4. Monitor network requests to find failed API calls
-chrome-cli network follow --timeout 10000 --type xhr,fetch
+agentchrome network follow --timeout 10000 --type xhr,fetch
 
 # 5. Inspect a specific element by searching for it
-chrome-cli page find "Submit" --role button
+agentchrome page find "Submit" --role button
 ```
 
 ### Form Automation
@@ -115,20 +115,20 @@ Fill and submit forms reliably:
 
 ```sh
 # 1. Snapshot the page to discover form field UIDs
-chrome-cli page snapshot
+agentchrome page snapshot
 
 # 2. Fill multiple fields at once (most reliable approach)
-chrome-cli form fill-many '[{"uid": "s5", "value": "user@example.com"}, {"uid": "s8", "value": "password123"}]'
+agentchrome form fill-many '[{"uid": "s5", "value": "user@example.com"}, {"uid": "s8", "value": "password123"}]'
 
 # 3. Or fill fields individually
-chrome-cli form fill s5 "user@example.com"
-chrome-cli form fill s8 "password123"
+agentchrome form fill s5 "user@example.com"
+agentchrome form fill s8 "password123"
 
 # 4. Click the submit button
-chrome-cli interact click s10
+agentchrome interact click s10
 
 # 5. Verify submission succeeded
-chrome-cli page snapshot
+agentchrome page snapshot
 ```
 
 ## Recommended Workflow Loops
@@ -143,12 +143,12 @@ snapshot → identify target → interact → snapshot (verify)
 
 ```sh
 # Step 1: Get the current page state
-chrome-cli page snapshot
+agentchrome page snapshot
 # Step 2: Identify the target element UID from the snapshot output
 # Step 3: Interact with the element
-chrome-cli interact click s5
+agentchrome interact click s5
 # Step 4: Verify the action took effect
-chrome-cli page snapshot
+agentchrome page snapshot
 ```
 
 Always snapshot before interacting — UIDs are assigned dynamically and change when the page updates.
@@ -163,12 +163,12 @@ navigate → wait → snapshot/text → extract
 
 ```sh
 # Step 1: Navigate to the page
-chrome-cli navigate https://example.com --wait-until networkidle
+agentchrome navigate https://example.com --wait-until networkidle
 # Step 2: Wait is handled by --wait-until above
 # Step 3: Extract the content
-chrome-cli page text
+agentchrome page text
 # Or for structured data:
-chrome-cli page snapshot
+agentchrome page snapshot
 ```
 
 ## Efficiency Tips
@@ -187,30 +187,30 @@ chrome-cli page snapshot
 
 ### Exit Codes
 
-chrome-cli uses structured exit codes so agents can programmatically detect error types:
+agentchrome uses structured exit codes so agents can programmatically detect error types:
 
 | Exit Code | Name | Description | Recovery Strategy |
 |-----------|------|-------------|-------------------|
 | 0 | Success | Command completed successfully | — |
 | 1 | GeneralError | Invalid arguments or internal failure | Check command syntax with `--help` |
-| 2 | ConnectionError | Chrome not running or session expired | Re-run `chrome-cli connect --launch --headless` |
-| 3 | TargetError | Tab not found or no page targets | Run `chrome-cli tabs list` to find valid targets |
+| 2 | ConnectionError | Chrome not running or session expired | Re-run `agentchrome connect --launch --headless` |
+| 3 | TargetError | Tab not found or no page targets | Run `agentchrome tabs list` to find valid targets |
 | 4 | TimeoutError | Navigation or command timeout | Increase `--timeout` value or check if the page is loading |
-| 5 | ProtocolError | CDP protocol failure | Disconnect and reconnect: `chrome-cli connect --disconnect` then `chrome-cli connect --launch --headless` |
+| 5 | ProtocolError | CDP protocol failure | Disconnect and reconnect: `agentchrome connect --disconnect` then `agentchrome connect --launch --headless` |
 
 ### Common Failure Modes
 
 **Connection refused** (exit code 2):
 Chrome is not running or the debug port is unavailable. Recovery:
 ```sh
-chrome-cli connect --launch --headless
+agentchrome connect --launch --headless
 ```
 
 **Element not found** (exit code 1):
 The target UID or selector does not match any element. This usually happens when the page has updated since the last snapshot. Recovery:
 ```sh
 # Re-snapshot to get fresh UIDs
-chrome-cli page snapshot
+agentchrome page snapshot
 # Then retry the interaction with the correct UID
 ```
 
@@ -218,14 +218,14 @@ chrome-cli page snapshot
 A navigation or command exceeded the time limit. Recovery:
 ```sh
 # Retry with a longer timeout
-chrome-cli navigate https://slow-page.example.com --timeout 30000
+agentchrome navigate https://slow-page.example.com --timeout 30000
 ```
 
 **Page not loaded** (exit code 1 or 4):
 Commands that inspect the page may fail if called before the page finishes loading. Recovery:
 ```sh
 # Navigate with an explicit wait strategy
-chrome-cli navigate https://example.com --wait-until networkidle
+agentchrome navigate https://example.com --wait-until networkidle
 ```
 
 ### Parsing Errors
@@ -237,7 +237,7 @@ Errors are written to stderr. In JSON output mode (`--json`), error details are 
 - **Always `page snapshot` before interaction commands.** UIDs are dynamic — they change when the DOM updates. A fresh snapshot ensures you target the correct element.
 - **Use JSON output for reliable parsing.** Pass `--json` (or `--pretty` for readable JSON) to get structured output that's easy for AI agents to parse. JSON is the default for most commands.
 - **Check exit codes for error handling.** Use the exit code to determine the type of failure before parsing error messages.
-- **Use `--timeout` flags.** Set timeouts on navigation and long-running commands to prevent indefinite hangs. Example: `chrome-cli navigate https://example.com --timeout 10000`.
+- **Use `--timeout` flags.** Set timeouts on navigation and long-running commands to prevent indefinite hangs. Example: `agentchrome navigate https://example.com --timeout 10000`.
 - **Prefer `form fill` over `interact type` for form inputs.** `form fill` sets the value directly via the DOM, which is more reliable than simulating keystrokes character by character with `interact type`.
 - **Use `console follow` and `network follow` for debugging.** These commands stream real-time console messages and network requests, which is invaluable for diagnosing runtime errors and failed API calls. Use `--timeout` to auto-exit after a set duration.
 - **Use `--include-snapshot` to reduce round-trips.** Interaction commands (`interact click`, `form fill`, etc.) support `--include-snapshot` to return the updated accessibility tree, saving a separate `page snapshot` call.
@@ -245,7 +245,7 @@ Errors are written to stderr. In JSON output mode (`--json`), error details are 
 
 ## Example Conversation
 
-Below is a realistic multi-turn example of Claude Code using chrome-cli to debug a web application that has a broken login form.
+Below is a realistic multi-turn example of Claude Code using agentchrome to debug a web application that has a broken login form.
 
 ---
 
@@ -254,21 +254,21 @@ Below is a realistic multi-turn example of Claude Code using chrome-cli to debug
 **Claude Code:** Let me connect to Chrome and inspect the login page.
 
 ```sh
-chrome-cli connect --launch --headless
+agentchrome connect --launch --headless
 ```
 ```
 {"status":"connected","ws_url":"ws://127.0.0.1:9222/devtools/page/ABC123"}
 ```
 
 ```sh
-chrome-cli navigate http://localhost:3000/login --wait-until networkidle
+agentchrome navigate http://localhost:3000/login --wait-until networkidle
 ```
 ```
 {"url":"http://localhost:3000/login","status":200}
 ```
 
 ```sh
-chrome-cli page snapshot
+agentchrome page snapshot
 ```
 ```
 [s1] heading "Sign In"
@@ -281,14 +281,14 @@ chrome-cli page snapshot
 The "Log In" button is disabled. Let me fill in the form fields and see if it enables.
 
 ```sh
-chrome-cli form fill-many '[{"uid": "s2", "value": "test@example.com"}, {"uid": "s3", "value": "password123"}]'
+agentchrome form fill-many '[{"uid": "s2", "value": "test@example.com"}, {"uid": "s3", "value": "password123"}]'
 ```
 ```
 {"filled":2,"fields":[{"uid":"s2","status":"ok"},{"uid":"s3","status":"ok"}]}
 ```
 
 ```sh
-chrome-cli page snapshot
+agentchrome page snapshot
 ```
 ```
 [s1] heading "Sign In"
@@ -301,7 +301,7 @@ chrome-cli page snapshot
 The button is still disabled even after filling both fields. Let me check for console errors.
 
 ```sh
-chrome-cli console read --errors-only
+agentchrome console read --errors-only
 ```
 ```
 {"messages":[{"id":1,"type":"error","text":"Uncaught TypeError: Cannot read properties of null (reading 'addEventListener')","source":"http://localhost:3000/js/login.js","line":15}]}
@@ -315,7 +315,7 @@ The bug is in `js/login.js` line 15. The script is probably looking for an eleme
 
 ## Reference
 
-- **Full command manifest:** `chrome-cli capabilities` — outputs JSON describing every command, subcommand, flag, and exit code
-- **Per-command examples:** `chrome-cli examples <command>` — shows practical usage examples (e.g., `chrome-cli examples navigate`)
-- **Man pages:** `chrome-cli man <command>` — displays the man page for any command
-- **Help text:** `chrome-cli <command> --help` — quick usage reference for any command or subcommand
+- **Full command manifest:** `agentchrome capabilities` — outputs JSON describing every command, subcommand, flag, and exit code
+- **Per-command examples:** `agentchrome examples <command>` — shows practical usage examples (e.g., `agentchrome examples navigate`)
+- **Man pages:** `agentchrome man <command>` — displays the man page for any command
+- **Help text:** `agentchrome <command> --help` — quick usage reference for any command or subcommand

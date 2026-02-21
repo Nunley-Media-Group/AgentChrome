@@ -9,7 +9,7 @@
 
 ## Root Cause
 
-When `connect --launch` runs, it creates a `ConnectionInfo` with `pid: Some(pid)` and saves it to `~/.chrome-cli/session.json` via `save_session()`. This works correctly.
+When `connect --launch` runs, it creates a `ConnectionInfo` with `pid: Some(pid)` and saves it to `~/.agentchrome/session.json` via `save_session()`. This works correctly.
 
 When a subsequent `connect` (auto-discover) runs, it calls `discover_chrome()` and constructs a new `ConnectionInfo` with `pid: None` hardcoded at `src/main.rs:330`. This new session data is then passed to `save_session()`, which unconditionally overwrites the session file. The PID from the original launch is lost because `save_session()` has no merge/preserve logic — it always creates a fresh `SessionData` from the `ConnectionInfo` it receives.
 

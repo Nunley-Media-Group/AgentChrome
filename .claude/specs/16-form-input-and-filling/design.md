@@ -9,7 +9,7 @@
 
 ## Overview
 
-This feature adds a `form` subcommand to chrome-cli with three operations: `fill` (set a single field), `fill-many` (set multiple fields from JSON), and `clear` (reset a field). The implementation follows the same architecture as the existing `interact` command module — a new `src/form.rs` file with CLI arg types defined in `src/cli/mod.rs` and dispatch wired through `src/main.rs`.
+This feature adds a `form` subcommand to agentchrome with three operations: `fill` (set a single field), `fill-many` (set multiple fields from JSON), and `clear` (reset a field). The implementation follows the same architecture as the existing `interact` command module — a new `src/form.rs` file with CLI arg types defined in `src/cli/mod.rs` and dispatch wired through `src/main.rs`.
 
 Form values are set using CDP's `Runtime.callFunctionOn` to directly modify DOM element properties and dispatch synthetic events (`input`, `change`) for framework compatibility. Target elements are resolved from UIDs (via the snapshot UID map) or CSS selectors (via `DOM.querySelector`), reusing the same target resolution pattern from `interact.rs`.
 
@@ -20,7 +20,7 @@ Form values are set using CDP's `Runtime.callFunctionOn` to directly modify DOM 
 ### Component Diagram
 
 ```
-CLI Input (chrome-cli form fill s1 "John")
+CLI Input (agentchrome form fill s1 "John")
     ↓
 ┌─────────────────┐
 │   CLI Layer      │  ← Parse args: FormArgs → FormCommand::Fill(FormFillArgs)
@@ -43,7 +43,7 @@ CLI Input (chrome-cli form fill s1 "John")
 ### Data Flow
 
 ```
-1. User runs: chrome-cli form fill s1 "John"
+1. User runs: agentchrome form fill s1 "John"
 2. CLI layer parses args into FormFillArgs { target: "s1", value: "John", ... }
 3. form.rs dispatcher calls execute_fill()
 4. Setup CDP session (resolve_connection → resolve_target → CdpClient::connect)
@@ -166,8 +166,8 @@ With `--include-snapshot`:
 ## State Management
 
 No new persistent state. The feature reuses:
-- **Snapshot state** (`~/.chrome-cli/snapshot.json`) — read UID-to-backendNodeId mappings
-- **Session state** (`~/.chrome-cli/session.json`) — resolve CDP connection
+- **Snapshot state** (`~/.agentchrome/snapshot.json`) — read UID-to-backendNodeId mappings
+- **Session state** (`~/.agentchrome/session.json`) — resolve CDP connection
 
 When `--include-snapshot` is used, snapshot state is updated (same pattern as `interact` commands).
 

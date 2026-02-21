@@ -17,7 +17,7 @@ Feature: perf vitals returns performance metrics
   @regression
   Scenario: perf vitals returns metrics after page reload
     Given Chrome is connected and navigated to "https://www.google.com/"
-    When I run "chrome-cli perf vitals"
+    When I run "agentchrome perf vitals"
     Then the JSON output contains the key "lcp_ms" with a numeric value
     And the JSON output contains the key "ttfb_ms" with a numeric value
     And the JSON output contains the key "cls"
@@ -29,7 +29,7 @@ Feature: perf vitals returns performance metrics
   @regression
   Scenario: null metrics are serialized as null instead of omitted
     Given Chrome is connected to a page with no layout shifts
-    When I run "chrome-cli perf vitals"
+    When I run "agentchrome perf vitals"
     Then the JSON output contains the key "lcp_ms"
     And the JSON output contains the key "cls"
     And the JSON output contains the key "ttfb_ms"
@@ -38,6 +38,6 @@ Feature: perf vitals returns performance metrics
   @regression
   Scenario: non-zero exit code when all metrics are unavailable
     Given Chrome is connected to a page where no vitals can be collected
-    When I run "chrome-cli perf vitals"
+    When I run "agentchrome perf vitals"
     Then the exit code should be non-zero
     And stderr contains a warning about missing metrics

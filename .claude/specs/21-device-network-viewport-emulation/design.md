@@ -53,7 +53,7 @@ The emulate module coordinates six CDP domains/methods: `Network.emulateNetworkC
 ### Data Flow
 
 ```
-1. User runs: chrome-cli emulate set --network slow-4g --viewport 375x667
+1. User runs: agentchrome emulate set --network slow-4g --viewport 375x667
 2. CLI layer parses args into EmulateSetArgs struct
 3. execute_set() establishes CDP session via setup_session()
 4. For --network: ensures Network domain, calls Network.emulateNetworkConditions
@@ -70,10 +70,10 @@ The emulate module coordinates six CDP domains/methods: `Network.emulateNetworkC
 
 | Command | Purpose |
 |---------|---------|
-| `chrome-cli emulate set [OPTIONS]` | Apply emulation overrides |
-| `chrome-cli emulate reset` | Clear all emulation overrides |
-| `chrome-cli emulate status` | Show current emulation settings |
-| `chrome-cli page resize <SIZE>` | Shorthand for viewport resize |
+| `agentchrome emulate set [OPTIONS]` | Apply emulation overrides |
+| `agentchrome emulate reset` | Clear all emulation overrides |
+| `agentchrome emulate status` | Show current emulation settings |
+| `agentchrome page resize <SIZE>` | Shorthand for viewport resize |
 
 ### CLI Argument Structures
 

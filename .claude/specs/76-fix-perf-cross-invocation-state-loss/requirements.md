@@ -14,9 +14,9 @@
 ### Steps to Reproduce
 
 1. Launch Chrome with remote debugging enabled (`--remote-debugging-port=9222`)
-2. Run `chrome-cli perf start --pretty`
+2. Run `agentchrome perf start --pretty`
 3. Observe success output: `{"tracing":true,"file":"/var/folders/.../chrome-trace-NNNN.json"}`
-4. Immediately run `chrome-cli perf stop --pretty`
+4. Immediately run `agentchrome perf stop --pretty`
 
 ### Environment
 
@@ -38,12 +38,12 @@ Always — 100% reproducible. The bug is architectural, not a race condition.
 | | Description |
 |---|-------------|
 | **Expected** | `perf stop` stops the active trace started by `perf start`, collects trace data, writes it to the file, and returns vitals summary |
-| **Actual** | `perf stop` fails with `{"error":"No active trace. Run 'chrome-cli perf start' first.","code":1}` |
+| **Actual** | `perf stop` fails with `{"error":"No active trace. Run 'agentchrome perf start' first.","code":1}` |
 
 ### Error Output
 
 ```json
-{"error":"No active trace. Run 'chrome-cli perf start' first.","code":1}
+{"error":"No active trace. Run 'agentchrome perf start' first.","code":1}
 ```
 
 This error is generated when Chrome responds to `Tracing.end` with "Tracing is not started" because the new CDP session created by `perf stop` never initiated a trace.
@@ -57,7 +57,7 @@ This error is generated when Chrome responds to `Tracing.end` with "Tracing is n
 ### AC1: Long-running perf record command captures a complete trace
 
 **Given** Chrome is running with CDP enabled and a page is loaded
-**When** the user runs `chrome-cli perf record` (or `perf start --record`) which starts tracing, waits for a signal/timeout, then stops and collects in the same session
+**When** the user runs `agentchrome perf record` (or `perf start --record`) which starts tracing, waits for a signal/timeout, then stops and collects in the same session
 **Then** the trace file is written with valid Chrome Trace Event Format data
 **And** the exit code is 0
 **And** Core Web Vitals are extracted from the trace

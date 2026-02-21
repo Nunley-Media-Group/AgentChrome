@@ -4,8 +4,8 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 
 /// Default config file template with comments, used by `config init`.
-const DEFAULT_CONFIG_TEMPLATE: &str = r#"# chrome-cli configuration file
-# See: https://github.com/Nunley-Media-Group/chrome-cli
+const DEFAULT_CONFIG_TEMPLATE: &str = r#"# agentchrome configuration file
+# See: https://github.com/Nunley-Media-Group/AgentChrome
 
 # Connection defaults
 # [connection]
@@ -174,13 +174,13 @@ impl From<ConfigError> for crate::error::AppError {
 ///
 /// Search order:
 /// 1. `explicit_path` (from `--config` flag)
-/// 2. `$CHROME_CLI_CONFIG` environment variable
-/// 3. `./.chrome-cli.toml` (project-local)
-/// 4. `<config_dir>/chrome-cli/config.toml` (XDG / platform config dir)
-/// 5. `~/.chrome-cli.toml` (home directory fallback)
+/// 2. `$AGENTCHROME_CONFIG` environment variable
+/// 3. `./.agentchrome.toml` (project-local)
+/// 4. `<config_dir>/agentchrome/config.toml` (XDG / platform config dir)
+/// 5. `~/.agentchrome.toml` (home directory fallback)
 #[must_use]
 pub fn find_config_file(explicit_path: Option<&Path>) -> Option<PathBuf> {
-    find_config_file_with(explicit_path, std::env::var("CHROME_CLI_CONFIG").ok())
+    find_config_file_with(explicit_path, std::env::var("AGENTCHROME_CONFIG").ok())
 }
 
 /// Testable variant of [`find_config_file`] that accepts an explicit env value.
@@ -196,7 +196,7 @@ pub fn find_config_file_with(
         }
     }
 
-    // 2. $CHROME_CLI_CONFIG
+    // 2. $AGENTCHROME_CONFIG
     if let Some(env_path) = env_config {
         let p = PathBuf::from(env_path);
         if p.exists() {
@@ -204,23 +204,23 @@ pub fn find_config_file_with(
         }
     }
 
-    // 3. ./.chrome-cli.toml (project-local)
-    let local = PathBuf::from(".chrome-cli.toml");
+    // 3. ./.agentchrome.toml (project-local)
+    let local = PathBuf::from(".agentchrome.toml");
     if local.exists() {
         return Some(local);
     }
 
     // 4. XDG / platform config dir
     if let Some(config_dir) = dirs::config_dir() {
-        let xdg = config_dir.join("chrome-cli").join("config.toml");
+        let xdg = config_dir.join("agentchrome").join("config.toml");
         if xdg.exists() {
             return Some(xdg);
         }
     }
 
-    // 5. ~/.chrome-cli.toml
+    // 5. ~/.agentchrome.toml
     if let Some(home) = dirs::home_dir() {
-        let home_config = home.join(".chrome-cli.toml");
+        let home_config = home.join(".agentchrome.toml");
         if home_config.exists() {
             return Some(home_config);
         }
@@ -423,14 +423,14 @@ pub fn resolve_config(file: &ConfigFile, config_path: Option<PathBuf>) -> Resolv
 // Config init
 // ---------------------------------------------------------------------------
 
-/// Default path for `config init`: `<config_dir>/chrome-cli/config.toml`.
+/// Default path for `config init`: `<config_dir>/agentchrome/config.toml`.
 ///
 /// # Errors
 ///
 /// Returns `ConfigError::NoConfigDir` if the platform config directory cannot be determined.
 pub fn default_init_path() -> Result<PathBuf, ConfigError> {
     dirs::config_dir()
-        .map(|d| d.join("chrome-cli").join("config.toml"))
+        .map(|d| d.join("agentchrome").join("config.toml"))
         .ok_or(ConfigError::NoConfigDir)
 }
 
@@ -632,7 +632,7 @@ unknown_key = "hello"
 
     #[test]
     fn init_config_creates_file() {
-        let dir = std::env::temp_dir().join("chrome-cli-test-config-init");
+        let dir = std::env::temp_dir().join("agentchrome-test-config-init");
         let _ = std::fs::remove_dir_all(&dir);
         let path = dir.join("config.toml");
 
@@ -649,7 +649,7 @@ unknown_key = "hello"
 
     #[test]
     fn init_config_refuses_overwrite() {
-        let dir = std::env::temp_dir().join("chrome-cli-test-config-overwrite");
+        let dir = std::env::temp_dir().join("agentchrome-test-config-overwrite");
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("config.toml");
@@ -667,7 +667,7 @@ unknown_key = "hello"
 
     #[test]
     fn find_config_with_explicit_path() {
-        let dir = std::env::temp_dir().join("chrome-cli-test-find-explicit");
+        let dir = std::env::temp_dir().join("agentchrome-test-find-explicit");
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("my-config.toml");
@@ -681,7 +681,7 @@ unknown_key = "hello"
 
     #[test]
     fn find_config_with_env_var() {
-        let dir = std::env::temp_dir().join("chrome-cli-test-find-env");
+        let dir = std::env::temp_dir().join("agentchrome-test-find-env");
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("env-config.toml");
@@ -695,7 +695,7 @@ unknown_key = "hello"
 
     #[test]
     fn find_config_explicit_takes_priority_over_env() {
-        let dir = std::env::temp_dir().join("chrome-cli-test-find-priority");
+        let dir = std::env::temp_dir().join("agentchrome-test-find-priority");
         let _ = std::fs::remove_dir_all(&dir);
         std::fs::create_dir_all(&dir).unwrap();
         let explicit = dir.join("explicit.toml");

@@ -13,8 +13,8 @@
 
 ### Steps to Reproduce
 
-1. Run `chrome-cli connect --launch --headless` — note the PID (e.g., 25675)
-2. Run `chrome-cli connect --disconnect` — output shows `{"disconnected":true,"killed_pid":25675}`
+1. Run `agentchrome connect --launch --headless` — note the PID (e.g., 25675)
+2. Run `agentchrome connect --disconnect` — output shows `{"disconnected":true,"killed_pid":25675}`
 3. Run `ps -p 25675` — process is still running
 4. Run `kill 25675` manually — process terminates normally
 
@@ -43,7 +43,7 @@ Always
 ### Error Output
 
 ```
-$ chrome-cli connect --disconnect
+$ agentchrome connect --disconnect
 {"disconnected":true,"killed_pid":25675}
 
 $ ps -p 25675
@@ -65,8 +65,8 @@ $ ps -p 25675
 **And** the process at PID X is no longer running
 
 **Example**:
-- Given: `chrome-cli connect --launch --headless` → PID 25675
-- When: `chrome-cli connect --disconnect`
+- Given: `agentchrome connect --launch --headless` → PID 25675
+- When: `agentchrome connect --disconnect`
 - Then: output is `{"disconnected":true,"killed_pid":25675}` and `ps -p 25675` returns no process
 
 ### AC2: Child processes are also cleaned up
@@ -77,7 +77,7 @@ $ ps -p 25675
 
 **Example**:
 - Given: Chrome PID 25675 has children [25676, 25677, 25678]
-- When: `chrome-cli connect --disconnect`
+- When: `agentchrome connect --disconnect`
 - Then: none of PIDs 25675-25678 are running
 
 ### AC3: Disconnect with already-exited process reports cleanly
@@ -90,7 +90,7 @@ $ ps -p 25675
 
 **Example**:
 - Given: session file references PID 99999 which no longer exists
-- When: `chrome-cli connect --disconnect`
+- When: `agentchrome connect --disconnect`
 - Then: output is `{"disconnected":true,"killed_pid":99999}` and exit code is 0
 
 ---
@@ -109,7 +109,7 @@ $ ps -p 25675
 ## Out of Scope
 
 - Cleaning up Chrome profile directories on disk
-- Killing Chrome processes not managed by chrome-cli (not in the session file)
+- Killing Chrome processes not managed by agentchrome (not in the session file)
 - Changing the `DisconnectInfo` JSON output schema beyond what is needed
 - Refactoring the session file format
 

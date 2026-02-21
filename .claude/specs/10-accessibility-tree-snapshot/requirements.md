@@ -30,14 +30,14 @@ The MCP server's `take_snapshot` tool demonstrates this pattern: it captures the
 ### AC1: Capture full accessibility tree of current page
 
 **Given** Chrome is running with a page loaded at "https://example.com"
-**When** I run `chrome-cli page snapshot`
+**When** I run `agentchrome page snapshot`
 **Then** stdout contains a text representation of the accessibility tree
 **And** the output shows hierarchical indentation reflecting the DOM structure
 **And** each node displays its role and accessible name
 
 **Example**:
 - Given: a page with a heading, paragraph, and button
-- When: `chrome-cli page snapshot`
+- When: `agentchrome page snapshot`
 - Then: output like:
   ```
   - document "Example Domain"
@@ -50,7 +50,7 @@ The MCP server's `take_snapshot` tool demonstrates this pattern: it captures the
 ### AC2: Interactive elements have unique reference IDs
 
 **Given** Chrome is running with a page containing interactive elements (links, buttons, inputs)
-**When** I run `chrome-cli page snapshot`
+**When** I run `agentchrome page snapshot`
 **Then** each interactive element is annotated with a uid in brackets (e.g., `[s1]`)
 **And** each uid is unique within the snapshot
 **And** uids are short, readable strings (e.g., `s1`, `s2`, `s3`)
@@ -58,21 +58,21 @@ The MCP server's `take_snapshot` tool demonstrates this pattern: it captures the
 ### AC3: Target a specific tab with --tab
 
 **Given** Chrome is running with multiple tabs open
-**When** I run `chrome-cli page snapshot --tab <ID>`
+**When** I run `agentchrome page snapshot --tab <ID>`
 **Then** the accessibility tree is captured from the specified tab
 **And** non-interactive text elements are included in the tree
 
 ### AC4: Verbose mode with --verbose
 
 **Given** Chrome is running with a page loaded
-**When** I run `chrome-cli page snapshot --verbose`
+**When** I run `agentchrome page snapshot --verbose`
 **Then** each element includes additional properties where applicable
 **And** properties may include: checked, disabled, expanded, selected, required, pressed, level, value, description, url
 
 ### AC5: Save snapshot to file with --file
 
 **Given** Chrome is running with a page loaded
-**When** I run `chrome-cli page snapshot --file /tmp/snapshot.txt`
+**When** I run `agentchrome page snapshot --file /tmp/snapshot.txt`
 **Then** the snapshot is written to `/tmp/snapshot.txt`
 **And** stdout is empty (no output to terminal)
 **And** the exit code is 0
@@ -80,7 +80,7 @@ The MCP server's `take_snapshot` tool demonstrates this pattern: it captures the
 ### AC6: JSON output with --json
 
 **Given** Chrome is running with a page loaded
-**When** I run `chrome-cli page snapshot --json`
+**When** I run `agentchrome page snapshot --json`
 **Then** stdout contains a JSON tree structure
 **And** each node has `uid` (if interactive), `role`, `name`, and `children` fields
 
@@ -100,40 +100,40 @@ The MCP server's `take_snapshot` tool demonstrates this pattern: it captures the
 ### AC7: UID-to-backend-node mapping stored in session
 
 **Given** Chrome is running with a page loaded
-**When** I run `chrome-cli page snapshot`
+**When** I run `agentchrome page snapshot`
 **Then** the uid-to-backend-node-id mapping is persisted to the session state
 **And** subsequent interaction commands can resolve uids back to DOM elements
 
 ### AC8: UIDs stable across consecutive snapshots of same page
 
 **Given** Chrome is running with a page loaded and unchanged
-**When** I run `chrome-cli page snapshot` twice consecutively
+**When** I run `agentchrome page snapshot` twice consecutively
 **Then** the same elements receive the same uids in both snapshots
 
 ### AC9: Large page handling
 
 **Given** Chrome is running with a very large page (e.g., 10,000+ elements)
-**When** I run `chrome-cli page snapshot`
+**When** I run `agentchrome page snapshot`
 **Then** the snapshot completes within the timeout window
 **And** if the tree exceeds a reasonable size, it is truncated with a message indicating truncation
 
 ### AC10: Page with no accessible content
 
 **Given** Chrome is running with a blank page (about:blank)
-**When** I run `chrome-cli page snapshot`
+**When** I run `agentchrome page snapshot`
 **Then** stdout contains a minimal tree (just the document root)
 **And** the exit code is 0
 
 ### AC11: Pretty JSON output with --pretty
 
 **Given** Chrome is running with a page loaded
-**When** I run `chrome-cli page snapshot --pretty`
+**When** I run `agentchrome page snapshot --pretty`
 **Then** stdout contains pretty-printed JSON with indentation
 
 ### AC12: Plain text default output format
 
 **Given** Chrome is running with a page loaded
-**When** I run `chrome-cli page snapshot` (no format flags)
+**When** I run `agentchrome page snapshot` (no format flags)
 **Then** the default output is the structured text representation (not JSON)
 **And** the text uses indentation and `- role "name" [uid]` format
 
@@ -150,65 +150,65 @@ Feature: Accessibility tree snapshot
 
   Scenario: Capture full accessibility tree
     Given a page is loaded at "https://example.com"
-    When I run "chrome-cli page snapshot"
+    When I run "agentchrome page snapshot"
     Then stdout contains a hierarchical text representation of the accessibility tree
     And each node shows its role and accessible name
 
   Scenario: Interactive elements have unique reference IDs
     Given a page with interactive elements
-    When I run "chrome-cli page snapshot"
+    When I run "agentchrome page snapshot"
     Then interactive elements are annotated with unique uids like "[s1]"
 
   Scenario: Target a specific tab
     Given multiple tabs are open
-    When I run "chrome-cli page snapshot --tab <ID>"
+    When I run "agentchrome page snapshot --tab <ID>"
     Then the snapshot is from the specified tab
 
   Scenario: Verbose mode shows additional properties
     Given a page is loaded
-    When I run "chrome-cli page snapshot --verbose"
+    When I run "agentchrome page snapshot --verbose"
     Then elements include extra properties like checked, disabled, expanded
 
   Scenario: Save snapshot to file
     Given a page is loaded
-    When I run "chrome-cli page snapshot --file /tmp/snapshot.txt"
+    When I run "agentchrome page snapshot --file /tmp/snapshot.txt"
     Then the snapshot is written to the file
     And stdout is empty
 
   Scenario: JSON output
     Given a page is loaded
-    When I run "chrome-cli page snapshot --json"
+    When I run "agentchrome page snapshot --json"
     Then stdout is a JSON tree with uid, role, name, children fields
 
   Scenario: UID mapping persisted to session
     Given a page is loaded
-    When I run "chrome-cli page snapshot"
+    When I run "agentchrome page snapshot"
     Then the uid-to-backend-node mapping is stored in session state
 
   Scenario: UID stability across snapshots
     Given a page is loaded and unchanged
-    When I run "chrome-cli page snapshot" twice
+    When I run "agentchrome page snapshot" twice
     Then the same elements get the same uids
 
   Scenario: Large page handling
     Given a very large page is loaded
-    When I run "chrome-cli page snapshot"
+    When I run "agentchrome page snapshot"
     Then the snapshot completes or truncates with a message
 
   Scenario: Blank page produces minimal tree
     Given a blank page is loaded
-    When I run "chrome-cli page snapshot"
+    When I run "agentchrome page snapshot"
     Then output shows just the document root
     And the exit code is 0
 
   Scenario: Pretty JSON output
     Given a page is loaded
-    When I run "chrome-cli page snapshot --pretty"
+    When I run "agentchrome page snapshot --pretty"
     Then stdout is pretty-printed JSON
 
   Scenario: Default output is structured text
     Given a page is loaded
-    When I run "chrome-cli page snapshot"
+    When I run "agentchrome page snapshot"
     Then output uses "- role name [uid]" text format with indentation
 ```
 

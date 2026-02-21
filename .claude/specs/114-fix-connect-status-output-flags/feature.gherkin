@@ -18,14 +18,14 @@ Feature: connect --status respects output format flags
 
   @regression
   Scenario: Pretty flag produces indented JSON
-    When I run chrome-cli connect --status --pretty
+    When I run agentchrome connect --status --pretty
     Then the exit code is 0
     And the output is valid JSON
     And the output contains newlines and indentation
 
   @regression
   Scenario: Plain flag produces human-readable text
-    When I run chrome-cli connect --status --plain
+    When I run agentchrome connect --status --plain
     Then the exit code is 0
     And the output is not valid JSON
     And the output contains key-value pairs for connection details
@@ -34,7 +34,7 @@ Feature: connect --status respects output format flags
 
   @regression
   Scenario: Default output is compact JSON
-    When I run chrome-cli connect --status
+    When I run agentchrome connect --status
     Then the exit code is 0
     And the output is valid JSON
     And the output is a single line

@@ -97,7 +97,7 @@
 **Depends**: T004
 **Acceptance**:
 - [ ] Feature file registered in `tests/bdd.rs` with `filter_run_and_exit` (all scenarios require Chrome, so filter returns `false` -- matching the #103 pattern)
-- [ ] Step definitions reuse existing steps where possible (`Given chrome-cli is built`, `When I run`, `Then the exit code should be`)
+- [ ] Step definitions reuse existing steps where possible (`Given agentchrome is built`, `When I run`, `Then the exit code should be`)
 - [ ] Any new step definitions needed are added to `tests/bdd.rs`
 - [ ] `cargo test --test bdd` passes (all scenarios are filtered out in CI, but syntax is valid)
 
@@ -108,15 +108,15 @@
 **Depends**: T002, T005
 **Acceptance**:
 - [ ] Build in debug mode: `cargo build`
-- [ ] Launch headless Chrome: `./target/debug/chrome-cli connect --launch --headless`
-- [ ] Navigate to a page: `./target/debug/chrome-cli navigate https://www.saucedemo.com/`
-- [ ] Generate runtime console messages: `./target/debug/chrome-cli js exec "console.log('smoke-test'); console.error('smoke-error')"`
-- [ ] Verify `console read` captures runtime messages: `./target/debug/chrome-cli console read` returns entries with "smoke-test" and "smoke-error"
-- [ ] Verify `--errors-only` filter: `./target/debug/chrome-cli console read --errors-only` returns only the error entry
-- [ ] Verify page state preserved: `./target/debug/chrome-cli page snapshot` still shows the SauceDemo page (not a reload/blank state)
+- [ ] Launch headless Chrome: `./target/debug/agentchrome connect --launch --headless`
+- [ ] Navigate to a page: `./target/debug/agentchrome navigate https://www.saucedemo.com/`
+- [ ] Generate runtime console messages: `./target/debug/agentchrome js exec "console.log('smoke-test'); console.error('smoke-error')"`
+- [ ] Verify `console read` captures runtime messages: `./target/debug/agentchrome console read` returns entries with "smoke-test" and "smoke-error"
+- [ ] Verify `--errors-only` filter: `./target/debug/agentchrome console read --errors-only` returns only the error entry
+- [ ] Verify page state preserved: `./target/debug/agentchrome page snapshot` still shows the SauceDemo page (not a reload/blank state)
 - [ ] Verify accumulated messages: run another `js exec` with new messages, then `console read` shows all prior + new messages
-- [ ] Verify `console follow` still works: `./target/debug/chrome-cli console follow --timeout 2000`
-- [ ] Disconnect: `./target/debug/chrome-cli connect disconnect`
+- [ ] Verify `console follow` still works: `./target/debug/agentchrome console follow --timeout 2000`
+- [ ] Disconnect: `./target/debug/agentchrome connect disconnect`
 - [ ] Kill orphaned Chrome processes: `pkill -f 'chrome.*--remote-debugging' || true`
 - [ ] All existing tests pass: `cargo test`
 - [ ] Clippy passes: `cargo clippy`

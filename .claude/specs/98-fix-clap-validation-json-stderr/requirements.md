@@ -13,15 +13,15 @@
 
 ### Steps to Reproduce
 
-1. Run a command with mutually exclusive flags: `chrome-cli interact scroll --to-top --to-bottom`
+1. Run a command with mutually exclusive flags: `agentchrome interact scroll --to-top --to-bottom`
 2. Observe stderr output: `error: the argument '--to-top' cannot be used with '--to-bottom'`
 3. Observe exit code: 2
 
 Additional triggers:
-- Invalid enum value: `chrome-cli emulate set --network invalid-profile`
-- Out-of-range value: `chrome-cli emulate set --cpu 0`
-- Conflicting flags with values: `chrome-cli emulate set --geolocation "37.7,-122.4" --no-geolocation`
-- Conflicting output format flags: `chrome-cli --json --plain navigate`
+- Invalid enum value: `agentchrome emulate set --network invalid-profile`
+- Out-of-range value: `agentchrome emulate set --cpu 0`
+- Conflicting flags with values: `agentchrome emulate set --geolocation "37.7,-122.4" --no-geolocation`
+- Conflicting output format flags: `agentchrome --json --plain navigate`
 
 ### Environment
 
@@ -42,7 +42,7 @@ Always — every clap validation error triggers this behavior.
 | | Description |
 |---|-------------|
 | **Expected** | stderr contains a JSON error object `{"error":"...","code":1}` and exit code is 1 (general error / invalid arguments) |
-| **Actual** | stderr contains clap's default plain-text error format and exit code is 2 (which chrome-cli defines as "connection error") |
+| **Actual** | stderr contains clap's default plain-text error format and exit code is 2 (which agentchrome defines as "connection error") |
 
 ### Error Output
 
@@ -50,7 +50,7 @@ Always — every clap validation error triggers this behavior.
 # Actual stderr (plain text, not JSON):
 error: the argument '--to-top' cannot be used with '--to-bottom'
 
-Usage: chrome-cli interact scroll [OPTIONS]
+Usage: agentchrome interact scroll [OPTIONS]
 
 For more information, try '--help'.
 
@@ -72,8 +72,8 @@ For more information, try '--help'.
 **And** exit code is 1
 
 **Example**:
-- Given: chrome-cli is built
-- When: I run `chrome-cli interact scroll --to-top --to-bottom`
+- Given: agentchrome is built
+- When: I run `agentchrome interact scroll --to-top --to-bottom`
 - Then: stderr is valid JSON with `error` containing "cannot be used with" and `code` equal to 1, and exit code is 1
 
 ### AC2: Invalid enum values produce JSON error with exit code 1
@@ -84,8 +84,8 @@ For more information, try '--help'.
 **And** exit code is 1
 
 **Example**:
-- Given: chrome-cli is built
-- When: I run `chrome-cli emulate set --network invalid-profile`
+- Given: agentchrome is built
+- When: I run `agentchrome emulate set --network invalid-profile`
 - Then: stderr is valid JSON with `error` containing "invalid value" and `code` equal to 1, and exit code is 1
 
 ### AC3: Out-of-range values produce JSON error with exit code 1
@@ -96,13 +96,13 @@ For more information, try '--help'.
 **And** exit code is 1
 
 **Example**:
-- Given: chrome-cli is built
-- When: I run `chrome-cli emulate set --cpu 0`
+- Given: agentchrome is built
+- When: I run `agentchrome emulate set --cpu 0`
 - Then: stderr is valid JSON with `error` containing "not in" and `code` equal to 1, and exit code is 1
 
 ### AC4: Existing JSON error behavior is preserved for non-clap errors
 
-**Given** I run a command that triggers a non-clap error (e.g., `chrome-cli dom`)
+**Given** I run a command that triggers a non-clap error (e.g., `agentchrome dom`)
 **When** the application-level error handler formats the error
 **Then** stderr contains a JSON error object with `error` and `code` fields
 **And** the exit code matches the existing behavior (exit code 1 for not-implemented)

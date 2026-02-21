@@ -42,7 +42,7 @@ The retrospective learning from issue #82's spec is directly relevant: *"When sp
 
 Increase the polling loop's timeout budget to give Chrome sufficient time to propagate the activation state to `/json/list`. The current budget of 100ms (10 × 10ms) should be increased to 500ms (50 × 10ms). This provides 5× the current budget while keeping individual poll intervals short (10ms) for fast resolution when Chrome updates quickly.
 
-The 500ms budget aligns with the existing timeout patterns in chrome-cli — other polling loops in the codebase (e.g., `tabs close` at line 262) use the same 10 × 10ms pattern, but activation propagation in headless mode is empirically slower than close propagation. A 50-iteration budget is conservative enough to handle slow headless environments while remaining imperceptible to users (the 500ms worst-case is well under typical CLI timeout expectations).
+The 500ms budget aligns with the existing timeout patterns in agentchrome — other polling loops in the codebase (e.g., `tabs close` at line 262) use the same 10 × 10ms pattern, but activation propagation in headless mode is empirically slower than close propagation. A 50-iteration budget is conservative enough to handle slow headless environments while remaining imperceptible to users (the 500ms worst-case is well under typical CLI timeout expectations).
 
 ### Changes
 

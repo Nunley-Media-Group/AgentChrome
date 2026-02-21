@@ -53,7 +53,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] `SessionError` enum defined: `NoHomeDir`, `Io(std::io::Error)`, `InvalidFormat(String)`
 - [ ] `SessionError` implements `Display`, `Error`
 - [ ] `From<SessionError>` for `AppError` with correct `ExitCode` mappings
-- [ ] `session_file_path() -> Result<PathBuf, SessionError>` returns `~/.chrome-cli/session.json` (cross-platform)
+- [ ] `session_file_path() -> Result<PathBuf, SessionError>` returns `~/.agentchrome/session.json` (cross-platform)
 - [ ] `src/lib.rs` exports `pub mod session`
 - [ ] `cargo check` passes
 
@@ -67,9 +67,9 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **Acceptance**:
 - [ ] `ConnectArgs` gains `status: bool` with `#[arg(long, conflicts_with_all = ["launch", "disconnect"])]`
 - [ ] `ConnectArgs` gains `disconnect: bool` with `#[arg(long, conflicts_with_all = ["launch", "status"])]`
-- [ ] `chrome-cli connect --help` shows `--status` and `--disconnect` flags
-- [ ] `chrome-cli connect --status --launch` produces a clap conflict error
-- [ ] `chrome-cli connect --status --disconnect` produces a clap conflict error
+- [ ] `agentchrome connect --help` shows `--status` and `--disconnect` flags
+- [ ] `agentchrome connect --status --launch` produces a clap conflict error
+- [ ] `agentchrome connect --status --disconnect` produces a clap conflict error
 - [ ] Existing tests still pass: `cargo test`
 - [ ] `cargo clippy` passes
 
@@ -86,7 +86,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **Depends**: T001
 **Acceptance**:
 - [ ] `write_session(data: &SessionData) -> Result<(), SessionError>`:
-  - Creates `~/.chrome-cli/` directory if it doesn't exist (mode `0o700` on Unix)
+  - Creates `~/.agentchrome/` directory if it doesn't exist (mode `0o700` on Unix)
   - Writes session JSON to a temp file then renames to `session.json` (atomic write)
   - Sets file permissions to `0o600` on Unix
 - [ ] `read_session() -> Result<Option<SessionData>, SessionError>`:
@@ -133,7 +133,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
   2. If `--port` explicitly provided (user passed `--port`) → discover on that port via `query_version`
   3. Read session file → if found, health-check, return stored `ws_url`
   4. Auto-discover via `discover_chrome("127.0.0.1", 9222)`
-  5. Return error with suggestion to run `chrome-cli connect`
+  5. Return error with suggestion to run `agentchrome connect`
 - [ ] Step 3: on health check failure, return stale session error (not fallthrough)
 - [ ] `cargo clippy` passes
 
@@ -232,8 +232,8 @@ Actually, the cleaner approach: always check session file after explicit flags. 
 **Type**: Modify
 **Depends**: T001
 **Acceptance**:
-- [ ] `AppError::stale_session()` → ExitCode::ConnectionError, message suggests `chrome-cli connect`
-- [ ] `AppError::no_session()` → ExitCode::ConnectionError, message suggests `chrome-cli connect` or `--launch`
+- [ ] `AppError::stale_session()` → ExitCode::ConnectionError, message suggests `agentchrome connect`
+- [ ] `AppError::no_session()` → ExitCode::ConnectionError, message suggests `agentchrome connect` or `--launch`
 - [ ] `AppError::target_not_found(tab: &str)` → ExitCode::TargetError, message suggests `tabs list`
 - [ ] `AppError::no_page_targets()` → ExitCode::TargetError, message suggests opening a tab
 - [ ] Unit tests for each constructor: verify message content and exit code
@@ -315,7 +315,7 @@ Actually, the cleaner approach: always check session file after explicit flags. 
 - [ ] `cargo fmt --check` passes
 - [ ] Existing tests pass: `cargo test`
 - [ ] Manual verification (if Chrome available):
-  - `cargo run -- connect` writes session file to `~/.chrome-cli/session.json`
+  - `cargo run -- connect` writes session file to `~/.agentchrome/session.json`
   - `cargo run -- connect --status` reads session and shows reachable=true
   - `cargo run -- connect --disconnect` removes session file
   - Session file contains valid JSON with expected fields
@@ -330,13 +330,13 @@ Actually, the cleaner approach: always check session file after explicit flags. 
 **Type**: Modify
 **Depends**: T011
 **Acceptance**:
-- [ ] Session tests (use temp directory, not real `~/.chrome-cli/`):
+- [ ] Session tests (use temp directory, not real `~/.agentchrome/`):
   - Write/read round-trip preserves all fields
   - Read nonexistent file returns `None`
   - Read invalid JSON returns `InvalidFormat` error
   - Delete nonexistent file returns `Ok(())`
   - `now_iso8601()` produces valid ISO 8601 format
-  - `session_file_path()` returns a path ending in `.chrome-cli/session.json`
+  - `session_file_path()` returns a path ending in `.agentchrome/session.json`
 - [ ] Connection resolution tests (mock-based or logic tests):
   - `resolve_target` with no tab picks first page target
   - `resolve_target` with numeric index picks correct target

@@ -13,16 +13,16 @@
 
 ### Steps to Reproduce
 
-1. Launch Chrome: `chrome-cli connect --launch`
-2. Navigate to a page: `chrome-cli navigate "https://www.google.com"`
-3. Run: `chrome-cli form fill-many '[{"selector":"css:textarea","value":"test"}]' --pretty`
+1. Launch Chrome: `agentchrome connect --launch`
+2. Navigate to a page: `agentchrome navigate "https://www.google.com"`
+3. Run: `agentchrome form fill-many '[{"selector":"css:textarea","value":"test"}]' --pretty`
 
 ### Environment
 
 | Factor | Value |
 |--------|-------|
 | **OS / Platform** | macOS (Darwin 25.2.0) |
-| **Version / Commit** | chrome-cli 0.1.0 (commit 01989d5) |
+| **Version / Commit** | agentchrome 0.1.0 (commit 01989d5) |
 | **Browser / Runtime** | Chrome via CDP |
 | **Configuration** | Default |
 
@@ -54,22 +54,22 @@ Mismatch between definition and access of `json`. Could not downcast to bool, ne
 
 ### AC1: Bug Is Fixed
 
-**Given** chrome-cli is built
-**When** I run `chrome-cli form fill-many '[{"uid":"s1","value":"test"}]' --pretty`
+**Given** agentchrome is built
+**When** I run `agentchrome form fill-many '[{"uid":"s1","value":"test"}]' --pretty`
 **Then** the command does not panic
 **And** the exit code is not 101
 
 ### AC2: --json output flag still works with fill-many
 
-**Given** chrome-cli is built
-**When** I run `chrome-cli form fill-many --help`
+**Given** agentchrome is built
+**When** I run `agentchrome form fill-many --help`
 **Then** the help text shows the positional argument for inline JSON input
 **And** the help text does not show a conflicting `--json` positional argument
 
 ### AC3: File-based input is not regressed
 
-**Given** chrome-cli is built
-**When** I run `chrome-cli form fill-many --help`
+**Given** agentchrome is built
+**When** I run `agentchrome form fill-many --help`
 **Then** the help text shows `--file` as an option
 **And** the help text shows `--include-snapshot` as an option
 

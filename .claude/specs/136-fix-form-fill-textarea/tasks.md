@@ -58,11 +58,11 @@ The `tag` variable already exists in both functions from the earlier `tag === 's
 **Depends**: T001
 **Acceptance**:
 - [ ] Build debug binary: `cargo build`
-- [ ] Launch headless Chrome: `./target/debug/chrome-cli connect --launch --headless`
-- [ ] Navigate to Google: `./target/debug/chrome-cli navigate https://www.google.com`
-- [ ] Take snapshot: `./target/debug/chrome-cli page snapshot`
-- [ ] Fill textarea: `./target/debug/chrome-cli form fill <textarea-uid> "test query"`
-- [ ] Verify value: `./target/debug/chrome-cli js exec --uid <textarea-uid> "(el) => el.value"` returns `"test query"`
+- [ ] Launch headless Chrome: `./target/debug/agentchrome connect --launch --headless`
+- [ ] Navigate to Google: `./target/debug/agentchrome navigate https://www.google.com`
+- [ ] Take snapshot: `./target/debug/agentchrome page snapshot`
+- [ ] Fill textarea: `./target/debug/agentchrome form fill <textarea-uid> "test query"`
+- [ ] Verify value: `./target/debug/agentchrome js exec --uid <textarea-uid> "(el) => el.value"` returns `"test query"`
 - [ ] Run SauceDemo smoke test: navigate to https://www.saucedemo.com/, take snapshot, fill username input, verify value is set
 - [ ] Disconnect and kill Chrome processes
 

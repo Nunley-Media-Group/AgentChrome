@@ -13,14 +13,14 @@
 
 ### Steps to Reproduce
 
-1. `chrome-cli connect --launch --headless`
-2. `chrome-cli navigate https://www.google.com --wait-until load`
-3. `chrome-cli js exec --no-await "setTimeout(() => alert('test alert'), 100); 'triggered'"`
+1. `agentchrome connect --launch --headless`
+2. `agentchrome navigate https://www.google.com --wait-until load`
+3. `agentchrome js exec --no-await "setTimeout(() => alert('test alert'), 100); 'triggered'"`
 4. `sleep 2`
-5. `chrome-cli dialog info` — returns `{"open":true,"type":"unknown","message":""}`
-6. `chrome-cli dialog handle accept` — returns `{"error":"No dialog is currently open.","code":1}`
+5. `agentchrome dialog info` — returns `{"open":true,"type":"unknown","message":""}`
+6. `agentchrome dialog handle accept` — returns `{"error":"No dialog is currently open.","code":1}`
 7. The dialog remains open and blocks all further CDP operations
-8. `chrome-cli navigate ... --auto-dismiss-dialogs` also hangs
+8. `agentchrome navigate ... --auto-dismiss-dialogs` also hangs
 
 ### Environment
 
@@ -62,20 +62,20 @@ Always — 100% reproducible with the steps above.
 ### AC1: Dialog info reports correct type and message
 
 **Given** a JavaScript `alert('test')` dialog is open in the browser
-**When** I run `chrome-cli dialog info`
+**When** I run `agentchrome dialog info`
 **Then** the output shows `type: "alert"` and `message: "test"` and `open: true`
 
 ### AC2: Dialog handle accept dismisses alert
 
 **Given** a JavaScript alert dialog is open in the browser
-**When** I run `chrome-cli dialog handle accept`
+**When** I run `agentchrome dialog handle accept`
 **Then** the dialog is dismissed successfully
 **And** the output shows `action: "accept"` and `dialog_type: "alert"`
 
 ### AC3: Dialog handle dismiss works for confirm
 
 **Given** a JavaScript `confirm('sure?')` dialog is open in the browser
-**When** I run `chrome-cli dialog handle dismiss`
+**When** I run `agentchrome dialog handle dismiss`
 **Then** the dialog is dismissed with the dismiss result
 **And** the output shows `action: "dismiss"` and `dialog_type: "confirm"`
 
@@ -88,7 +88,7 @@ Always — 100% reproducible with the steps above.
 ### AC5: Dialog handle with text for prompt
 
 **Given** a JavaScript `prompt('name?')` dialog is open in the browser
-**When** I run `chrome-cli dialog handle accept --text "Alice"`
+**When** I run `agentchrome dialog handle accept --text "Alice"`
 **Then** the dialog is accepted with the provided text
 **And** the output shows `dialog_type: "prompt"` and `text: "Alice"`
 

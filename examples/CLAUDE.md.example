@@ -1,46 +1,46 @@
 # Browser Automation
 
-This project uses [chrome-cli](https://github.com/Nunley-Media-Group/chrome-cli) for browser automation. chrome-cli is a native CLI tool that controls Chrome via the DevTools Protocol.
+This project uses [agentchrome](https://github.com/Nunley-Media-Group/AgentChrome) for browser automation. agentchrome is a native CLI tool that controls Chrome via the DevTools Protocol.
 
 ## Quick Start
 
 ```sh
 # 1. Launch headless Chrome and connect
-chrome-cli connect --launch --headless
+agentchrome connect --launch --headless
 
 # 2. Navigate to the dev server
-chrome-cli navigate http://localhost:3000 --wait-until networkidle
+agentchrome navigate http://localhost:3000 --wait-until networkidle
 
 # 3. Inspect the page structure (accessibility tree with UIDs)
-chrome-cli page snapshot
+agentchrome page snapshot
 
 # 4. Take a screenshot
-chrome-cli page screenshot --file screenshot.png
+agentchrome page screenshot --file screenshot.png
 ```
 
 ## Key Commands
 
 | Command | Purpose |
 |---------|---------|
-| `chrome-cli capabilities` | See all available commands (JSON manifest) |
-| `chrome-cli examples <cmd>` | See examples for a command |
-| `chrome-cli page snapshot` | Get the page accessibility tree with UIDs |
-| `chrome-cli page text` | Extract visible text content |
-| `chrome-cli page screenshot --file <path>` | Capture a screenshot |
-| `chrome-cli interact click <uid>` | Click an element by UID from snapshot |
-| `chrome-cli form fill <uid> "<value>"` | Fill a form field by UID |
-| `chrome-cli form fill-many '<json>'` | Fill multiple form fields at once |
-| `chrome-cli console read --errors-only` | Check for JavaScript errors |
-| `chrome-cli network follow --timeout 5000` | Monitor network requests |
+| `agentchrome capabilities` | See all available commands (JSON manifest) |
+| `agentchrome examples <cmd>` | See examples for a command |
+| `agentchrome page snapshot` | Get the page accessibility tree with UIDs |
+| `agentchrome page text` | Extract visible text content |
+| `agentchrome page screenshot --file <path>` | Capture a screenshot |
+| `agentchrome interact click <uid>` | Click an element by UID from snapshot |
+| `agentchrome form fill <uid> "<value>"` | Fill a form field by UID |
+| `agentchrome form fill-many '<json>'` | Fill multiple form fields at once |
+| `agentchrome console read --errors-only` | Check for JavaScript errors |
+| `agentchrome network follow --timeout 5000` | Monitor network requests |
 
 ## Workflow Loop
 
 Always follow this pattern when interacting with pages:
 
-1. **Snapshot** — `chrome-cli page snapshot` to get the current page state and element UIDs
+1. **Snapshot** — `agentchrome page snapshot` to get the current page state and element UIDs
 2. **Identify** — Find the target element UID in the snapshot output
-3. **Interact** — `chrome-cli interact click <uid>` or `chrome-cli form fill <uid> "<value>"`
-4. **Verify** — `chrome-cli page snapshot` again to confirm the action worked
+3. **Interact** — `agentchrome interact click <uid>` or `agentchrome form fill <uid> "<value>"`
+4. **Verify** — `agentchrome page snapshot` again to confirm the action worked
 
 UIDs are dynamic and change when the page updates. Always snapshot before interacting.
 

@@ -50,7 +50,7 @@ CLI Input (args)
 ### Data Flow
 
 ```
-1. User runs: chrome-cli [global-opts] <subcommand>
+1. User runs: agentchrome [global-opts] <subcommand>
 2. clap parses args into Cli struct
 3. main() matches on Cli.command
 4. Stub handler returns AppError::NotImplemented
@@ -69,7 +69,7 @@ The core clap structs using derive macros:
 ```rust
 #[derive(Parser)]
 #[command(
-    name = "chrome-cli",
+    name = "agentchrome",
     version,
     about = "Browser automation via the Chrome DevTools Protocol",
     long_about = "...",  // Comprehensive AI-agent-friendly description

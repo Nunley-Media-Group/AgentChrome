@@ -13,7 +13,7 @@
 
 ### Steps to Reproduce
 
-1. Launch a Chrome session via `chrome-cli connect` or `chrome-cli launch`
+1. Launch a Chrome session via `agentchrome connect` or `agentchrome launch`
 2. Run `emulate set --viewport 375x667 --mobile` to enable mobile emulation
 3. Observe the `set` command correctly returns `mobile: true`
 4. Immediately run `emulate status`

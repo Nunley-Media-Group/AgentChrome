@@ -13,19 +13,19 @@
 
 ### Steps to Reproduce
 
-1. Launch Chrome: `chrome-cli connect --launch`
-2. Set user agent: `chrome-cli emulate set --user-agent "TestBot/1.0" --pretty`
-3. Navigate: `chrome-cli navigate "https://www.google.com" --pretty`
-4. Verify: `chrome-cli js exec "navigator.userAgent" --pretty`
+1. Launch Chrome: `agentchrome connect --launch`
+2. Set user agent: `agentchrome emulate set --user-agent "TestBot/1.0" --pretty`
+3. Navigate: `agentchrome navigate "https://www.google.com" --pretty`
+4. Verify: `agentchrome js exec "navigator.userAgent" --pretty`
 
 ### Environment
 
 | Factor | Value |
 |--------|-------|
 | **OS / Platform** | macOS (Darwin 25.2.0) |
-| **Version / Commit** | chrome-cli 0.1.0 |
+| **Version / Commit** | agentchrome 0.1.0 |
 | **Browser / Runtime** | Chrome via CDP WebSocket |
-| **Configuration** | Default; state file at `~/.chrome-cli/emulate-state.json` |
+| **Configuration** | Default; state file at `~/.agentchrome/emulate-state.json` |
 
 ### Frequency
 
@@ -87,7 +87,7 @@ No error is produced. The command silently succeeds but the override is not in e
 | ID | Requirement | Priority |
 |----|-------------|----------|
 | FR1 | Expand `EmulateState` to include `user_agent`, `device_scale_factor`, `geolocation`, `color_scheme`, and `viewport` fields | Must |
-| FR2 | Persist all emulation overrides to `~/.chrome-cli/emulate-state.json` on `emulate set` | Must |
+| FR2 | Persist all emulation overrides to `~/.agentchrome/emulate-state.json` on `emulate set` | Must |
 | FR3 | Re-apply persisted overrides when creating new CDP sessions in all command modules | Must |
 | FR4 | Report all active overrides (including geolocation) in `emulate status` | Must |
 | FR5 | `emulate reset` clears all persisted overrides including new fields | Must |

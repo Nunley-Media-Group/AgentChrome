@@ -42,7 +42,7 @@ Chrome Browser
 ### Data Flow
 
 ```
-1. User runs: chrome-cli js exec <CODE> [--file PATH] [--uid UID] [--no-await] [--timeout MS] [--max-size N]
+1. User runs: agentchrome js exec <CODE> [--file PATH] [--uid UID] [--no-await] [--timeout MS] [--max-size N]
 2. CLI layer parses args into JsExecArgs
 3. Resolve code source:
    a. If --file: read file contents
@@ -75,7 +75,7 @@ Chrome Browser
 
 | Command | Purpose |
 |---------|---------|
-| `chrome-cli js exec <CODE>` | Execute JavaScript in the page context |
+| `agentchrome js exec <CODE>` | Execute JavaScript in the page context |
 
 ### CLI Arguments (JsExecArgs)
 
@@ -143,7 +143,7 @@ With truncation:
 | File not found | `"Script file not found: {path}"` | `GeneralError` (1) |
 | File read error | `"Failed to read script file: {path}: {error}"` | `GeneralError` (1) |
 | UID not found | Existing `uid_not_found` | `GeneralError` (1) |
-| No snapshot | `"No snapshot state found. Run 'chrome-cli page snapshot' first."` | `GeneralError` (1) |
+| No snapshot | `"No snapshot state found. Run 'agentchrome page snapshot' first."` | `GeneralError` (1) |
 | No code provided | `"No JavaScript code provided. Specify code as argument, --file, or pipe via stdin."` | `GeneralError` (1) |
 | No connection | Existing `no_session` / `no_chrome_found` | `ConnectionError` (2) |
 | Tab not found | Existing `target_not_found` | `TargetError` (3) |

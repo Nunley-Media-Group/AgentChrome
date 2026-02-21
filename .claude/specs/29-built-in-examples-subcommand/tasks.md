@@ -80,7 +80,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **Acceptance**:
 - [ ] `fn all_examples() -> Vec<CommandGroupSummary>` returns data for all 13 command groups: connect, tabs, navigate, page, dom, js, console, network, interact, form, emulate, perf, dialog, config
 - [ ] Each command group has 3–5 examples
-- [ ] Each example `cmd` is a syntactically valid chrome-cli invocation
+- [ ] Each example `cmd` is a syntactically valid agentchrome invocation
 - [ ] Examples cover common use cases per the existing `after_long_help` text in cli/mod.rs
 - [ ] `flags` field populated where relevant
 
@@ -173,10 +173,10 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] `Command::Examples(args) => examples::execute_examples(&global, args)` added to match in `run()`
 - [ ] No `async` — this is a sync call (same as `execute_completions`, `execute_man`)
 - [ ] `cargo build` succeeds
-- [ ] Running `chrome-cli examples` prints expected output
-- [ ] Running `chrome-cli examples navigate` prints navigate examples
-- [ ] Running `chrome-cli examples --json` prints valid JSON
-- [ ] Running `chrome-cli examples nonexistent` exits non-zero with error
+- [ ] Running `agentchrome examples` prints expected output
+- [ ] Running `agentchrome examples navigate` prints navigate examples
+- [ ] Running `agentchrome examples --json` prints valid JSON
+- [ ] Running `agentchrome examples nonexistent` exits non-zero with error
 
 ---
 

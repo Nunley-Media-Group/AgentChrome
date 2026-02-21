@@ -9,10 +9,10 @@ use clap_complete::Shell;
 
 #[derive(Parser)]
 #[command(
-    name = "chrome-cli",
+    name = "agentchrome",
     version,
     about = "Browser automation via the Chrome DevTools Protocol",
-    long_about = "chrome-cli is a command-line tool for browser automation via the Chrome DevTools \
+    long_about = "agentchrome is a command-line tool for browser automation via the Chrome DevTools \
         Protocol (CDP). It provides subcommands for connecting to Chrome/Chromium instances, \
         managing tabs, navigating pages, inspecting the DOM, executing JavaScript, monitoring \
         console output, intercepting network requests, simulating user interactions, filling forms, \
@@ -23,27 +23,27 @@ use clap_complete::Shell;
     after_long_help = "\
 QUICK START:
   # Connect to a running Chrome instance
-  chrome-cli connect
+  agentchrome connect
 
   # Launch a new headless Chrome and connect
-  chrome-cli connect --launch --headless
+  agentchrome connect --launch --headless
 
   # List open tabs and navigate to a URL
-  chrome-cli tabs list
-  chrome-cli navigate https://example.com
+  agentchrome tabs list
+  agentchrome navigate https://example.com
 
   # Take a full-page screenshot
-  chrome-cli page screenshot --full-page --file shot.png
+  agentchrome page screenshot --full-page --file shot.png
 
   # Execute JavaScript and get the result
-  chrome-cli js exec \"document.title\"
+  agentchrome js exec \"document.title\"
 
   # Capture the accessibility tree and fill a form field
-  chrome-cli page snapshot
-  chrome-cli form fill s5 \"hello@example.com\"
+  agentchrome page snapshot
+  agentchrome form fill s5 \"hello@example.com\"
 
   # Monitor console output in real time
-  chrome-cli console follow --timeout 5000
+  agentchrome console follow --timeout 5000
 
 EXIT CODES:
   0  Success
@@ -54,10 +54,10 @@ EXIT CODES:
   5  Protocol error (CDP protocol failure, dialog handling error)
 
 ENVIRONMENT VARIABLES:
-  CHROME_CLI_PORT     CDP port number (default: 9222)
-  CHROME_CLI_HOST     CDP host address (default: 127.0.0.1)
-  CHROME_CLI_TIMEOUT  Default command timeout in milliseconds
-  CHROME_CLI_CONFIG   Path to configuration file",
+  AGENTCHROME_PORT     CDP port number (default: 9222)
+  AGENTCHROME_HOST     CDP host address (default: 127.0.0.1)
+  AGENTCHROME_TIMEOUT  Default command timeout in milliseconds
+  AGENTCHROME_CONFIG   Path to configuration file",
     term_width = 100
 )]
 pub struct Cli {
@@ -71,7 +71,7 @@ pub struct Cli {
 #[derive(Args)]
 pub struct GlobalOpts {
     /// Chrome DevTools Protocol port number [default: 9222]
-    #[arg(long, global = true, env = "CHROME_CLI_PORT")]
+    #[arg(long, global = true, env = "AGENTCHROME_PORT")]
     pub port: Option<u16>,
 
     /// Chrome DevTools Protocol host address
@@ -79,7 +79,7 @@ pub struct GlobalOpts {
         long,
         default_value = "127.0.0.1",
         global = true,
-        env = "CHROME_CLI_HOST"
+        env = "AGENTCHROME_HOST"
     )]
     pub host: String,
 
@@ -88,7 +88,7 @@ pub struct GlobalOpts {
     pub ws_url: Option<String>,
 
     /// Command timeout in milliseconds
-    #[arg(long, global = true, env = "CHROME_CLI_TIMEOUT")]
+    #[arg(long, global = true, env = "AGENTCHROME_TIMEOUT")]
     pub timeout: Option<u64>,
 
     /// Target tab ID (defaults to the active tab)
@@ -100,7 +100,7 @@ pub struct GlobalOpts {
     pub auto_dismiss_dialogs: bool,
 
     /// Path to configuration file (overrides default search)
-    #[arg(long, global = true, env = "CHROME_CLI_CONFIG")]
+    #[arg(long, global = true, env = "AGENTCHROME_CONFIG")]
     pub config: Option<PathBuf>,
 
     #[command(flatten)]
@@ -146,19 +146,19 @@ pub enum Command {
         after_long_help = "\
 EXAMPLES:
   # Connect to Chrome on the default port (9222)
-  chrome-cli connect
+  agentchrome connect
 
   # Launch a new headless Chrome instance
-  chrome-cli connect --launch --headless
+  agentchrome connect --launch --headless
 
   # Connect to a specific port
-  chrome-cli connect --port 9333
+  agentchrome connect --port 9333
 
   # Check connection status
-  chrome-cli connect --status
+  agentchrome connect --status
 
   # Disconnect and remove session file
-  chrome-cli connect --disconnect"
+  agentchrome connect --disconnect"
     )]
     Connect(ConnectArgs),
 
@@ -170,16 +170,16 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # List all open tabs
-  chrome-cli tabs list
+  agentchrome tabs list
 
   # Open a new tab and get its ID
-  chrome-cli tabs create https://example.com
+  agentchrome tabs create https://example.com
 
   # Close tabs by ID
-  chrome-cli tabs close ABC123 DEF456
+  agentchrome tabs close ABC123 DEF456
 
   # Activate a specific tab
-  chrome-cli tabs activate ABC123"
+  agentchrome tabs activate ABC123"
     )]
     Tabs(TabsArgs),
 
@@ -190,16 +190,16 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Navigate to a URL and wait for page load
-  chrome-cli navigate https://example.com
+  agentchrome navigate https://example.com
 
   # Navigate and wait for network idle
-  chrome-cli navigate https://example.com --wait-until networkidle
+  agentchrome navigate https://example.com --wait-until networkidle
 
   # Go back in browser history
-  chrome-cli navigate back
+  agentchrome navigate back
 
   # Reload the current page, bypassing cache
-  chrome-cli navigate reload --ignore-cache"
+  agentchrome navigate reload --ignore-cache"
     )]
     Navigate(NavigateArgs),
 
@@ -211,19 +211,19 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Extract all visible text from the page
-  chrome-cli page text
+  agentchrome page text
 
   # Capture the accessibility tree (assigns UIDs to elements)
-  chrome-cli page snapshot
+  agentchrome page snapshot
 
   # Take a full-page screenshot
-  chrome-cli page screenshot --full-page --file page.png
+  agentchrome page screenshot --full-page --file page.png
 
   # Find elements by text
-  chrome-cli page find \"Sign in\"
+  agentchrome page find \"Sign in\"
 
   # Resize the viewport
-  chrome-cli page resize 1280x720"
+  agentchrome page resize 1280x720"
     )]
     Page(PageArgs),
 
@@ -236,22 +236,22 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Select elements by CSS selector
-  chrome-cli dom select \"h1\"
+  agentchrome dom select \"h1\"
 
   # Select by XPath
-  chrome-cli dom select \"//a[@href]\" --xpath
+  agentchrome dom select \"//a[@href]\" --xpath
 
   # Get an element's attribute
-  chrome-cli dom get-attribute s3 href
+  agentchrome dom get-attribute s3 href
 
   # Read element text
-  chrome-cli dom get-text css:h1
+  agentchrome dom get-text css:h1
 
   # Set an attribute
-  chrome-cli dom set-attribute s5 class \"highlight\"
+  agentchrome dom set-attribute s5 class \"highlight\"
 
   # View the DOM tree
-  chrome-cli dom tree --depth 3"
+  agentchrome dom tree --depth 3"
     )]
     Dom(DomArgs),
 
@@ -263,16 +263,16 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Get the page title
-  chrome-cli js exec \"document.title\"
+  agentchrome js exec \"document.title\"
 
   # Execute a script file
-  chrome-cli js exec --file script.js
+  agentchrome js exec --file script.js
 
   # Run code on a specific element (by UID from snapshot)
-  chrome-cli js exec --uid s3 \"(el) => el.textContent\"
+  agentchrome js exec --uid s3 \"(el) => el.textContent\"
 
   # Read from stdin
-  echo 'document.URL' | chrome-cli js exec -"
+  echo 'document.URL' | agentchrome js exec -"
     )]
     Js(JsArgs),
 
@@ -283,16 +283,16 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Read recent console messages
-  chrome-cli console read
+  agentchrome console read
 
   # Show only error messages
-  chrome-cli console read --errors-only
+  agentchrome console read --errors-only
 
   # Stream console messages in real time
-  chrome-cli console follow
+  agentchrome console follow
 
   # Stream errors for 10 seconds
-  chrome-cli console follow --errors-only --timeout 10000"
+  agentchrome console follow --errors-only --timeout 10000"
     )]
     Console(ConsoleArgs),
 
@@ -304,16 +304,16 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # List recent network requests
-  chrome-cli network list
+  agentchrome network list
 
   # Filter by resource type
-  chrome-cli network list --type xhr,fetch
+  agentchrome network list --type xhr,fetch
 
   # Get details of a specific request
-  chrome-cli network get 42
+  agentchrome network get 42
 
   # Stream network requests in real time
-  chrome-cli network follow --url api.example.com"
+  agentchrome network follow --url api.example.com"
     )]
     Network(NetworkArgs),
 
@@ -326,19 +326,19 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Click an element by UID
-  chrome-cli interact click s5
+  agentchrome interact click s5
 
   # Click by CSS selector
-  chrome-cli interact click css:#submit-btn
+  agentchrome interact click css:#submit-btn
 
   # Type text into the focused element
-  chrome-cli interact type \"Hello, world!\"
+  agentchrome interact type \"Hello, world!\"
 
   # Press a key combination
-  chrome-cli interact key Control+A
+  agentchrome interact key Control+A
 
   # Scroll down one viewport height
-  chrome-cli interact scroll"
+  agentchrome interact scroll"
     )]
     Interact(InteractArgs),
 
@@ -350,19 +350,19 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Fill a field by UID (from page snapshot)
-  chrome-cli form fill s5 \"hello@example.com\"
+  agentchrome form fill s5 \"hello@example.com\"
 
   # Fill by CSS selector
-  chrome-cli form fill css:#email \"user@example.com\"
+  agentchrome form fill css:#email \"user@example.com\"
 
   # Fill multiple fields at once
-  chrome-cli form fill-many '[{\"uid\":\"s5\",\"value\":\"Alice\"},{\"uid\":\"s7\",\"value\":\"alice@example.com\"}]'
+  agentchrome form fill-many '[{\"uid\":\"s5\",\"value\":\"Alice\"},{\"uid\":\"s7\",\"value\":\"alice@example.com\"}]'
 
   # Clear a field
-  chrome-cli form clear s5
+  agentchrome form clear s5
 
   # Upload a file
-  chrome-cli form upload s10 ./photo.jpg"
+  agentchrome form upload s10 ./photo.jpg"
     )]
     Form(FormArgs),
 
@@ -374,19 +374,19 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Emulate a mobile device
-  chrome-cli emulate set --viewport 375x667 --device-scale 2 --mobile
+  agentchrome emulate set --viewport 375x667 --device-scale 2 --mobile
 
   # Simulate slow 3G network
-  chrome-cli emulate set --network 3g
+  agentchrome emulate set --network 3g
 
   # Force dark mode
-  chrome-cli emulate set --color-scheme dark
+  agentchrome emulate set --color-scheme dark
 
   # Check current emulation settings
-  chrome-cli emulate status
+  agentchrome emulate status
 
   # Clear all emulation overrides
-  chrome-cli emulate reset"
+  agentchrome emulate reset"
     )]
     Emulate(EmulateArgs),
 
@@ -397,19 +397,19 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Quick Core Web Vitals measurement
-  chrome-cli perf vitals
+  agentchrome perf vitals
 
   # Record a trace until Ctrl+C
-  chrome-cli perf record
+  agentchrome perf record
 
   # Record a trace for 5 seconds
-  chrome-cli perf record --duration 5000
+  agentchrome perf record --duration 5000
 
   # Record with page reload
-  chrome-cli perf record --reload --duration 5000
+  agentchrome perf record --reload --duration 5000
 
   # Analyze a trace for render-blocking resources
-  chrome-cli perf analyze RenderBlocking --trace-file trace.json"
+  agentchrome perf analyze RenderBlocking --trace-file trace.json"
     )]
     Perf(PerfArgs),
 
@@ -422,38 +422,38 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Check if a dialog is open
-  chrome-cli dialog info
+  agentchrome dialog info
 
   # Accept an alert or confirm dialog
-  chrome-cli dialog handle accept
+  agentchrome dialog handle accept
 
   # Dismiss a dialog
-  chrome-cli dialog handle dismiss
+  agentchrome dialog handle dismiss
 
   # Accept a prompt with text
-  chrome-cli dialog handle accept --text \"my input\""
+  agentchrome dialog handle accept --text \"my input\""
     )]
     Dialog(DialogArgs),
 
     /// Configuration file management (show, init, path)
     #[command(
-        long_about = "Manage the chrome-cli configuration file. Show the resolved configuration \
+        long_about = "Manage the agentchrome configuration file. Show the resolved configuration \
             from all sources, create a default config file, or display the active config file path. \
             Config files use TOML format and are searched in priority order: --config flag, \
-            $CHROME_CLI_CONFIG env var, project-local, XDG config dir, home directory.",
+            $AGENTCHROME_CONFIG env var, project-local, XDG config dir, home directory.",
         after_long_help = "\
 EXAMPLES:
   # Show the resolved configuration
-  chrome-cli config show
+  agentchrome config show
 
   # Create a default config file
-  chrome-cli config init
+  agentchrome config init
 
   # Create a config at a custom path
-  chrome-cli config init --path ./my-config.toml
+  agentchrome config init --path ./my-config.toml
 
   # Show the active config file path
-  chrome-cli config path"
+  agentchrome config path"
     )]
     Config(ConfigArgs),
 
@@ -464,40 +464,40 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Bash
-  chrome-cli completions bash > /etc/bash_completion.d/chrome-cli
+  agentchrome completions bash > /etc/bash_completion.d/agentchrome
 
   # Zsh
-  chrome-cli completions zsh > ~/.zfunc/_chrome-cli
+  agentchrome completions zsh > ~/.zfunc/_agentchrome
 
   # Fish
-  chrome-cli completions fish > ~/.config/fish/completions/chrome-cli.fish
+  agentchrome completions fish > ~/.config/fish/completions/agentchrome.fish
 
   # PowerShell
-  chrome-cli completions powershell >> $PROFILE
+  agentchrome completions powershell >> $PROFILE
 
   # Elvish
-  chrome-cli completions elvish >> ~/.elvish/rc.elv"
+  agentchrome completions elvish >> ~/.elvish/rc.elv"
     )]
     Completions(CompletionsArgs),
 
     /// Show usage examples for commands
     #[command(
-        long_about = "Show usage examples for chrome-cli commands. Without arguments, lists all \
+        long_about = "Show usage examples for agentchrome commands. Without arguments, lists all \
             command groups with a brief description and one example each. With a command name, \
             shows detailed examples for that specific command group.",
         after_long_help = "\
 EXAMPLES:
   # List all command groups with summary examples
-  chrome-cli examples
+  agentchrome examples
 
   # Show detailed examples for the navigate command
-  chrome-cli examples navigate
+  agentchrome examples navigate
 
   # Get all examples as JSON (for programmatic use)
-  chrome-cli examples --json
+  agentchrome examples --json
 
   # Pretty-printed JSON output
-  chrome-cli examples --pretty"
+  agentchrome examples --pretty"
     )]
     Examples(ExamplesArgs),
 
@@ -510,37 +510,37 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Full capabilities manifest
-  chrome-cli capabilities
+  agentchrome capabilities
 
   # Pretty-printed for readability
-  chrome-cli capabilities --pretty
+  agentchrome capabilities --pretty
 
   # Capabilities for a specific command
-  chrome-cli capabilities --command navigate
+  agentchrome capabilities --command navigate
 
   # Compact listing (names and descriptions only)
-  chrome-cli capabilities --compact"
+  agentchrome capabilities --compact"
     )]
     Capabilities(CapabilitiesArgs),
 
-    /// Display man pages for chrome-cli commands
+    /// Display man pages for agentchrome commands
     #[command(
-        long_about = "Display man pages for chrome-cli commands. Without arguments, displays \
-            the main chrome-cli man page. With a subcommand name, displays the man page for \
+        long_about = "Display man pages for agentchrome commands. Without arguments, displays \
+            the main agentchrome man page. With a subcommand name, displays the man page for \
             that specific command. Output is in roff format, suitable for piping to a pager.",
         after_long_help = "\
 EXAMPLES:
-  # Display the main chrome-cli man page
-  chrome-cli man
+  # Display the main agentchrome man page
+  agentchrome man
 
   # Display the man page for the connect command
-  chrome-cli man connect
+  agentchrome man connect
 
   # Display the man page for the tabs command
-  chrome-cli man tabs
+  agentchrome man tabs
 
   # Pipe to a pager
-  chrome-cli man navigate | less"
+  agentchrome man navigate | less"
     )]
     Man(ManArgs),
 }
@@ -572,10 +572,10 @@ pub enum TabsCommand {
         after_long_help = "\
 EXAMPLES:
   # List page tabs
-  chrome-cli tabs list
+  agentchrome tabs list
 
   # Include internal Chrome pages
-  chrome-cli tabs list --all"
+  agentchrome tabs list --all"
     )]
     List(TabsListArgs),
 
@@ -587,13 +587,13 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Open a blank tab
-  chrome-cli tabs create
+  agentchrome tabs create
 
   # Open a URL
-  chrome-cli tabs create https://example.com
+  agentchrome tabs create https://example.com
 
   # Open in the background
-  chrome-cli tabs create https://example.com --background"
+  agentchrome tabs create https://example.com --background"
     )]
     Create(TabsCreateArgs),
 
@@ -605,10 +605,10 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Close a single tab
-  chrome-cli tabs close ABC123
+  agentchrome tabs close ABC123
 
   # Close multiple tabs
-  chrome-cli tabs close ABC123 DEF456 GHI789"
+  agentchrome tabs close ABC123 DEF456 GHI789"
     )]
     Close(TabsCloseArgs),
 
@@ -620,10 +620,10 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Activate a tab by ID
-  chrome-cli tabs activate ABC123
+  agentchrome tabs activate ABC123
 
   # Activate silently
-  chrome-cli tabs activate ABC123 --quiet"
+  agentchrome tabs activate ABC123 --quiet"
     )]
     Activate(TabsActivateArgs),
 }
@@ -687,7 +687,7 @@ pub enum NavigateCommand {
         after_long_help = "\
 EXAMPLES:
   # Go back
-  chrome-cli navigate back"
+  agentchrome navigate back"
     )]
     Back,
 
@@ -699,7 +699,7 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Go forward
-  chrome-cli navigate forward"
+  agentchrome navigate forward"
     )]
     Forward,
 
@@ -710,10 +710,10 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Reload the page
-  chrome-cli navigate reload
+  agentchrome navigate reload
 
   # Reload bypassing cache
-  chrome-cli navigate reload --ignore-cache"
+  agentchrome navigate reload --ignore-cache"
     )]
     Reload(NavigateReloadArgs),
 }
@@ -763,10 +763,10 @@ pub enum PageCommand {
         after_long_help = "\
 EXAMPLES:
   # Get all visible text
-  chrome-cli page text
+  agentchrome page text
 
   # Get text from a specific element
-  chrome-cli page text --selector \"#main-content\""
+  agentchrome page text --selector \"#main-content\""
     )]
     Text(PageTextArgs),
 
@@ -779,13 +779,13 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Capture the accessibility tree
-  chrome-cli page snapshot
+  agentchrome page snapshot
 
   # Verbose output with extra properties
-  chrome-cli page snapshot --verbose
+  agentchrome page snapshot --verbose
 
   # Save to a file
-  chrome-cli page snapshot --file snapshot.txt"
+  agentchrome page snapshot --file snapshot.txt"
     )]
     Snapshot(PageSnapshotArgs),
 
@@ -798,16 +798,16 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Find elements by text
-  chrome-cli page find \"Sign in\"
+  agentchrome page find \"Sign in\"
 
   # Find by CSS selector
-  chrome-cli page find --selector \"button.primary\"
+  agentchrome page find --selector \"button.primary\"
 
   # Find by accessibility role
-  chrome-cli page find --role button
+  agentchrome page find --role button
 
   # Exact text match with limit
-  chrome-cli page find \"Submit\" --exact --limit 1"
+  agentchrome page find \"Submit\" --exact --limit 1"
     )]
     Find(PageFindArgs),
 
@@ -821,16 +821,16 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Screenshot the visible viewport
-  chrome-cli page screenshot --file shot.png
+  agentchrome page screenshot --file shot.png
 
   # Full-page screenshot
-  chrome-cli page screenshot --full-page --file full.png
+  agentchrome page screenshot --full-page --file full.png
 
   # Screenshot a specific element by UID
-  chrome-cli page screenshot --uid s3 --file element.png
+  agentchrome page screenshot --uid s3 --file element.png
 
   # JPEG format with quality
-  chrome-cli page screenshot --format jpeg --quality 80 --file shot.jpg"
+  agentchrome page screenshot --format jpeg --quality 80 --file shot.jpg"
     )]
     Screenshot(PageScreenshotArgs),
 
@@ -842,10 +842,10 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Resize to 1280x720
-  chrome-cli page resize 1280x720
+  agentchrome page resize 1280x720
 
   # Mobile viewport
-  chrome-cli page resize 375x667"
+  agentchrome page resize 375x667"
     )]
     Resize(PageResizeArgs),
 }
@@ -957,16 +957,16 @@ pub enum PerfCommand {
         after_long_help = "\
 EXAMPLES:
   # Record until Ctrl+C
-  chrome-cli perf record
+  agentchrome perf record
 
   # Record for 5 seconds
-  chrome-cli perf record --duration 5000
+  agentchrome perf record --duration 5000
 
   # Record with page reload
-  chrome-cli perf record --reload --duration 5000
+  agentchrome perf record --reload --duration 5000
 
   # Save to a specific file
-  chrome-cli perf record --file my-trace.json"
+  agentchrome perf record --file my-trace.json"
     )]
     Record(PerfRecordArgs),
 
@@ -979,13 +979,13 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Analyze LCP breakdown
-  chrome-cli perf analyze LCPBreakdown --trace-file trace.json
+  agentchrome perf analyze LCPBreakdown --trace-file trace.json
 
   # Find render-blocking resources
-  chrome-cli perf analyze RenderBlocking --trace-file trace.json
+  agentchrome perf analyze RenderBlocking --trace-file trace.json
 
   # Identify long tasks
-  chrome-cli perf analyze LongTasks --trace-file trace.json"
+  agentchrome perf analyze LongTasks --trace-file trace.json"
     )]
     Analyze(PerfAnalyzeArgs),
 
@@ -997,10 +997,10 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Measure web vitals
-  chrome-cli perf vitals
+  agentchrome perf vitals
 
   # Save the underlying trace file
-  chrome-cli perf vitals --file vitals-trace.json"
+  agentchrome perf vitals --file vitals-trace.json"
     )]
     Vitals(PerfVitalsArgs),
 }
@@ -1057,19 +1057,19 @@ pub enum JsCommand {
         after_long_help = "\
 EXAMPLES:
   # Evaluate an expression
-  chrome-cli js exec \"document.title\"
+  agentchrome js exec \"document.title\"
 
   # Execute a script file
-  chrome-cli js exec --file script.js
+  agentchrome js exec --file script.js
 
   # Run code on a specific element
-  chrome-cli js exec --uid s3 \"(el) => el.textContent\"
+  agentchrome js exec --uid s3 \"(el) => el.textContent\"
 
   # Read from stdin
-  echo 'document.URL' | chrome-cli js exec -
+  echo 'document.URL' | agentchrome js exec -
 
   # Skip awaiting promises
-  chrome-cli js exec --no-await \"fetch('/api/data')\""
+  agentchrome js exec --no-await \"fetch('/api/data')\""
     )]
     Exec(JsExecArgs),
 }
@@ -1120,13 +1120,13 @@ pub enum DialogCommand {
         after_long_help = "\
 EXAMPLES:
   # Accept an alert
-  chrome-cli dialog handle accept
+  agentchrome dialog handle accept
 
   # Dismiss a confirm dialog
-  chrome-cli dialog handle dismiss
+  agentchrome dialog handle dismiss
 
   # Accept a prompt with text
-  chrome-cli dialog handle accept --text \"my response\""
+  agentchrome dialog handle accept --text \"my response\""
     )]
     Handle(DialogHandleArgs),
 
@@ -1139,7 +1139,7 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Check for open dialog
-  chrome-cli dialog info"
+  agentchrome dialog info"
     )]
     Info,
 }
@@ -1230,16 +1230,16 @@ pub enum InteractCommand {
         after_long_help = "\
 EXAMPLES:
   # Click by UID
-  chrome-cli interact click s5
+  agentchrome interact click s5
 
   # Click by CSS selector
-  chrome-cli interact click css:#submit-btn
+  agentchrome interact click css:#submit-btn
 
   # Double-click
-  chrome-cli interact click s5 --double
+  agentchrome interact click s5 --double
 
   # Right-click (context menu)
-  chrome-cli interact click s5 --right"
+  agentchrome interact click s5 --right"
     )]
     Click(ClickArgs),
 
@@ -1251,10 +1251,10 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Click at coordinates
-  chrome-cli interact click-at 100 200
+  agentchrome interact click-at 100 200
 
   # Double-click at coordinates
-  chrome-cli interact click-at 100 200 --double"
+  agentchrome interact click-at 100 200 --double"
     )]
     ClickAt(ClickAtArgs),
 
@@ -1265,10 +1265,10 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Hover by UID
-  chrome-cli interact hover s3
+  agentchrome interact hover s3
 
   # Hover by CSS selector
-  chrome-cli interact hover css:.tooltip-trigger"
+  agentchrome interact hover css:.tooltip-trigger"
     )]
     Hover(HoverArgs),
 
@@ -1280,10 +1280,10 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Drag between elements by UID
-  chrome-cli interact drag s3 s7
+  agentchrome interact drag s3 s7
 
   # Drag using CSS selectors
-  chrome-cli interact drag css:#item css:#dropzone"
+  agentchrome interact drag css:#item css:#dropzone"
     )]
     Drag(DragArgs),
 
@@ -1295,10 +1295,10 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Type text
-  chrome-cli interact type \"Hello, world!\"
+  agentchrome interact type \"Hello, world!\"
 
   # Type with delay between keystrokes
-  chrome-cli interact type \"slow typing\" --delay 50"
+  agentchrome interact type \"slow typing\" --delay 50"
     )]
     Type(TypeArgs),
 
@@ -1311,16 +1311,16 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Press Enter
-  chrome-cli interact key Enter
+  agentchrome interact key Enter
 
   # Select all (Ctrl+A)
-  chrome-cli interact key Control+A
+  agentchrome interact key Control+A
 
   # Press Tab 3 times
-  chrome-cli interact key Tab --repeat 3
+  agentchrome interact key Tab --repeat 3
 
   # Multi-modifier combo
-  chrome-cli interact key Control+Shift+ArrowRight"
+  agentchrome interact key Control+Shift+ArrowRight"
     )]
     Key(KeyArgs),
 
@@ -1334,19 +1334,19 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Scroll down one viewport height
-  chrome-cli interact scroll
+  agentchrome interact scroll
 
   # Scroll up 200 pixels
-  chrome-cli interact scroll --direction up --amount 200
+  agentchrome interact scroll --direction up --amount 200
 
   # Scroll to bottom of page
-  chrome-cli interact scroll --to-bottom
+  agentchrome interact scroll --to-bottom
 
   # Scroll until an element is visible
-  chrome-cli interact scroll --to-element s15
+  agentchrome interact scroll --to-element s15
 
   # Smooth scroll within a container
-  chrome-cli interact scroll --container css:.scrollable --smooth"
+  agentchrome interact scroll --container css:.scrollable --smooth"
     )]
     Scroll(ScrollArgs),
 }
@@ -1520,13 +1520,13 @@ pub enum FormCommand {
         after_long_help = "\
 EXAMPLES:
   # Fill by UID
-  chrome-cli form fill s5 \"hello@example.com\"
+  agentchrome form fill s5 \"hello@example.com\"
 
   # Fill by CSS selector
-  chrome-cli form fill css:#email \"user@example.com\"
+  agentchrome form fill css:#email \"user@example.com\"
 
   # Select a dropdown option
-  chrome-cli form fill s8 \"Option B\""
+  agentchrome form fill s8 \"Option B\""
     )]
     Fill(FormFillArgs),
 
@@ -1538,10 +1538,10 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Fill multiple fields inline
-  chrome-cli form fill-many '[{\"uid\":\"s5\",\"value\":\"Alice\"},{\"uid\":\"s7\",\"value\":\"alice@example.com\"}]'
+  agentchrome form fill-many '[{\"uid\":\"s5\",\"value\":\"Alice\"},{\"uid\":\"s7\",\"value\":\"alice@example.com\"}]'
 
   # Fill from a JSON file
-  chrome-cli form fill-many --file form-data.json"
+  agentchrome form fill-many --file form-data.json"
     )]
     FillMany(FormFillManyArgs),
 
@@ -1552,10 +1552,10 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Clear a field by UID
-  chrome-cli form clear s5
+  agentchrome form clear s5
 
   # Clear by CSS selector
-  chrome-cli form clear css:#search-input"
+  agentchrome form clear css:#search-input"
     )]
     Clear(FormClearArgs),
 
@@ -1567,10 +1567,10 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Upload a single file
-  chrome-cli form upload s10 ./photo.jpg
+  agentchrome form upload s10 ./photo.jpg
 
   # Upload multiple files
-  chrome-cli form upload css:#file-input ./doc1.pdf ./doc2.pdf"
+  agentchrome form upload css:#file-input ./doc1.pdf ./doc2.pdf"
     )]
     Upload(FormUploadArgs),
 }
@@ -1650,16 +1650,16 @@ pub enum ConsoleCommand {
         after_long_help = "\
 EXAMPLES:
   # List recent console messages
-  chrome-cli console read
+  agentchrome console read
 
   # Get details of a specific message
-  chrome-cli console read 42
+  agentchrome console read 42
 
   # Show only errors
-  chrome-cli console read --errors-only
+  agentchrome console read --errors-only
 
   # Filter by type
-  chrome-cli console read --type warn,error --limit 20"
+  agentchrome console read --type warn,error --limit 20"
     )]
     Read(ConsoleReadArgs),
 
@@ -1672,13 +1672,13 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Stream all console output
-  chrome-cli console follow
+  agentchrome console follow
 
   # Stream errors only for 10 seconds
-  chrome-cli console follow --errors-only --timeout 10000
+  agentchrome console follow --errors-only --timeout 10000
 
   # Stream specific message types
-  chrome-cli console follow --type log,warn"
+  agentchrome console follow --type log,warn"
     )]
     Follow(ConsoleFollowArgs),
 }
@@ -1745,16 +1745,16 @@ pub enum NetworkCommand {
         after_long_help = "\
 EXAMPLES:
   # List recent requests
-  chrome-cli network list
+  agentchrome network list
 
   # Filter by resource type
-  chrome-cli network list --type xhr,fetch
+  agentchrome network list --type xhr,fetch
 
   # Filter by URL pattern
-  chrome-cli network list --url api.example.com
+  agentchrome network list --url api.example.com
 
   # Filter by status code
-  chrome-cli network list --status 4xx"
+  agentchrome network list --status 4xx"
     )]
     List(NetworkListArgs),
 
@@ -1767,13 +1767,13 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Get request details
-  chrome-cli network get 42
+  agentchrome network get 42
 
   # Save the response body to a file
-  chrome-cli network get 42 --save-response body.json
+  agentchrome network get 42 --save-response body.json
 
   # Save both request and response bodies
-  chrome-cli network get 42 --save-request req.json --save-response resp.json"
+  agentchrome network get 42 --save-request req.json --save-response resp.json"
     )]
     Get(NetworkGetArgs),
 
@@ -1786,13 +1786,13 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Stream all network requests
-  chrome-cli network follow
+  agentchrome network follow
 
   # Stream API requests only
-  chrome-cli network follow --type xhr,fetch --url /api/
+  agentchrome network follow --type xhr,fetch --url /api/
 
   # Stream with headers for 30 seconds
-  chrome-cli network follow --verbose --timeout 30000"
+  agentchrome network follow --verbose --timeout 30000"
     )]
     Follow(NetworkFollowArgs),
 }
@@ -1894,13 +1894,13 @@ pub enum DomCommand {
         after_long_help = "\
 EXAMPLES:
   # Select by CSS selector
-  chrome-cli dom select \"h1\"
+  agentchrome dom select \"h1\"
 
   # Select by XPath
-  chrome-cli dom select \"//a[@href]\" --xpath
+  agentchrome dom select \"//a[@href]\" --xpath
 
   # Select with a complex CSS selector
-  chrome-cli dom select \"div.content > p:first-child\""
+  agentchrome dom select \"div.content > p:first-child\""
     )]
     Select(DomSelectArgs),
 
@@ -1913,10 +1913,10 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Get href by UID
-  chrome-cli dom get-attribute s3 href
+  agentchrome dom get-attribute s3 href
 
   # Get class by CSS selector
-  chrome-cli dom get-attribute css:h1 class"
+  agentchrome dom get-attribute css:h1 class"
     )]
     GetAttribute(DomGetAttributeArgs),
 
@@ -1928,10 +1928,10 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Get text by UID
-  chrome-cli dom get-text s3
+  agentchrome dom get-text s3
 
   # Get text by CSS selector
-  chrome-cli dom get-text css:h1"
+  agentchrome dom get-text css:h1"
     )]
     GetText(DomNodeIdArgs),
 
@@ -1943,10 +1943,10 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Get HTML by UID
-  chrome-cli dom get-html s3
+  agentchrome dom get-html s3
 
   # Get HTML by CSS selector
-  chrome-cli dom get-html css:div.content"
+  agentchrome dom get-html css:div.content"
     )]
     GetHtml(DomNodeIdArgs),
 
@@ -1958,10 +1958,10 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Set class attribute
-  chrome-cli dom set-attribute s5 class \"highlight\"
+  agentchrome dom set-attribute s5 class \"highlight\"
 
   # Set data attribute by CSS selector
-  chrome-cli dom set-attribute css:#main data-active true"
+  agentchrome dom set-attribute css:#main data-active true"
     )]
     SetAttribute(DomSetAttributeArgs),
 
@@ -1973,10 +1973,10 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Set text by UID
-  chrome-cli dom set-text s3 \"New heading\"
+  agentchrome dom set-text s3 \"New heading\"
 
   # Set text by CSS selector
-  chrome-cli dom set-text css:h1 \"Updated Title\""
+  agentchrome dom set-text css:h1 \"Updated Title\""
     )]
     SetText(DomSetTextArgs),
 
@@ -1987,10 +1987,10 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Remove by UID
-  chrome-cli dom remove s3
+  agentchrome dom remove s3
 
   # Remove by CSS selector
-  chrome-cli dom remove css:div.ad-banner"
+  agentchrome dom remove css:div.ad-banner"
     )]
     Remove(DomNodeIdArgs),
 
@@ -2003,13 +2003,13 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Get all computed styles
-  chrome-cli dom get-style s3
+  agentchrome dom get-style s3
 
   # Get a specific property
-  chrome-cli dom get-style s3 display
+  agentchrome dom get-style s3 display
 
   # Get style by CSS selector
-  chrome-cli dom get-style css:h1 color"
+  agentchrome dom get-style css:h1 color"
     )]
     GetStyle(DomGetStyleArgs),
 
@@ -2021,10 +2021,10 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Set inline style
-  chrome-cli dom set-style s3 \"color: red; font-size: 24px\"
+  agentchrome dom set-style s3 \"color: red; font-size: 24px\"
 
   # Set style by CSS selector
-  chrome-cli dom set-style css:h1 \"display: none\""
+  agentchrome dom set-style css:h1 \"display: none\""
     )]
     SetStyle(DomSetStyleArgs),
 
@@ -2035,10 +2035,10 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Get parent of a UID
-  chrome-cli dom parent s3
+  agentchrome dom parent s3
 
   # Get parent by CSS selector
-  chrome-cli dom parent css:span.label"
+  agentchrome dom parent css:span.label"
     )]
     Parent(DomNodeIdArgs),
 
@@ -2049,10 +2049,10 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # List children by UID
-  chrome-cli dom children s3
+  agentchrome dom children s3
 
   # List children by CSS selector
-  chrome-cli dom children css:div.container"
+  agentchrome dom children css:div.container"
     )]
     Children(DomNodeIdArgs),
 
@@ -2063,10 +2063,10 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # List siblings by UID
-  chrome-cli dom siblings s3
+  agentchrome dom siblings s3
 
   # List siblings by CSS selector
-  chrome-cli dom siblings css:li.active"
+  agentchrome dom siblings css:li.active"
     )]
     Siblings(DomNodeIdArgs),
 
@@ -2078,13 +2078,13 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Show the full DOM tree
-  chrome-cli dom tree
+  agentchrome dom tree
 
   # Limit depth to 3 levels
-  chrome-cli dom tree --depth 3
+  agentchrome dom tree --depth 3
 
   # Show tree from a specific element
-  chrome-cli dom tree --root css:div.content"
+  agentchrome dom tree --root css:div.content"
     )]
     Tree(DomTreeArgs),
 }
@@ -2194,19 +2194,19 @@ pub enum EmulateCommand {
         after_long_help = "\
 EXAMPLES:
   # Emulate a mobile device
-  chrome-cli emulate set --viewport 375x667 --device-scale 2 --mobile
+  agentchrome emulate set --viewport 375x667 --device-scale 2 --mobile
 
   # Simulate slow network
-  chrome-cli emulate set --network 3g
+  agentchrome emulate set --network 3g
 
   # Set geolocation (San Francisco)
-  chrome-cli emulate set --geolocation 37.7749,-122.4194
+  agentchrome emulate set --geolocation 37.7749,-122.4194
 
   # Force dark mode with custom user agent
-  chrome-cli emulate set --color-scheme dark --user-agent \"CustomBot/1.0\"
+  agentchrome emulate set --color-scheme dark --user-agent \"CustomBot/1.0\"
 
   # Throttle CPU (4x slowdown)
-  chrome-cli emulate set --cpu 4"
+  agentchrome emulate set --cpu 4"
     )]
     Set(EmulateSetArgs),
 
@@ -2218,7 +2218,7 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Reset all overrides
-  chrome-cli emulate reset"
+  agentchrome emulate reset"
     )]
     Reset,
 
@@ -2230,7 +2230,7 @@ EXAMPLES:
         after_long_help = "\
 EXAMPLES:
   # Check emulation status
-  chrome-cli emulate status"
+  agentchrome emulate status"
     )]
     Status,
 }
@@ -2328,10 +2328,10 @@ pub enum ConfigCommand {
         after_long_help = "\
 EXAMPLES:
   # Show resolved config
-  chrome-cli config show
+  agentchrome config show
 
   # Show config from a specific file
-  chrome-cli --config ./my-config.toml config show"
+  agentchrome --config ./my-config.toml config show"
     )]
     Show,
 
@@ -2339,29 +2339,29 @@ EXAMPLES:
     #[command(
         long_about = "Create a new configuration file with all available settings documented \
             as comments. By default, the file is created at the XDG config directory \
-            (~/.config/chrome-cli/config.toml on Linux, ~/Library/Application Support/\
-            chrome-cli/config.toml on macOS). Use --path to specify a custom location. \
+            (~/.config/agentchrome/config.toml on Linux, ~/Library/Application Support/\
+            agentchrome/config.toml on macOS). Use --path to specify a custom location. \
             Will not overwrite an existing file.",
         after_long_help = "\
 EXAMPLES:
   # Create default config file
-  chrome-cli config init
+  agentchrome config init
 
   # Create at a custom path
-  chrome-cli config init --path ./my-config.toml"
+  agentchrome config init --path ./my-config.toml"
     )]
     Init(ConfigInitArgs),
 
     /// Show the active config file path (or null if none)
     #[command(
         long_about = "Show the path of the active configuration file. Searches in priority \
-            order: --config flag, $CHROME_CLI_CONFIG env var, project-local \
-            (.chrome-cli.toml), XDG config dir, home directory (~/.chrome-cli.toml). \
+            order: --config flag, $AGENTCHROME_CONFIG env var, project-local \
+            (.agentchrome.toml), XDG config dir, home directory (~/.agentchrome.toml). \
             Returns JSON with {\"path\": \"...\"} or {\"path\": null} if no config file is found.",
         after_long_help = "\
 EXAMPLES:
   # Show active config path
-  chrome-cli config path"
+  agentchrome config path"
     )]
     Path,
 }

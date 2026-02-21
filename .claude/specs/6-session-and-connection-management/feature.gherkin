@@ -13,8 +13,8 @@ Feature: Session and connection management
   @requires-chrome
   Scenario: Write session file after connect
     Given a Chrome instance is running with remote debugging
-    When I run "chrome-cli connect"
-    Then a session file should exist at "~/.chrome-cli/session.json"
+    When I run "agentchrome connect"
+    Then a session file should exist at "~/.agentchrome/session.json"
     And the session file should contain "ws_url" as a string
     And the session file should contain "port" as a number
     And the session file should contain "timestamp" as a string
@@ -23,8 +23,8 @@ Feature: Session and connection management
   @requires-chrome
   Scenario: Write session file after launch
     Given Chrome is installed on the system
-    When I run "chrome-cli connect --launch --headless"
-    Then a session file should exist at "~/.chrome-cli/session.json"
+    When I run "agentchrome connect --launch --headless"
+    Then a session file should exist at "~/.agentchrome/session.json"
     And the session file should contain "pid" as a number
     And the session file should contain "ws_url" as a string
     And the exit code should be 0
@@ -50,7 +50,7 @@ Feature: Session and connection management
   Scenario: Show connection status with valid reachable session
     Given a valid session file exists with ws_url "ws://127.0.0.1:9222/devtools/browser/abc"
     And Chrome is running on port 9222
-    When I run "chrome-cli connect --status"
+    When I run "agentchrome connect --status"
     Then the output should contain "ws_url"
     And the output should contain "reachable": true
     And the exit code should be 0
@@ -58,13 +58,13 @@ Feature: Session and connection management
   Scenario: Show connection status with stale session
     Given a valid session file exists with ws_url "ws://127.0.0.1:9222/devtools/browser/abc"
     And Chrome is not running on port 9222
-    When I run "chrome-cli connect --status"
+    When I run "agentchrome connect --status"
     Then the output should contain "reachable": false
     And the exit code should be 0
 
   Scenario: Show connection status with no session
     Given no session file exists
-    When I run "chrome-cli connect --status"
+    When I run "agentchrome connect --status"
     Then stderr should contain "No active session"
     And the exit code should be non-zero
 
@@ -72,7 +72,7 @@ Feature: Session and connection management
 
   Scenario: Disconnect removes session file
     Given a valid session file exists
-    When I run "chrome-cli connect --disconnect"
+    When I run "agentchrome connect --disconnect"
     Then the session file should not exist
     And the output should contain "disconnected": true
     And the exit code should be 0
@@ -80,14 +80,14 @@ Feature: Session and connection management
   @requires-chrome
   Scenario: Disconnect kills launched Chrome process
     Given a session file exists with pid 12345 from a launched Chrome
-    When I run "chrome-cli connect --disconnect"
+    When I run "agentchrome connect --disconnect"
     Then the Chrome process 12345 should receive a termination signal
     And the session file should not exist
     And the output should contain "killed_pid"
 
   Scenario: Disconnect with no session is idempotent
     Given no session file exists
-    When I run "chrome-cli connect --disconnect"
+    When I run "agentchrome connect --disconnect"
     Then the output should contain "disconnected": true
     And the exit code should be 0
 
@@ -99,7 +99,7 @@ Feature: Session and connection management
     And no Chrome instance is running
     When I run a command that needs Chrome
     Then stderr should contain "No Chrome instance found"
-    And stderr should contain "chrome-cli connect"
+    And stderr should contain "agentchrome connect"
     And the exit code should be non-zero
 
   @requires-chrome
@@ -113,7 +113,7 @@ Feature: Session and connection management
     Given a session file exists but Chrome is not running at the stored address
     When I run a command that needs Chrome via session file
     Then stderr should contain "stale"
-    And stderr should contain "chrome-cli connect"
+    And stderr should contain "agentchrome connect"
     And the exit code should be non-zero
 
   # --- Tab Targeting ---
@@ -180,6 +180,6 @@ Feature: Session and connection management
 
   Scenario: Corrupted session file handled gracefully
     Given a session file exists with invalid JSON content
-    When I run "chrome-cli connect --status"
+    When I run "agentchrome connect --status"
     Then stderr should contain an error about the session file
     And the exit code should be non-zero

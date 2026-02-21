@@ -50,7 +50,7 @@
 - [ ] `cargo test` passes (all unit, integration, and BDD tests)
 - [ ] `cargo clippy` passes
 - [ ] `cargo fmt --check` passes
-- [ ] Manual verification: `chrome-cli tabs create --background` keeps the original tab active in headless mode
+- [ ] Manual verification: `agentchrome tabs create --background` keeps the original tab active in headless mode
 
 ---
 

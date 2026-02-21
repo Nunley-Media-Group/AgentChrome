@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
 
-use chrome_cli::error::AppError;
+use agentchrome::error::AppError;
 
 // =============================================================================
 // Constants
@@ -475,7 +475,7 @@ impl From<std::io::Error> for SnapshotStateError {
 
 impl From<SnapshotStateError> for AppError {
     fn from(e: SnapshotStateError) -> Self {
-        use chrome_cli::error::ExitCode;
+        use agentchrome::error::ExitCode;
         Self {
             message: e.to_string(),
             code: ExitCode::GeneralError,
@@ -484,7 +484,7 @@ impl From<SnapshotStateError> for AppError {
     }
 }
 
-/// Returns the path to `~/.chrome-cli/snapshot.json`.
+/// Returns the path to `~/.agentchrome/snapshot.json`.
 fn snapshot_state_path() -> Result<PathBuf, SnapshotStateError> {
     #[cfg(unix)]
     let key = "HOME";
@@ -494,10 +494,10 @@ fn snapshot_state_path() -> Result<PathBuf, SnapshotStateError> {
     let home = std::env::var(key)
         .map(PathBuf::from)
         .map_err(|_| SnapshotStateError::NoHomeDir)?;
-    Ok(home.join(".chrome-cli").join("snapshot.json"))
+    Ok(home.join(".agentchrome").join("snapshot.json"))
 }
 
-/// Write snapshot state to `~/.chrome-cli/snapshot.json` using atomic write.
+/// Write snapshot state to `~/.agentchrome/snapshot.json` using atomic write.
 pub fn write_snapshot_state(state: &SnapshotState) -> Result<(), SnapshotStateError> {
     let path = snapshot_state_path()?;
     write_snapshot_state_to(&path, state)
@@ -533,7 +533,7 @@ pub fn write_snapshot_state_to(
     Ok(())
 }
 
-/// Read snapshot state from `~/.chrome-cli/snapshot.json`.
+/// Read snapshot state from `~/.agentchrome/snapshot.json`.
 ///
 /// Returns `Ok(None)` if the file does not exist.
 ///
@@ -979,7 +979,7 @@ mod tests {
 
     #[test]
     fn snapshot_state_write_read_round_trip() {
-        let dir = std::env::temp_dir().join("chrome-cli-test-snapshot-rt");
+        let dir = std::env::temp_dir().join("agentchrome-test-snapshot-rt");
         let _ = std::fs::remove_dir_all(&dir);
         let path = dir.join("snapshot.json");
 
@@ -1001,7 +1001,7 @@ mod tests {
 
     #[test]
     fn read_snapshot_state_nonexistent_returns_none() {
-        let path = std::path::Path::new("/tmp/chrome-cli-test-snap-nonexistent/snapshot.json");
+        let path = std::path::Path::new("/tmp/agentchrome-test-snap-nonexistent/snapshot.json");
         let result = read_snapshot_state_from(path).unwrap();
         assert!(result.is_none());
     }

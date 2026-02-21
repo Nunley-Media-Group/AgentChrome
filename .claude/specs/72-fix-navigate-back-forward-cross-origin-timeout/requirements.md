@@ -13,10 +13,10 @@
 
 ### Steps to Reproduce
 
-1. Launch Chrome via chrome-cli
+1. Launch Chrome via agentchrome
 2. Navigate to `https://google.com`
 3. Navigate to `https://google.com/about` (which redirects to `https://about.google`, a different origin)
-4. Execute `chrome-cli navigate back`
+4. Execute `agentchrome navigate back`
 5. Observe timeout error after 30 seconds
 
 ### Environment
@@ -56,21 +56,21 @@ Always — 100% reproducible when back/forward navigation crosses origins.
 ### AC1: Cross-origin navigate back succeeds
 
 **Given** a tab has navigated from `https://example.com` to a page on a different origin (e.g., `https://www.iana.org/domains/reserved`)
-**When** I run `chrome-cli navigate back`
+**When** I run `agentchrome navigate back`
 **Then** the exit code is 0
 **And** the JSON output has key `url` containing the previous origin's URL
 
 ### AC2: Cross-origin navigate forward succeeds
 
 **Given** a tab has navigated across origins and then navigated back
-**When** I run `chrome-cli navigate forward`
+**When** I run `agentchrome navigate forward`
 **Then** the exit code is 0
 **And** the JSON output has key `url` containing the forward destination URL
 
 ### AC3: Same-origin navigate back still works (no regression)
 
 **Given** a tab has navigated between two pages on the same origin
-**When** I run `chrome-cli navigate back`
+**When** I run `agentchrome navigate back`
 **Then** the exit code is 0
 **And** the JSON output has key `url` containing the previous page's URL
 

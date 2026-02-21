@@ -13,8 +13,8 @@
 
 ### Steps to Reproduce
 
-1. Connect to Chrome: `chrome-cli connect --launch --headless`
-2. Execute failing JS: `chrome-cli js exec "throw new Error('test')" 2>/tmp/stderr.txt`
+1. Connect to Chrome: `agentchrome connect --launch --headless`
+2. Execute failing JS: `agentchrome js exec "throw new Error('test')" 2>/tmp/stderr.txt`
 3. Inspect stderr: `cat /tmp/stderr.txt`
 4. Observe two JSON objects on stderr instead of one
 
@@ -54,7 +54,7 @@ Always — any JavaScript runtime error triggers this.
 ### AC1: Single JSON error on throw
 
 **Given** Chrome is connected and a page is loaded
-**When** I execute `chrome-cli js exec "throw new Error('test')"`
+**When** I execute `agentchrome js exec "throw new Error('test')"`
 **Then** exactly one JSON object is written to stderr
 **And** it contains the `error`, `stack`, and `code` fields
 **And** the exit code is non-zero
@@ -62,7 +62,7 @@ Always — any JavaScript runtime error triggers this.
 ### AC2: Single JSON error on ReferenceError
 
 **Given** Chrome is connected and a page is loaded
-**When** I execute `chrome-cli js exec "nonExistentVar"`
+**When** I execute `agentchrome js exec "nonExistentVar"`
 **Then** exactly one JSON object is written to stderr
 **And** it contains the `error` and `code` fields
 
@@ -76,7 +76,7 @@ Always — any JavaScript runtime error triggers this.
 ### AC4: Successful execution unchanged
 
 **Given** Chrome is connected and a page is loaded
-**When** I execute `chrome-cli js exec "document.title"`
+**When** I execute `agentchrome js exec "document.title"`
 **Then** stdout contains the result JSON
 **And** stderr is empty
 **And** the exit code is 0

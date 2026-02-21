@@ -5,9 +5,9 @@ use std::time::{Duration, Instant};
 
 use serde::{Deserialize, Serialize};
 
-use chrome_cli::cdp::{CdpClient, CdpConfig, CdpEvent};
-use chrome_cli::connection::{ManagedSession, resolve_connection, resolve_target};
-use chrome_cli::error::{AppError, ExitCode};
+use agentchrome::cdp::{CdpClient, CdpConfig, CdpEvent};
+use agentchrome::connection::{ManagedSession, resolve_connection, resolve_target};
+use agentchrome::error::{AppError, ExitCode};
 
 use crate::cli::{
     GlobalOpts, PerfAnalyzeArgs, PerfArgs, PerfCommand, PerfRecordArgs, PerfVitalsArgs,

@@ -1,4 +1,4 @@
-# chrome-cli Code Structure Steering
+# agentchrome Code Structure Steering
 
 This document defines code organization, naming conventions, and patterns.
 All code should follow these guidelines for consistency.
@@ -8,7 +8,7 @@ All code should follow these guidelines for consistency.
 ## Project Layout
 
 ```
-chrome-cli/
+agentchrome/
 ├── src/
 │   ├── main.rs               # Entry point, CLI parsing, command dispatch
 │   ├── lib.rs                 # Library target (exposes modules for tests/xtask)
@@ -27,7 +27,7 @@ chrome-cli/
 │   │   ├── platform.rs        # Platform-specific Chrome paths (macOS/Linux/Windows)
 │   │   └── error.rs           # Chrome-specific error types
 │   ├── connection.rs          # Connection management (connect, disconnect, auto-discover)
-│   ├── session.rs             # Session file persistence (~/.config/chrome-cli/session.json)
+│   ├── session.rs             # Session file persistence (~/.config/agentchrome/session.json)
 │   ├── config.rs              # Configuration file loading and merging
 │   ├── error.rs               # Top-level error types (AppError, ExitCode)
 │   ├── snapshot.rs            # Accessibility tree snapshot and formatting
@@ -160,8 +160,8 @@ use clap::Parser;
 use tokio::net::TcpStream;
 
 // 3. Crate-level imports
-use chrome_cli::cdp::CdpClient;
-use chrome_cli::error::Result;
+use agentchrome::cdp::CdpClient;
+use agentchrome::error::Result;
 
 // 4. Local module imports
 use crate::cli::Command;

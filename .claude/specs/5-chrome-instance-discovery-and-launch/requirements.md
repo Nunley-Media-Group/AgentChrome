@@ -10,14 +10,14 @@
 ## User Story
 
 **As a** developer or automation engineer
-**I want** chrome-cli to discover running Chrome instances and launch new ones with remote debugging enabled
+**I want** agentchrome to discover running Chrome instances and launch new ones with remote debugging enabled
 **So that** I can seamlessly connect to Chrome for browser automation without manual setup
 
 ---
 
 ## Background
 
-The chrome-cli tool needs to connect to a Chrome browser via the Chrome DevTools Protocol (CDP) before any commands can be executed. Currently, the CDP WebSocket client exists (issue #4) but there is no way to discover a running Chrome instance or launch a new one. This feature bridges the gap between the CLI interface and the CDP client by implementing Chrome process discovery, launch, and the `connect` subcommand that orchestrates both.
+The agentchrome tool needs to connect to a Chrome browser via the Chrome DevTools Protocol (CDP) before any commands can be executed. Currently, the CDP WebSocket client exists (issue #4) but there is no way to discover a running Chrome instance or launch a new one. This feature bridges the gap between the CLI interface and the CDP client by implementing Chrome process discovery, launch, and the `connect` subcommand that orchestrates both.
 
 The MCP server reference implementation uses Puppeteer's built-in browser detection. We need equivalent Rust-native functionality that works across macOS, Linux, and Windows.
 
@@ -30,7 +30,7 @@ The MCP server reference implementation uses Puppeteer's built-in browser detect
 ### AC1: Discover Chrome via HTTP debug endpoint
 
 **Given** a Chrome instance is running with `--remote-debugging-port=9222`
-**When** I run `chrome-cli connect --port 9222`
+**When** I run `agentchrome connect --port 9222`
 **Then** the tool queries `http://127.0.0.1:9222/json/version` and extracts the WebSocket debugger URL
 **And** outputs connection info as JSON: `{"ws_url": "ws://...", "port": 9222, "pid": null}`
 **And** the exit code is 0
@@ -38,7 +38,7 @@ The MCP server reference implementation uses Puppeteer's built-in browser detect
 ### AC2: Discover Chrome via DevToolsActivePort file
 
 **Given** Chrome is running and has written a `DevToolsActivePort` file in its user data directory
-**When** I run `chrome-cli connect` with no flags
+**When** I run `agentchrome connect` with no flags
 **Then** the tool reads the `DevToolsActivePort` file from the platform-default Chrome user data directory
 **And** extracts the port number and WebSocket path from the file
 **And** connects to the discovered instance
@@ -53,7 +53,7 @@ The MCP server reference implementation uses Puppeteer's built-in browser detect
 ### AC4: Launch Chrome with remote debugging
 
 **Given** Chrome is installed on the system
-**When** I run `chrome-cli connect --launch`
+**When** I run `agentchrome connect --launch`
 **Then** the tool finds the Chrome executable on the current platform
 **And** launches Chrome with `--remote-debugging-port=<port>` using an available port
 **And** creates a temporary user data directory for isolation
@@ -63,28 +63,28 @@ The MCP server reference implementation uses Puppeteer's built-in browser detect
 ### AC5: Launch Chrome in headless mode
 
 **Given** Chrome is installed on the system
-**When** I run `chrome-cli connect --launch --headless`
+**When** I run `agentchrome connect --launch --headless`
 **Then** Chrome is launched with both `--remote-debugging-port` and `--headless=new` flags
 **And** the tool connects successfully
 
 ### AC6: Launch specific Chrome channel
 
 **Given** Chrome Canary is installed on the system
-**When** I run `chrome-cli connect --launch --channel canary`
+**When** I run `agentchrome connect --launch --channel canary`
 **Then** the tool finds and launches Chrome Canary's executable
 **And** connects to it successfully
 
 ### AC7: Connect via direct WebSocket URL
 
 **Given** I know the WebSocket debugger URL of a running Chrome instance
-**When** I run `chrome-cli connect --ws-url ws://127.0.0.1:9222/devtools/browser/abc123`
+**When** I run `agentchrome connect --ws-url ws://127.0.0.1:9222/devtools/browser/abc123`
 **Then** the tool connects directly to the provided WebSocket URL
 **And** outputs connection info as JSON
 
 ### AC8: Auto-discover or launch (default behavior)
 
 **Given** no Chrome instance is running with debugging enabled
-**When** I run `chrome-cli connect` with no flags
+**When** I run `agentchrome connect` with no flags
 **Then** the tool first attempts to discover a running instance (DevToolsActivePort, then common ports)
 **And** if no instance is found, launches a new Chrome instance
 **And** connects to it and outputs connection info
@@ -92,21 +92,21 @@ The MCP server reference implementation uses Puppeteer's built-in browser detect
 ### AC9: Custom Chrome executable path
 
 **Given** Chrome is installed in a non-standard location
-**When** I run `chrome-cli connect --launch --chrome-path /custom/path/to/chrome`
+**When** I run `agentchrome connect --launch --chrome-path /custom/path/to/chrome`
 **Then** the tool launches Chrome from the specified path
 **And** connects to it successfully
 
 ### AC10: Pass additional Chrome flags
 
 **Given** Chrome is installed on the system
-**When** I run `chrome-cli connect --launch --chrome-arg --disable-gpu --chrome-arg --no-sandbox`
+**When** I run `agentchrome connect --launch --chrome-arg --disable-gpu --chrome-arg --no-sandbox`
 **Then** Chrome is launched with the additional flags passed through
 **And** the tool connects successfully
 
 ### AC11: Chrome not installed error
 
 **Given** Chrome is not installed on the system (or not found in any known location)
-**When** I run `chrome-cli connect --launch`
+**When** I run `agentchrome connect --launch`
 **Then** the tool outputs a clear error message indicating Chrome was not found
 **And** suggests installing Chrome or using `--chrome-path` to specify the location
 **And** the exit code is non-zero
@@ -122,7 +122,7 @@ The MCP server reference implementation uses Puppeteer's built-in browser detect
 ### AC13: Port already in use
 
 **Given** port 9222 is already in use by another process (not Chrome with CDP)
-**When** I run `chrome-cli connect --port 9222`
+**When** I run `agentchrome connect --port 9222`
 **Then** the tool reports that it could not connect to Chrome on that port
 **And** the exit code is non-zero
 
@@ -138,7 +138,7 @@ The MCP server reference implementation uses Puppeteer's built-in browser detect
 ### AC15: Temporary user data directory cleanup
 
 **Given** Chrome was launched with a temporary user data directory
-**When** chrome-cli exits or the connection is closed
+**When** agentchrome exits or the connection is closed
 **Then** the temporary user data directory is cleaned up
 
 ### Generated Gherkin Preview
@@ -146,25 +146,25 @@ The MCP server reference implementation uses Puppeteer's built-in browser detect
 ```gherkin
 Feature: Chrome instance discovery and launch
   As a developer or automation engineer
-  I want chrome-cli to discover running Chrome instances and launch new ones
+  I want agentchrome to discover running Chrome instances and launch new ones
   So that I can seamlessly connect to Chrome for browser automation
 
   Scenario: Discover Chrome via HTTP debug endpoint
     Given a Chrome instance is running with remote debugging on port 9222
-    When I run "chrome-cli connect --port 9222"
+    When I run "agentchrome connect --port 9222"
     Then the output should contain a JSON object with "ws_url"
     And the output should contain "port": 9222
     And the exit code should be 0
 
   Scenario: Connect via direct WebSocket URL
     Given a Chrome instance is running with a known WebSocket URL
-    When I run "chrome-cli connect --ws-url ws://127.0.0.1:9222/devtools/browser/abc"
+    When I run "agentchrome connect --ws-url ws://127.0.0.1:9222/devtools/browser/abc"
     Then the output should contain a JSON object with "ws_url"
     And the exit code should be 0
 
   Scenario: Chrome not installed error
     Given Chrome is not installed on the system
-    When I run "chrome-cli connect --launch"
+    When I run "agentchrome connect --launch"
     Then stderr should contain "Chrome not found"
     And the exit code should be non-zero
 ```

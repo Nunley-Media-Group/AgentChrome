@@ -9,7 +9,7 @@
 
 ## User Story
 
-**As a** developer contributing to chrome-cli
+**As a** developer contributing to agentchrome
 **I want** a properly configured Rust project with workspace setup, linting, and project metadata
 **So that** I can build, test, and lint the project with zero warnings from day one
 
@@ -17,7 +17,7 @@
 
 ## Background
 
-chrome-cli is a standalone CLI tool that provides browser automation and inspection capabilities via the Chrome DevTools Protocol (CDP) over WebSocket. This is the foundational setup issue — everything else depends on having a clean, CI-ready Rust project structure. The project uses edition 2024 and resolver 3, starting as a single crate with the option to split into a workspace later.
+agentchrome is a standalone CLI tool that provides browser automation and inspection capabilities via the Chrome DevTools Protocol (CDP) over WebSocket. This is the foundational setup issue — everything else depends on having a clean, CI-ready Rust project structure. The project uses edition 2024 and resolver 3, starting as a single crate with the option to split into a workspace later.
 
 ---
 
@@ -28,7 +28,7 @@ chrome-cli is a standalone CLI tool that provides browser automation and inspect
 **Given** a freshly cloned repository
 **When** I inspect `Cargo.toml`
 **Then** it contains workspace configuration with `resolver = "3"`
-**And** it contains project metadata: name (`chrome-cli`), version (`0.1.0`), authors, license (`MIT OR Apache-2.0`), repository URL, description, keywords, categories
+**And** it contains project metadata: name (`agentchrome`), version (`0.1.0`), authors, license (`MIT OR Apache-2.0`), repository URL, description, keywords, categories
 **And** it uses `edition = "2024"`
 
 ### AC2: Dual license files present
@@ -68,14 +68,14 @@ chrome-cli is a standalone CLI tool that provides browser automation and inspect
 
 **Given** the project has been set up
 **When** I run `cargo run -- --version`
-**Then** it prints the program name and version (e.g., `chrome-cli 0.1.0`)
+**Then** it prints the program name and version (e.g., `agentchrome 0.1.0`)
 **And** the process exits with code 0
 
 ### AC8: Scaffold README.md
 
 **Given** a freshly cloned repository
 **When** I inspect `README.md`
-**Then** it contains the project name (`chrome-cli`)
+**Then** it contains the project name (`agentchrome`)
 **And** it contains a one-line description
 **And** it contains an "under construction" notice
 

@@ -12,14 +12,14 @@ Feature: Navigate back/forward works for SPA same-document history navigations
   and Page.navigatedWithinDocument CDP events.
 
   Background:
-    Given chrome-cli is built
+    Given agentchrome is built
 
   # --- Bug Is Fixed ---
 
   @regression
   Scenario: AC1 — SPA same-document navigate back succeeds
     Given a tab has navigated through multiple SPA pages via pushState routing
-    When I run "chrome-cli navigate back"
+    When I run "agentchrome navigate back"
     Then the exit code should be 0
     And the JSON output has key "url" containing the previous page URL
     And the JSON output has key "title"
@@ -27,7 +27,7 @@ Feature: Navigate back/forward works for SPA same-document history navigations
   @regression
   Scenario: AC2 — SPA same-document navigate forward succeeds
     Given a tab has navigated through SPA pages and then navigated back
-    When I run "chrome-cli navigate forward"
+    When I run "agentchrome navigate forward"
     Then the exit code should be 0
     And the JSON output has key "url" containing the forward destination URL
     And the JSON output has key "title"
@@ -37,7 +37,7 @@ Feature: Navigate back/forward works for SPA same-document history navigations
   @regression
   Scenario: AC3 — Cross-document navigate back still works
     Given a tab has navigated between two pages via full page loads
-    When I run "chrome-cli navigate back"
+    When I run "agentchrome navigate back"
     Then the exit code should be 0
     And the JSON output has key "url" containing the previous page URL
     And the JSON output has key "title"
@@ -45,7 +45,7 @@ Feature: Navigate back/forward works for SPA same-document history navigations
   @regression
   Scenario: AC4 — Cross-origin navigate back still works
     Given a tab has navigated across origins via full page loads
-    When I run "chrome-cli navigate back"
+    When I run "agentchrome navigate back"
     Then the exit code should be 0
     And the JSON output has key "url" containing the previous origin URL
     And the JSON output has key "title"
