@@ -7,16 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [1.2.2] - 2026-02-19
+## [1.3.0] - 2026-02-20
+
+### Changed
+
+- Rename project from chrome-cli to AgentChrome — binary, crate, and all references (#155)
+- Refocus README on agentic use and Claude Code integration
 
 ### Fixed
 
 - Navigate back/forward/reload commands now respect the global `--timeout` flag and `AGENTCHROME_TIMEOUT` environment variable instead of always using the hardcoded 30-second default (#145)
-
-## [1.2.1] - 2026-02-19
-
-### Fixed
-
 - Navigate back/forward timeout on SPA same-document history navigations — listen for both `Page.frameNavigated` and `Page.navigatedWithinDocument` CDP events using `tokio::select!` (#144)
 
 ## [1.2.0] - 2026-02-19
