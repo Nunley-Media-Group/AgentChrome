@@ -1873,6 +1873,8 @@ mod tests {
     fn click_at_result_serialization() {
         let result = ClickAtResult {
             clicked_at: Coords { x: 100.0, y: 200.0 },
+            url: None,
+            navigated: None,
             double_click: None,
             right_click: None,
             snapshot: None,
