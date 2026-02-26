@@ -1559,6 +1559,29 @@ EXAMPLES:
     )]
     Clear(FormClearArgs),
 
+    /// Submit a form by targeting a form element or element within a form
+    #[command(
+        long_about = "Submit a form identified by targeting the <form> element itself or any \
+            element inside the form (e.g., an input field). If the target is not a <form>, \
+            the command walks up the DOM to find the nearest ancestor <form> and submits it. \
+            Uses requestSubmit() to trigger browser validation and fire the submit event, \
+            matching real user behavior.",
+        after_long_help = "\
+EXAMPLES:
+  # Submit by form UID
+  agentchrome form submit s3
+
+  # Submit by targeting an input inside the form
+  agentchrome form submit s5
+
+  # Submit by CSS selector
+  agentchrome form submit css:#login-form
+
+  # Submit and include updated snapshot
+  agentchrome form submit s3 --include-snapshot"
+    )]
+    Submit(FormSubmitArgs),
+
     /// Upload files to a file input element
     #[command(
         long_about = "Upload one or more files to a file input element identified by UID or \
@@ -1599,6 +1622,18 @@ pub struct FormFillManyArgs {
     /// Read JSON from a file instead of inline argument
     #[arg(long)]
     pub file: Option<PathBuf>,
+
+    /// Include updated accessibility snapshot in output
+    #[arg(long)]
+    pub include_snapshot: bool,
+}
+
+/// Arguments for `form submit`.
+#[derive(Args)]
+pub struct FormSubmitArgs {
+    /// Target element (UID like 's3' or CSS selector like 'css:#login-form')
+    #[arg(value_name = "TARGET")]
+    pub target: String,
 
     /// Include updated accessibility snapshot in output
     #[arg(long)]

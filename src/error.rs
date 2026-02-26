@@ -411,6 +411,15 @@ impl AppError {
     }
 
     #[must_use]
+    pub fn not_in_form(target: &str) -> Self {
+        Self {
+            message: format!("No form found for target: {target}"),
+            code: ExitCode::GeneralError,
+            custom_json: None,
+        }
+    }
+
+    #[must_use]
     pub fn not_file_input(target: &str) -> Self {
         Self {
             message: format!("Element is not a file input: {target}"),
@@ -785,6 +794,14 @@ mod tests {
         let err = AppError::file_not_readable("/tmp/secret.txt");
         assert!(err.message.contains("File not readable"));
         assert!(err.message.contains("/tmp/secret.txt"));
+        assert!(matches!(err.code, ExitCode::GeneralError));
+    }
+
+    #[test]
+    fn not_in_form_error() {
+        let err = AppError::not_in_form("s10");
+        assert!(err.message.contains("No form found for target"));
+        assert!(err.message.contains("s10"));
         assert!(matches!(err.code, ExitCode::GeneralError));
     }
 

@@ -1791,8 +1791,10 @@ impl Default for ConfigWorld {
         use std::sync::atomic::{AtomicU64, Ordering};
         static COUNTER: AtomicU64 = AtomicU64::new(0);
         let id = COUNTER.fetch_add(1, Ordering::Relaxed);
-        let temp_dir =
-            std::env::temp_dir().join(format!("agentchrome-bdd-config-{}-{id}", std::process::id()));
+        let temp_dir = std::env::temp_dir().join(format!(
+            "agentchrome-bdd-config-{}-{id}",
+            std::process::id()
+        ));
         let _ = std::fs::create_dir_all(&temp_dir);
         Self {
             temp_dir,
@@ -2108,10 +2110,9 @@ fn examples_binary_available(world: &mut ExamplesWorld) {
 
 #[when(expr = "I run {string}")]
 fn examples_run_command(world: &mut ExamplesWorld, command_line: String) {
-    let binary = world
-        .binary_path
-        .as_ref()
-        .expect("Binary path not set — did you forget 'Given the agentchrome binary is available'?");
+    let binary = world.binary_path.as_ref().expect(
+        "Binary path not set — did you forget 'Given the agentchrome binary is available'?",
+    );
 
     let parts: Vec<&str> = command_line.split_whitespace().collect();
     let args = if parts.first().is_some_and(|&p| p == "agentchrome") {

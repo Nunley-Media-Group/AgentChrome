@@ -8,8 +8,8 @@ use agentchrome::connection::{ManagedSession, resolve_connection, resolve_target
 use agentchrome::error::{AppError, ExitCode};
 
 use crate::cli::{
-    FormArgs, FormClearArgs, FormCommand, FormFillArgs, FormFillManyArgs, FormUploadArgs,
-    GlobalOpts,
+    FormArgs, FormClearArgs, FormCommand, FormFillArgs, FormFillManyArgs, FormSubmitArgs,
+    FormUploadArgs, GlobalOpts,
 };
 use crate::emulate::apply_emulate_state;
 use crate::snapshot;
@@ -48,6 +48,15 @@ struct UploadResult {
     uploaded: String,
     files: Vec<String>,
     size: u64,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    snapshot: Option<serde_json::Value>,
+}
+
+#[derive(Serialize)]
+struct SubmitResult {
+    submitted: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    url: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     snapshot: Option<serde_json::Value>,
 }
@@ -98,6 +107,10 @@ fn print_upload_plain(result: &UploadResult) {
         "Uploaded {} ({} bytes): {}",
         result.uploaded, result.size, file_list
     );
+}
+
+fn print_submit_plain(result: &SubmitResult) {
+    println!("Submitted {}", result.submitted);
 }
 
 // =============================================================================
@@ -293,6 +306,24 @@ function() {
 
     el.dispatchEvent(new Event('input', { bubbles: true }));
     el.dispatchEvent(new Event('change', { bubbles: true }));
+}
+";
+
+/// JavaScript function to find the enclosing form and submit it.
+///
+/// If `this` is a `<form>`, submits directly. Otherwise walks up via `closest('form')`.
+/// Uses `requestSubmit()` to trigger validation and the submit event.
+const SUBMIT_JS: &str = r"
+function() {
+    const el = this;
+    const form = el.tagName.toLowerCase() === 'form'
+        ? el
+        : el.closest('form');
+    if (!form) {
+        return { found: false };
+    }
+    form.requestSubmit();
+    return { found: true };
 }
 ";
 
@@ -649,6 +680,86 @@ async fn execute_upload(global: &GlobalOpts, args: &FormUploadArgs) -> Result<()
 }
 
 // =============================================================================
+// Submit implementation
+// =============================================================================
+
+/// Execute the `form submit` command.
+async fn execute_submit(global: &GlobalOpts, args: &FormSubmitArgs) -> Result<(), AppError> {
+    let (_client, mut managed) = setup_session(global).await?;
+    if global.auto_dismiss_dialogs {
+        let _dismiss = managed.spawn_auto_dismiss().await?;
+    }
+
+    // Enable required domains
+    managed.ensure_domain("DOM").await?;
+    managed.ensure_domain("Runtime").await?;
+    managed.ensure_domain("Page").await?;
+
+    // Resolve target to a Runtime object ID
+    let object_id = resolve_to_object_id(&mut managed, &args.target).await?;
+
+    // Subscribe to navigation events before submitting
+    let mut nav_rx = managed.subscribe("Page.frameNavigated").await?;
+
+    // Call SUBMIT_JS on the resolved element
+    let call_params = serde_json::json!({
+        "objectId": object_id,
+        "functionDeclaration": SUBMIT_JS,
+        "returnByValue": true,
+    });
+    let response = managed
+        .send_command("Runtime.callFunctionOn", Some(call_params))
+        .await
+        .map_err(|e| AppError::interaction_failed("submit", &e.to_string()))?;
+
+    // Check if a form was found
+    let found = response["result"]["value"]["found"]
+        .as_bool()
+        .unwrap_or(false);
+    if !found {
+        return Err(AppError::not_in_form(&args.target));
+    }
+
+    // Brief wait for potential navigation (100ms)
+    tokio::time::sleep(Duration::from_millis(100)).await;
+
+    // Check if navigation happened
+    let navigated = nav_rx.try_recv().is_ok();
+
+    // Get current URL only if navigated
+    let url = if navigated {
+        Some(get_current_url(&mut managed).await?)
+    } else {
+        None
+    };
+
+    // Take snapshot if requested
+    let snapshot = if args.include_snapshot {
+        let current_url = if let Some(ref u) = url {
+            u.clone()
+        } else {
+            get_current_url(&mut managed).await?
+        };
+        Some(take_snapshot(&mut managed, &current_url).await?)
+    } else {
+        None
+    };
+
+    let result = SubmitResult {
+        submitted: args.target.clone(),
+        url,
+        snapshot,
+    };
+
+    if global.output.plain {
+        print_submit_plain(&result);
+        Ok(())
+    } else {
+        print_output(&result, &global.output)
+    }
+}
+
+// =============================================================================
 // File reading helper
 // =============================================================================
 
@@ -674,6 +785,7 @@ pub async fn execute_form(global: &GlobalOpts, args: &FormArgs) -> Result<(), Ap
         FormCommand::Fill(fill_args) => execute_fill(global, fill_args).await,
         FormCommand::FillMany(fill_many_args) => execute_fill_many(global, fill_many_args).await,
         FormCommand::Clear(clear_args) => execute_clear(global, clear_args).await,
+        FormCommand::Submit(submit_args) => execute_submit(global, submit_args).await,
         FormCommand::Upload(upload_args) => execute_upload(global, upload_args).await,
     }
 }
@@ -960,5 +1072,72 @@ mod tests {
         };
         // Would print "Uploaded s5 (24576 bytes): /tmp/photo.jpg"
         print_upload_plain(&result);
+    }
+
+    // =========================================================================
+    // SubmitResult serialization tests
+    // =========================================================================
+
+    #[test]
+    fn submit_result_serialization_no_nav_no_snapshot() {
+        let result = SubmitResult {
+            submitted: "s3".to_string(),
+            url: None,
+            snapshot: None,
+        };
+        let json: serde_json::Value = serde_json::to_value(&result).unwrap();
+        assert_eq!(json["submitted"], "s3");
+        assert!(json.get("url").is_none());
+        assert!(json.get("snapshot").is_none());
+    }
+
+    #[test]
+    fn submit_result_serialization_with_url() {
+        let result = SubmitResult {
+            submitted: "s5".to_string(),
+            url: Some("https://example.com/dashboard".to_string()),
+            snapshot: None,
+        };
+        let json: serde_json::Value = serde_json::to_value(&result).unwrap();
+        assert_eq!(json["submitted"], "s5");
+        assert_eq!(json["url"], "https://example.com/dashboard");
+        assert!(json.get("snapshot").is_none());
+    }
+
+    #[test]
+    fn submit_result_serialization_with_snapshot() {
+        let result = SubmitResult {
+            submitted: "s3".to_string(),
+            url: None,
+            snapshot: Some(serde_json::json!({"role": "document"})),
+        };
+        let json: serde_json::Value = serde_json::to_value(&result).unwrap();
+        assert_eq!(json["submitted"], "s3");
+        assert!(json.get("url").is_none());
+        assert!(json.get("snapshot").is_some());
+    }
+
+    #[test]
+    fn submit_result_serialization_with_url_and_snapshot() {
+        let result = SubmitResult {
+            submitted: "css:#login-form".to_string(),
+            url: Some("https://example.com/home".to_string()),
+            snapshot: Some(serde_json::json!({"role": "document"})),
+        };
+        let json: serde_json::Value = serde_json::to_value(&result).unwrap();
+        assert_eq!(json["submitted"], "css:#login-form");
+        assert_eq!(json["url"], "https://example.com/home");
+        assert!(json.get("snapshot").is_some());
+    }
+
+    #[test]
+    fn submit_plain_output_format() {
+        let result = SubmitResult {
+            submitted: "s3".to_string(),
+            url: None,
+            snapshot: None,
+        };
+        // Would print "Submitted s3"
+        print_submit_plain(&result);
     }
 }
