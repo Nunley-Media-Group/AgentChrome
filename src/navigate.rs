@@ -12,10 +12,10 @@ use crate::cli::{
 use crate::emulate::apply_emulate_state;
 
 /// Default navigation wait timeout in milliseconds.
-const DEFAULT_NAVIGATE_TIMEOUT_MS: u64 = 30_000;
+pub const DEFAULT_NAVIGATE_TIMEOUT_MS: u64 = 30_000;
 
 /// Network idle threshold in milliseconds.
-const NETWORK_IDLE_MS: u64 = 500;
+pub const NETWORK_IDLE_MS: u64 = 500;
 
 // =============================================================================
 // Output types
@@ -370,7 +370,7 @@ async fn execute_reload(global: &GlobalOpts, args: &NavigateReloadArgs) -> Resul
 // Wait strategies
 // =============================================================================
 
-async fn wait_for_event(
+pub async fn wait_for_event(
     mut rx: tokio::sync::mpsc::Receiver<CdpEvent>,
     timeout_ms: u64,
     strategy: &str,
@@ -430,7 +430,7 @@ async fn wait_for_history_navigation(
     }
 }
 
-async fn wait_for_network_idle(
+pub async fn wait_for_network_idle(
     mut req_rx: tokio::sync::mpsc::Receiver<CdpEvent>,
     mut fin_rx: tokio::sync::mpsc::Receiver<CdpEvent>,
     mut fail_rx: tokio::sync::mpsc::Receiver<CdpEvent>,

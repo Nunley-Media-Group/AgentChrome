@@ -370,6 +370,15 @@ fn stderr_should_contain(world: &mut CliWorld, expected: String) {
     );
 }
 
+#[then(expr = "stderr should not contain {string}")]
+fn stderr_should_not_contain(world: &mut CliWorld, unexpected: String) {
+    assert!(
+        !world.stderr.contains(&unexpected),
+        "stderr should NOT contain '{unexpected}'\nstderr: {}",
+        world.stderr
+    );
+}
+
 #[then("stderr should be valid JSON")]
 fn stderr_should_be_valid_json(world: &mut CliWorld) {
     let trimmed = world.stderr.trim();
@@ -1791,8 +1800,10 @@ impl Default for ConfigWorld {
         use std::sync::atomic::{AtomicU64, Ordering};
         static COUNTER: AtomicU64 = AtomicU64::new(0);
         let id = COUNTER.fetch_add(1, Ordering::Relaxed);
-        let temp_dir =
-            std::env::temp_dir().join(format!("agentchrome-bdd-config-{}-{id}", std::process::id()));
+        let temp_dir = std::env::temp_dir().join(format!(
+            "agentchrome-bdd-config-{}-{id}",
+            std::process::id()
+        ));
         let _ = std::fs::create_dir_all(&temp_dir);
         Self {
             temp_dir,
@@ -2108,10 +2119,9 @@ fn examples_binary_available(world: &mut ExamplesWorld) {
 
 #[when(expr = "I run {string}")]
 fn examples_run_command(world: &mut ExamplesWorld, command_line: String) {
-    let binary = world
-        .binary_path
-        .as_ref()
-        .expect("Binary path not set — did you forget 'Given the agentchrome binary is available'?");
+    let binary = world.binary_path.as_ref().expect(
+        "Binary path not set — did you forget 'Given the agentchrome binary is available'?",
+    );
 
     let parts: Vec<&str> = command_line.split_whitespace().collect();
     let args = if parts.first().is_some_and(|&p| p == "agentchrome") {
@@ -3383,6 +3393,13 @@ const INTERACT_TESTABLE_SCENARIOS: &[&str] = &[
     "Click help displays all options",
 ];
 
+/// Wait-until click BDD scenarios that can be tested without a running Chrome instance.
+const WAIT_UNTIL_CLICK_TESTABLE_SCENARIOS: &[&str] = &[
+    "Click help displays wait-until option",
+    "Click-at help displays wait-until option",
+    "Click rejects invalid wait-until values",
+];
+
 /// Session BDD scenarios that can be tested without a running Chrome instance.
 const SESSION_TESTABLE_SCENARIOS: &[&str] = &[
     "Show connection status with no session",
@@ -3940,6 +3957,18 @@ async fn main() {
         .filter_run_and_exit(
             "tests/features/145-fix-navigate-timeout.feature",
             |_feature, _rule, _scenario| false, // All scenarios require running Chrome
+        )
+        .await;
+
+    // Wait-until flag for interact click commands (issue #148) — only CLI argument validation
+    // scenarios can be tested without Chrome. Scenarios requiring actual click+wait behavior
+    // need a running Chrome instance.
+    CliWorld::cucumber()
+        .filter_run_and_exit(
+            "tests/features/wait-until-click.feature",
+            |_feature, _rule, scenario| {
+                WAIT_UNTIL_CLICK_TESTABLE_SCENARIOS.contains(&scenario.name.as_str())
+            },
         )
         .await;
 }

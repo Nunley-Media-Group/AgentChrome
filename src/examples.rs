@@ -276,6 +276,11 @@ fn all_examples() -> Vec<CommandGroupSummary> {
                     flags: None,
                 },
                 ExampleEntry {
+                    cmd: "agentchrome interact click s12 --wait-until networkidle".into(),
+                    description: "Click and wait for network idle (for SPA navigation)".into(),
+                    flags: Some(vec!["--wait-until".into()]),
+                },
+                ExampleEntry {
                     cmd: "agentchrome interact type \"Hello, world!\"".into(),
                     description: "Type text into the focused element".into(),
                     flags: None,
