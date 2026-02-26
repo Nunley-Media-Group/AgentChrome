@@ -8,7 +8,7 @@
 
 AgentChrome is a native CLI tool for browser automation via the Chrome DevTools Protocol, designed for AI coding agents — especially [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Every command outputs structured JSON, uses accessibility-tree UIDs for element targeting, and returns typed exit codes for programmatic error handling. No Node.js, no Python, no MCP server — just a fast Rust binary your agent calls from the shell.
 
-## Give Claude Code Browser Powers in 2 Minutes
+## Claude Code Integration
 
 **1. Install AgentChrome** (see [Installation](#installation) for more options)
 
