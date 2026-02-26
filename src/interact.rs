@@ -8,9 +8,10 @@ use agentchrome::error::AppError;
 
 use crate::cli::{
     ClickArgs, ClickAtArgs, DragArgs, GlobalOpts, HoverArgs, InteractArgs, InteractCommand,
-    KeyArgs, ScrollArgs, ScrollDirection, TypeArgs,
+    KeyArgs, ScrollArgs, ScrollDirection, TypeArgs, WaitUntil,
 };
 use crate::emulate::apply_emulate_state;
+use crate::navigate::{DEFAULT_NAVIGATE_TIMEOUT_MS, wait_for_event, wait_for_network_idle};
 use crate::snapshot;
 
 // =============================================================================
@@ -45,6 +46,10 @@ struct ClickResult {
 #[derive(Serialize)]
 struct ClickAtResult {
     clicked_at: Coords,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    url: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    navigated: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     double_click: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -973,6 +978,24 @@ async fn dispatch_key_combination(
 }
 
 // =============================================================================
+// URL helper
+// =============================================================================
+
+/// Get the current page URL via `Runtime.evaluate`.
+async fn get_current_url(managed: &mut ManagedSession) -> Result<String, AppError> {
+    let url_response = managed
+        .send_command(
+            "Runtime.evaluate",
+            Some(serde_json::json!({ "expression": "window.location.href" })),
+        )
+        .await?;
+    Ok(url_response["result"]["value"]
+        .as_str()
+        .unwrap_or("")
+        .to_string())
+}
+
+// =============================================================================
 // Snapshot refresh helper
 // =============================================================================
 
@@ -1358,33 +1381,57 @@ async fn execute_click(global: &GlobalOpts, args: &ClickArgs) -> Result<(), AppE
     // Resolve target coordinates
     let (x, y) = resolve_target_coords(&mut managed, &args.target).await?;
 
-    // Subscribe to navigation events
-    let mut nav_rx = managed.subscribe("Page.frameNavigated").await?;
-
     // Determine button and click count
     let button = if args.right { "right" } else { "left" };
     let click_count = if args.double { 2 } else { 1 };
 
-    // Dispatch click
-    dispatch_click(&mut managed, x, y, button, click_count).await?;
+    // Get pre-click URL for comparison
+    let pre_url = get_current_url(&mut managed).await?;
 
-    // Brief wait for potential navigation (100ms)
-    tokio::time::sleep(Duration::from_millis(100)).await;
+    let navigated;
 
-    // Check if navigation happened during the wait
-    let navigated = nav_rx.try_recv().is_ok();
+    match args.wait_until {
+        Some(WaitUntil::None) => {
+            // Dispatch and return immediately — no grace period, no navigation check
+            dispatch_click(&mut managed, x, y, button, click_count).await?;
+            navigated = false;
+        }
+        Some(WaitUntil::Load) => {
+            let wait_rx = managed.subscribe("Page.loadEventFired").await?;
+            dispatch_click(&mut managed, x, y, button, click_count).await?;
+            let timeout_ms = global.timeout.unwrap_or(DEFAULT_NAVIGATE_TIMEOUT_MS);
+            wait_for_event(wait_rx, timeout_ms, "load").await?;
+            navigated = true;
+        }
+        Some(WaitUntil::Domcontentloaded) => {
+            let wait_rx = managed.subscribe("Page.domContentEventFired").await?;
+            dispatch_click(&mut managed, x, y, button, click_count).await?;
+            let timeout_ms = global.timeout.unwrap_or(DEFAULT_NAVIGATE_TIMEOUT_MS);
+            wait_for_event(wait_rx, timeout_ms, "domcontentloaded").await?;
+            navigated = true;
+        }
+        Some(WaitUntil::Networkidle) => {
+            managed.ensure_domain("Network").await?;
+            let req_rx = managed.subscribe("Network.requestWillBeSent").await?;
+            let fin_rx = managed.subscribe("Network.loadingFinished").await?;
+            let fail_rx = managed.subscribe("Network.loadingFailed").await?;
+            dispatch_click(&mut managed, x, y, button, click_count).await?;
+            let timeout_ms = global.timeout.unwrap_or(DEFAULT_NAVIGATE_TIMEOUT_MS);
+            wait_for_network_idle(req_rx, fin_rx, fail_rx, timeout_ms).await?;
+            let post_url = get_current_url(&mut managed).await?;
+            navigated = post_url != pre_url;
+        }
+        None => {
+            // Legacy behavior: 100ms grace period with non-blocking navigation check
+            let mut nav_rx = managed.subscribe("Page.frameNavigated").await?;
+            dispatch_click(&mut managed, x, y, button, click_count).await?;
+            tokio::time::sleep(Duration::from_millis(100)).await;
+            navigated = nav_rx.try_recv().is_ok();
+        }
+    }
 
     // Get current URL
-    let url_response = managed
-        .send_command(
-            "Runtime.evaluate",
-            Some(serde_json::json!({ "expression": "window.location.href" })),
-        )
-        .await?;
-    let url = url_response["result"]["value"]
-        .as_str()
-        .unwrap_or("")
-        .to_string();
+    let url = get_current_url(&mut managed).await?;
 
     // Take snapshot if requested
     let snapshot = if args.include_snapshot {
@@ -1422,24 +1469,61 @@ async fn execute_click_at(global: &GlobalOpts, args: &ClickAtArgs) -> Result<(),
     let button = if args.right { "right" } else { "left" };
     let click_count = if args.double { 2 } else { 1 };
 
-    // Dispatch click at coordinates
-    dispatch_click(&mut managed, args.x, args.y, button, click_count).await?;
+    let (url, navigated) = match args.wait_until {
+        Some(WaitUntil::None) => {
+            dispatch_click(&mut managed, args.x, args.y, button, click_count).await?;
+            (None, None)
+        }
+        Some(WaitUntil::Load) => {
+            managed.ensure_domain("Page").await?;
+            let pre_url = get_current_url(&mut managed).await?;
+            let wait_rx = managed.subscribe("Page.loadEventFired").await?;
+            dispatch_click(&mut managed, args.x, args.y, button, click_count).await?;
+            let timeout_ms = global.timeout.unwrap_or(DEFAULT_NAVIGATE_TIMEOUT_MS);
+            wait_for_event(wait_rx, timeout_ms, "load").await?;
+            let post_url = get_current_url(&mut managed).await?;
+            let nav = post_url != pre_url;
+            (Some(post_url), Some(nav))
+        }
+        Some(WaitUntil::Domcontentloaded) => {
+            managed.ensure_domain("Page").await?;
+            let pre_url = get_current_url(&mut managed).await?;
+            let wait_rx = managed.subscribe("Page.domContentEventFired").await?;
+            dispatch_click(&mut managed, args.x, args.y, button, click_count).await?;
+            let timeout_ms = global.timeout.unwrap_or(DEFAULT_NAVIGATE_TIMEOUT_MS);
+            wait_for_event(wait_rx, timeout_ms, "domcontentloaded").await?;
+            let post_url = get_current_url(&mut managed).await?;
+            let nav = post_url != pre_url;
+            (Some(post_url), Some(nav))
+        }
+        Some(WaitUntil::Networkidle) => {
+            managed.ensure_domain("Network").await?;
+            let pre_url = get_current_url(&mut managed).await?;
+            let req_rx = managed.subscribe("Network.requestWillBeSent").await?;
+            let fin_rx = managed.subscribe("Network.loadingFinished").await?;
+            let fail_rx = managed.subscribe("Network.loadingFailed").await?;
+            dispatch_click(&mut managed, args.x, args.y, button, click_count).await?;
+            let timeout_ms = global.timeout.unwrap_or(DEFAULT_NAVIGATE_TIMEOUT_MS);
+            wait_for_network_idle(req_rx, fin_rx, fail_rx, timeout_ms).await?;
+            let post_url = get_current_url(&mut managed).await?;
+            let nav = post_url != pre_url;
+            (Some(post_url), Some(nav))
+        }
+        None => {
+            // Legacy behavior: dispatch click, no navigation check
+            dispatch_click(&mut managed, args.x, args.y, button, click_count).await?;
+            (None, None)
+        }
+    };
 
     // Take snapshot if requested
     let snapshot = if args.include_snapshot {
-        // Need to get current URL for snapshot state
-        managed.ensure_domain("Runtime").await?;
-        let url_response = managed
-            .send_command(
-                "Runtime.evaluate",
-                Some(serde_json::json!({ "expression": "window.location.href" })),
-            )
-            .await?;
-        let url = url_response["result"]["value"]
-            .as_str()
-            .unwrap_or("")
-            .to_string();
-        Some(take_snapshot(&mut managed, &url).await?)
+        let snap_url = if let Some(ref u) = url {
+            u.clone()
+        } else {
+            get_current_url(&mut managed).await?
+        };
+        Some(take_snapshot(&mut managed, &snap_url).await?)
     } else {
         None
     };
@@ -1450,6 +1534,8 @@ async fn execute_click_at(global: &GlobalOpts, args: &ClickAtArgs) -> Result<(),
             x: args.x,
             y: args.y,
         },
+        url,
+        navigated,
         double_click: if args.double { Some(true) } else { None },
         right_click: if args.right { Some(true) } else { None },
         snapshot,
@@ -1787,6 +1873,8 @@ mod tests {
     fn click_at_result_serialization() {
         let result = ClickAtResult {
             clicked_at: Coords { x: 100.0, y: 200.0 },
+            url: None,
+            navigated: None,
             double_click: None,
             right_click: None,
             snapshot: None,

@@ -6,9 +6,9 @@
 ![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue)
 <!-- ![Crates.io](https://img.shields.io/crates/v/agentchrome) TODO: uncomment when published -->
 
-AgentChrome is a native CLI tool that lets AI coding agents — especially [Claude Code](https://docs.anthropic.com/en/docs/claude-code) — control Chrome through the DevTools Protocol. Every command outputs structured JSON, uses accessibility-tree UIDs for element targeting, and returns typed exit codes for programmatic error handling. No Node.js, no Python, no MCP server — just a fast Rust binary your agent calls from the shell.
+AgentChrome is a native CLI tool for browser automation via the Chrome DevTools Protocol, designed for AI coding agents — especially [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Every command outputs structured JSON, uses accessibility-tree UIDs for element targeting, and returns typed exit codes for programmatic error handling. No Node.js, no Python, no MCP server — just a fast Rust binary your agent calls from the shell.
 
-## Give Claude Code Browser Powers in 2 Minutes
+## Claude Code Integration
 
 **1. Install AgentChrome** (see [Installation](#installation) for more options)
 
@@ -39,7 +39,7 @@ agentchrome console read --errors-only
 
 See the full [Claude Code Integration Guide](docs/claude-code.md) for workflows, efficiency tips, and error handling patterns.
 
-## Why AgentChrome?
+## Features
 
 ### Built for AI Agents
 
@@ -67,19 +67,7 @@ See the full [Claude Code Integration Guide](docs/claude-code.md) for workflows,
 
 </details>
 
-## How It Works
-
-```mermaid
-graph LR
-    subgraph AgentChrome
-        A[CLI Layer<br/>clap] --> B[Command<br/>Dispatch] --> C[CDP Client<br/>WebSocket]
-    end
-    C -->|JSON-RPC| D[Chrome Browser<br/>DevTools Protocol]
-```
-
-AgentChrome communicates with Chrome using the [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/) (CDP) over WebSocket. Run `agentchrome connect --launch --headless` to start a session — subsequent commands reuse the connection automatically. Native Rust binary, <50ms startup, <10MB on disk.
-
-## Comparison
+### Comparison
 
 How AgentChrome stacks up for giving AI agents browser access:
 
@@ -92,6 +80,14 @@ How AgentChrome stacks up for giving AI agents browser access:
 | **Startup time** | < 50ms | ~500ms+ | Varies |
 | **Binary size** | < 10 MB | ~100 MB+ (with deps) | Varies |
 | **Shell pipelines** | First-class (`| jq`, `| grep`) | Requires wrapper scripts | Not designed for CLI |
+
+## Architecture
+
+```
+Agent → CLI (clap) → Command Dispatch → CDP Client (WebSocket) → Chrome (DevTools Protocol)
+```
+
+AgentChrome communicates with Chrome using the [Chrome DevTools Protocol](https://chromedevtools.github.io/devtools-protocol/) (CDP) over WebSocket. Run `agentchrome connect --launch --headless` to start a session — subsequent commands reuse the connection automatically. Native Rust binary, <50ms startup, <10MB on disk.
 
 ## Installation
 
@@ -270,6 +266,22 @@ agentchrome js exec "document.title"
 
 # Run JavaScript from a file
 agentchrome js exec --file script.js
+```
+
+</details>
+
+<details>
+<summary><strong>Network monitoring</strong></summary>
+
+```sh
+# List recent network requests
+agentchrome network list
+
+# Filter requests by URL pattern
+agentchrome network list --filter "api"
+
+# Get details for a specific request
+agentchrome network get <request-id>
 ```
 
 </details>

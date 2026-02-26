@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-02-26
+
+### Added
+
+- Add `--wait-until` flag to `interact click` and `interact click-at` commands for SPA-aware waiting after clicks (#148)
+
 ## [1.3.0] - 2026-02-20
 
 ### Changed

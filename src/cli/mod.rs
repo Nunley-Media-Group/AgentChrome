@@ -1368,6 +1368,11 @@ pub struct ClickArgs {
     /// Include updated accessibility snapshot in output
     #[arg(long)]
     pub include_snapshot: bool,
+
+    /// Wait strategy after click (e.g., for SPA navigation).
+    /// If omitted, click returns immediately with a brief navigation check.
+    #[arg(long, value_enum)]
+    pub wait_until: Option<WaitUntil>,
 }
 
 /// Arguments for `interact click-at`.
@@ -1390,6 +1395,11 @@ pub struct ClickAtArgs {
     /// Include updated accessibility snapshot in output
     #[arg(long)]
     pub include_snapshot: bool,
+
+    /// Wait strategy after click (e.g., for SPA navigation).
+    /// If omitted, click returns immediately after dispatching.
+    #[arg(long, value_enum)]
+    pub wait_until: Option<WaitUntil>,
 }
 
 /// Arguments for `interact hover`.

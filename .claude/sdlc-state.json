@@ -1,10 +1,10 @@
 {
   "currentStep": 7,
   "lastCompletedStep": 6,
-  "currentIssue": 121,
-  "currentBranch": "121-fix-tabs-create-background",
-  "featureName": "99-fix-dialog-handle-no-dialog-open",
-  "lastTransitionAt": "2026-02-17T02:03:44.474Z",
+  "currentIssue": 148,
+  "currentBranch": "148-add-wait-until-flag-to-interact-click",
+  "featureName": "feature-wait-until-flag-interact-click-click-at-spa-aware-waiting",
+  "lastTransitionAt": "2026-02-26T21:00:50.871Z",
   "retries": {},
   "runnerPid": 20994,
   "prNumber": 129
