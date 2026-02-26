@@ -1,10 +1,10 @@
 {
-  "currentStep": 4,
+  "currentStep": 6,
   "lastCompletedStep": 4,
   "currentIssue": 148,
   "currentBranch": "148-add-wait-until-flag-to-interact-click",
   "featureName": "feature-wait-until-flag-interact-click-click-at-spa-aware-waiting",
-  "lastTransitionAt": "2026-02-26T20:23:13.281Z",
+  "lastTransitionAt": "2026-02-26T21:00:23.473Z",
   "retries": {},
   "runnerPid": 20994,
   "prNumber": 129
