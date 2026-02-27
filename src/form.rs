@@ -321,7 +321,7 @@ function() {
 ///
 /// Called on the target element via `Runtime.callFunctionOn`. Returns the form
 /// element if `this` is a `<form>` or is inside a `<form>`, otherwise throws.
-const FIND_FORM_JS: &str = r#"
+const FIND_FORM_JS: &str = r"
 function() {
     if (this.tagName && this.tagName.toLowerCase() === 'form') {
         return this;
@@ -332,7 +332,7 @@ function() {
     }
     throw new Error('NOT_IN_FORM');
 }
-"#;
+";
 
 /// JavaScript function to submit a form via `requestSubmit()`.
 ///
@@ -783,10 +783,10 @@ async fn execute_submit(global: &GlobalOpts, args: &FormSubmitArgs) -> Result<()
     // Get post-submit URL if navigated
     let url = if navigated {
         let post_url = get_current_url(&mut managed).await?;
-        if post_url != pre_url {
-            Some(post_url)
-        } else {
+        if post_url == pre_url {
             None
+        } else {
+            Some(post_url)
         }
     } else {
         None
