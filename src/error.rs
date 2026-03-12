@@ -420,6 +420,15 @@ impl AppError {
     }
 
     #[must_use]
+    pub fn not_in_form(target: &str) -> Self {
+        Self {
+            message: format!("Target element is not a form and is not inside a form: {target}"),
+            code: ExitCode::TargetError,
+            custom_json: None,
+        }
+    }
+
+    #[must_use]
     pub fn node_not_found(id: &str) -> Self {
         Self {
             message: format!("Node not found: {id}"),
@@ -794,6 +803,15 @@ mod tests {
         assert!(err.message.contains("Element is not a file input"));
         assert!(err.message.contains("s2"));
         assert!(matches!(err.code, ExitCode::GeneralError));
+    }
+
+    #[test]
+    fn not_in_form_error() {
+        let err = AppError::not_in_form("s7");
+        assert!(err.message.contains("not a form"));
+        assert!(err.message.contains("not inside a form"));
+        assert!(err.message.contains("s7"));
+        assert!(matches!(err.code, ExitCode::TargetError));
     }
 
     #[test]

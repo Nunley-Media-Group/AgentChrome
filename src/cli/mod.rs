@@ -1583,6 +1583,28 @@ EXAMPLES:
   agentchrome form upload css:#file-input ./doc1.pdf ./doc2.pdf"
     )]
     Upload(FormUploadArgs),
+
+    /// Submit a form programmatically
+    #[command(
+        long_about = "Submit a form identified by UID (from 'page snapshot', e.g., 's3') or \
+            CSS selector (prefixed with 'css:', e.g., 'css:#login-form'). The target can be \
+            the form element itself or any element inside the form — the parent form is \
+            resolved automatically. Uses requestSubmit() to respect browser validation.",
+        after_long_help = "\
+EXAMPLES:
+  # Submit by form UID
+  agentchrome form submit s3
+
+  # Submit by CSS selector
+  agentchrome form submit css:#login-form
+
+  # Submit targeting an input inside the form
+  agentchrome form submit s5
+
+  # Include updated snapshot after submit
+  agentchrome form submit s3 --include-snapshot"
+    )]
+    Submit(FormSubmitArgs),
 }
 
 /// Arguments for `form fill`.
@@ -1635,6 +1657,18 @@ pub struct FormUploadArgs {
     /// File paths to upload
     #[arg(required = true)]
     pub files: Vec<PathBuf>,
+
+    /// Include updated accessibility snapshot in output
+    #[arg(long)]
+    pub include_snapshot: bool,
+}
+
+/// Arguments for `form submit`.
+#[derive(Args)]
+pub struct FormSubmitArgs {
+    /// Target element (UID like 's3' or CSS selector like 'css:#login-form')
+    #[arg(value_name = "TARGET")]
+    pub target: String,
 
     /// Include updated accessibility snapshot in output
     #[arg(long)]

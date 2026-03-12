@@ -3448,6 +3448,14 @@ const FORM_TESTABLE_SCENARIOS: &[&str] = &[
     "fill-many with --json flag does not panic",
 ];
 
+/// Form submit BDD scenarios that can be tested without a running Chrome instance.
+/// These are pure CLI argument validation and help text scenarios.
+const FORM_SUBMIT_TESTABLE_SCENARIOS: &[&str] = &[
+    "Submit help displays usage",
+    "Submit without required target argument",
+    "Form help lists submit subcommand",
+];
+
 /// Emulate BDD scenarios that can be tested without a running Chrome instance.
 /// These are pure CLI argument validation and help text scenarios.
 const EMULATE_TESTABLE_SCENARIOS: &[&str] = &[
@@ -3779,6 +3787,17 @@ async fn main() {
     // Form fill textarea fix (issue #136) — source-level regression tests verify that
     // FILL_JS and CLEAR_JS select the correct prototype based on element tag name.
     FormSourceWorld::run("tests/features/136-fix-form-fill-textarea.feature").await;
+
+    // Form submit (issue #147) — CLI-testable scenarios only (help text, missing args).
+    // Chrome-dependent scenarios are commented out in the feature file.
+    CliWorld::cucumber()
+        .filter_run_and_exit(
+            "tests/features/form-submit.feature",
+            |_feature, _rule, scenario| {
+                FORM_SUBMIT_TESTABLE_SCENARIOS.contains(&scenario.name.as_str())
+            },
+        )
+        .await;
 
     // Scroll interactions — only CLI-testable scenarios (argument validation, help text, conflicts).
     // Scenarios requiring a running Chrome instance are skipped.
