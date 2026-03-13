@@ -286,6 +286,20 @@ function(value) {
 }
 ";
 
+/// JavaScript expression to clear a text-type input via DOM.focus + activeElement.
+///
+/// Used by `clear_element_keyboard`. Sets the native value to "" and dispatches an
+/// `InputEvent` with `inputType: 'deleteContentBackward'` that React's synthetic event
+/// system recognizes, updating React's internal state to empty string.
+const CLEAR_ACTIVE_ELEMENT_JS: &str = "(function(){\
+    var el=document.activeElement;\
+    var proto=el.tagName==='TEXTAREA'\
+        ?window.HTMLTextAreaElement.prototype\
+        :window.HTMLInputElement.prototype;\
+    Object.getOwnPropertyDescriptor(proto,'value').set.call(el,'');\
+    el.dispatchEvent(new InputEvent('input',{bubbles:true,cancelable:true,inputType:'deleteContentBackward'}));\
+})()";
+
 /// JavaScript function to clear a form field's value and dispatch events.
 const CLEAR_JS: &str = r"
 function() {
@@ -366,42 +380,179 @@ async fn resolve_to_object_id(
         .ok_or_else(|| AppError::interaction_failed("resolve_node", "no objectId returned"))
 }
 
-/// Resolve a target to a Runtime object and call a JS function on it.
+/// Describe a DOM node to determine its type, without resolving to a Runtime object.
+///
+/// Uses `DOM.describeNode` which is read-only and does not invalidate cached
+/// accessibility tree backend node IDs (unlike `DOM.resolveNode`).
+async fn describe_element(
+    session: &mut ManagedSession,
+    backend_node_id: i64,
+) -> Result<(String, Option<String>), AppError> {
+    let params = serde_json::json!({ "backendNodeId": backend_node_id });
+    let response = session
+        .send_command("DOM.describeNode", Some(params))
+        .await
+        .map_err(|e| AppError::interaction_failed("describe_node", &e.to_string()))?;
+
+    let node_name = response["node"]["nodeName"]
+        .as_str()
+        .unwrap_or("")
+        .to_lowercase();
+
+    // Parse the flat attributes array [name1, val1, name2, val2, ...] to find "type"
+    let input_type = response["node"]["attributes"].as_array().and_then(|attrs| {
+        attrs
+            .chunks(2)
+            .find(|pair| pair.first().and_then(|v| v.as_str()) == Some("type"))
+            .and_then(|pair| pair.get(1).and_then(|v| v.as_str()).map(String::from))
+    });
+
+    Ok((node_name, input_type))
+}
+
+/// Returns true if the element is a text-type input that should use keyboard simulation.
+fn is_text_input(node_name: &str, input_type: Option<&str>) -> bool {
+    if node_name == "textarea" {
+        return true;
+    }
+    if node_name == "input" {
+        return matches!(
+            input_type,
+            None | Some("text" | "password" | "email" | "number" | "tel" | "url" | "search")
+        );
+    }
+    false
+}
+
+/// Fill a text-type element using CDP keyboard simulation.
+///
+/// Uses `DOM.focus` + `document.activeElement.select()` + `Input.dispatchKeyEvent` char
+/// events to type the value. Works correctly with React-controlled inputs because
+/// char key events trigger React's synthetic event system. Uses `activeElement.select()`
+/// for cross-platform select-all (Ctrl+A is not select-all on macOS Chrome).
+async fn fill_element_keyboard(
+    session: &mut ManagedSession,
+    backend_node_id: i64,
+    value: &str,
+) -> Result<(), AppError> {
+    // Focus the element
+    let focus_params = serde_json::json!({ "backendNodeId": backend_node_id });
+    session
+        .send_command("DOM.focus", Some(focus_params))
+        .await
+        .map_err(|e| AppError::interaction_failed("focus", &e.to_string()))?;
+
+    // Select all existing text via document.activeElement.select().
+    // Cross-platform: Ctrl+A does not select all in macOS Chrome text inputs.
+    // This does not call DOM.resolveNode and does not invalidate cached node IDs.
+    session
+        .send_command(
+            "Runtime.evaluate",
+            Some(serde_json::json!({ "expression": "document.activeElement.select()" })),
+        )
+        .await
+        .map_err(|e| AppError::interaction_failed("select_all", &e.to_string()))?;
+
+    // Type each character (replaces the selection on the first char, then appends)
+    for ch in value.chars() {
+        let params = serde_json::json!({
+            "type": "char",
+            "text": ch.to_string(),
+        });
+        session
+            .send_command("Input.dispatchKeyEvent", Some(params))
+            .await
+            .map_err(|e| AppError::interaction_failed("char", &e.to_string()))?;
+    }
+
+    Ok(())
+}
+
+/// Clear a text-type element using DOM.focus + React-compatible JavaScript.
+///
+/// Uses `DOM.focus` to focus the element, then `Runtime.evaluate` to clear the value
+/// via the native setter and dispatch an `InputEvent` with `inputType: 'deleteContentBackward'`
+/// that React's synthetic event system recognizes. Backspace `keyDown`/`keyUp` events do not
+/// reliably trigger React `onChange` when the selection was set programmatically.
+async fn clear_element_keyboard(
+    session: &mut ManagedSession,
+    backend_node_id: i64,
+) -> Result<(), AppError> {
+    // Focus the element
+    let focus_params = serde_json::json!({ "backendNodeId": backend_node_id });
+    session
+        .send_command("DOM.focus", Some(focus_params))
+        .await
+        .map_err(|e| AppError::interaction_failed("focus", &e.to_string()))?;
+
+    // Clear the value via native setter + InputEvent that React recognizes.
+    // document.activeElement is the focused element (set by DOM.focus above).
+    // The InputEvent with inputType='deleteContentBackward' tells React's event
+    // system the content was deleted, so React updates its internal state to "".
+    // This does not call DOM.resolveNode and does not invalidate cached node IDs.
+    session
+        .send_command(
+            "Runtime.evaluate",
+            Some(serde_json::json!({ "expression": CLEAR_ACTIVE_ELEMENT_JS })),
+        )
+        .await
+        .map_err(|e| AppError::interaction_failed("clear", &e.to_string()))?;
+
+    Ok(())
+}
+
+/// Fill an element's value. Text-type inputs use keyboard simulation (React-compatible);
+/// select/checkbox/radio use the existing JS setter approach.
 async fn fill_element(
     session: &mut ManagedSession,
     target: &str,
     value: &str,
 ) -> Result<(), AppError> {
-    let object_id = resolve_to_object_id(session, target).await?;
+    let backend_node_id = resolve_target_to_backend_node_id(session, target).await?;
+    let (node_name, input_type) = describe_element(session, backend_node_id).await?;
 
-    let call_params = serde_json::json!({
-        "objectId": object_id,
-        "functionDeclaration": FILL_JS,
-        "arguments": [{ "value": value }],
-    });
-    session
-        .send_command("Runtime.callFunctionOn", Some(call_params))
-        .await
-        .map_err(|e| AppError::interaction_failed("fill", &e.to_string()))?;
+    if is_text_input(&node_name, input_type.as_deref()) {
+        fill_element_keyboard(session, backend_node_id, value).await
+    } else {
+        let object_id = resolve_to_object_id(session, target).await?;
 
-    Ok(())
+        let call_params = serde_json::json!({
+            "objectId": object_id,
+            "functionDeclaration": FILL_JS,
+            "arguments": [{ "value": value }],
+        });
+        session
+            .send_command("Runtime.callFunctionOn", Some(call_params))
+            .await
+            .map_err(|e| AppError::interaction_failed("fill", &e.to_string()))?;
+
+        Ok(())
+    }
 }
 
-/// Clear an element's value via Runtime.callFunctionOn.
+/// Clear an element's value. Text-type inputs use keyboard simulation (React-compatible);
+/// select/checkbox/radio use the existing JS setter approach.
 async fn clear_element(session: &mut ManagedSession, target: &str) -> Result<(), AppError> {
-    let object_id = resolve_to_object_id(session, target).await?;
+    let backend_node_id = resolve_target_to_backend_node_id(session, target).await?;
+    let (node_name, input_type) = describe_element(session, backend_node_id).await?;
 
-    let call_params = serde_json::json!({
-        "objectId": object_id,
-        "functionDeclaration": CLEAR_JS,
-        "arguments": [],
-    });
-    session
-        .send_command("Runtime.callFunctionOn", Some(call_params))
-        .await
-        .map_err(|e| AppError::interaction_failed("clear", &e.to_string()))?;
+    if is_text_input(&node_name, input_type.as_deref()) {
+        clear_element_keyboard(session, backend_node_id).await
+    } else {
+        let object_id = resolve_to_object_id(session, target).await?;
 
-    Ok(())
+        let call_params = serde_json::json!({
+            "objectId": object_id,
+            "functionDeclaration": CLEAR_JS,
+            "arguments": [],
+        });
+        session
+            .send_command("Runtime.callFunctionOn", Some(call_params))
+            .await
+            .map_err(|e| AppError::interaction_failed("clear", &e.to_string()))?;
+
+        Ok(())
+    }
 }
 
 // =============================================================================
@@ -1195,5 +1346,54 @@ mod tests {
             snapshot: None,
         };
         print_submit_plain(&result);
+    }
+
+    // =========================================================================
+    // is_text_input classification tests
+    // =========================================================================
+
+    #[test]
+    fn is_text_input_textarea() {
+        assert!(is_text_input("textarea", None));
+    }
+
+    #[test]
+    fn is_text_input_default_input() {
+        assert!(is_text_input("input", None));
+    }
+
+    #[test]
+    fn is_text_input_text_types() {
+        for t in &[
+            "text", "password", "email", "number", "tel", "url", "search",
+        ] {
+            assert!(
+                is_text_input("input", Some(t)),
+                "expected true for type={t}"
+            );
+        }
+    }
+
+    #[test]
+    fn is_text_input_non_text_types() {
+        for t in &[
+            "checkbox", "radio", "file", "hidden", "submit", "button", "reset", "image", "range",
+            "color", "date",
+        ] {
+            assert!(
+                !is_text_input("input", Some(t)),
+                "expected false for type={t}"
+            );
+        }
+    }
+
+    #[test]
+    fn is_text_input_select() {
+        assert!(!is_text_input("select", None));
+    }
+
+    #[test]
+    fn is_text_input_div() {
+        assert!(!is_text_input("div", None));
     }
 }
