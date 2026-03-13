@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.12.0] - 2026-03-12
+
+### Added
+
+- Add `--page-id` global flag for stateless page routing, enabling parallel agents to target specific pages by CDP target ID without interfering with shared session state (#170)
+
 ## [1.11.0] - 2026-03-12
 
 ### Fixed
