@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.11.0] - 2026-03-12
+
+### Fixed
+
+- Fix `form fill` silently failing on React-controlled inputs by using keyboard simulation (`Input.dispatchKeyEvent`) instead of the native JS setter, and focus via `DOM.focus` to prevent accessibility node ID invalidation (#161)
+
 ## [1.10.0] - 2026-03-12
 
 ### Added

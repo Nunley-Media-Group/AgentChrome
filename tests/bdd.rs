@@ -3642,6 +3642,139 @@ fn selects_input_prototype(world: &mut FormSourceWorld) {
 }
 
 // =============================================================================
+// FormFillReactWorld — form.rs source-level regression tests (issue #161)
+// =============================================================================
+
+#[derive(Debug, Default, World)]
+struct FormFillReactWorld {
+    source_content: String,
+    function_body: String,
+}
+
+#[given("agentchrome is built")]
+fn form_fill_react_agentchrome_is_built(world: &mut FormFillReactWorld) {
+    let path = project_root().join("src/form.rs");
+    world.source_content = std::fs::read_to_string(&path)
+        .unwrap_or_else(|e| panic!("Failed to read src/form.rs: {e}"));
+}
+
+/// Extract a function body from source by finding `fn <name>(` and reading until the next
+/// top-level function boundary.
+fn extract_function_body(source: &str, fn_name: &str) -> String {
+    let needle = format!("fn {fn_name}(");
+    let start = source
+        .find(&needle)
+        .unwrap_or_else(|| panic!("{fn_name} function not found in source"));
+    let rest = &source[start..];
+    let end = rest[1..]
+        .find("\nasync fn ")
+        .or_else(|| rest[1..].find("\nfn "))
+        .or_else(|| rest[1..].find("\n/// "))
+        .map(|i| i + 1)
+        .unwrap_or(rest.len());
+    rest[..end].to_string()
+}
+
+#[when("I check the fill_element implementation")]
+fn check_fill_element_impl(world: &mut FormFillReactWorld) {
+    world.function_body = extract_function_body(&world.source_content, "fill_element");
+}
+
+#[when("I check the clear_element implementation")]
+fn check_clear_element_impl(world: &mut FormFillReactWorld) {
+    world.function_body = extract_function_body(&world.source_content, "clear_element");
+}
+
+#[when("I check the fill_element_keyboard implementation")]
+fn check_fill_element_keyboard_impl(world: &mut FormFillReactWorld) {
+    world.function_body = extract_function_body(&world.source_content, "fill_element_keyboard");
+}
+
+#[when("I check the clear_element_keyboard implementation")]
+fn check_clear_element_keyboard_impl(world: &mut FormFillReactWorld) {
+    world.function_body = extract_function_body(&world.source_content, "clear_element_keyboard");
+}
+
+#[then("it should call describe_element to detect element type")]
+fn calls_describe_element(world: &mut FormFillReactWorld) {
+    assert!(
+        world.function_body.contains("describe_element("),
+        "Expected function to call describe_element:\n{}",
+        world.function_body
+    );
+}
+
+#[then("it should call is_text_input to classify the element")]
+fn calls_is_text_input(world: &mut FormFillReactWorld) {
+    assert!(
+        world.function_body.contains("is_text_input("),
+        "Expected function to call is_text_input:\n{}",
+        world.function_body
+    );
+}
+
+#[then("it should call fill_element_keyboard for text inputs")]
+fn calls_fill_element_keyboard(world: &mut FormFillReactWorld) {
+    assert!(
+        world.function_body.contains("fill_element_keyboard("),
+        "Expected function to call fill_element_keyboard:\n{}",
+        world.function_body
+    );
+}
+
+#[then("it should call clear_element_keyboard for text inputs")]
+fn calls_clear_element_keyboard(world: &mut FormFillReactWorld) {
+    assert!(
+        world.function_body.contains("clear_element_keyboard("),
+        "Expected function to call clear_element_keyboard:\n{}",
+        world.function_body
+    );
+}
+
+#[then("it should call DOM.focus to focus the element")]
+fn calls_dom_focus(world: &mut FormFillReactWorld) {
+    assert!(
+        world.function_body.contains("\"DOM.focus\""),
+        "Expected function to call DOM.focus:\n{}",
+        world.function_body
+    );
+}
+
+#[then("it should select all text using activeElement.select()")]
+fn selects_via_active_element(world: &mut FormFillReactWorld) {
+    assert!(
+        world
+            .function_body
+            .contains("document.activeElement.select()"),
+        "Expected function to use document.activeElement.select() for cross-platform select-all:\n{}",
+        world.function_body
+    );
+}
+
+#[then("it should dispatch char key events to type the value")]
+fn dispatches_char_events(world: &mut FormFillReactWorld) {
+    assert!(
+        world.function_body.contains("\"type\": \"char\""),
+        "Expected char key events for typing:\n{}",
+        world.function_body
+    );
+}
+
+#[then("it should clear using React-compatible InputEvent")]
+fn clears_via_react_input_event(world: &mut FormFillReactWorld) {
+    assert!(
+        world.function_body.contains("deleteContentBackward"),
+        "Expected clear to dispatch InputEvent with inputType='deleteContentBackward':\n{}",
+        world.function_body
+    );
+    assert!(
+        world.function_body.contains("Runtime.evaluate"),
+        "Expected clear to use Runtime.evaluate (not DOM.resolveNode):\n{}",
+        world.function_body
+    );
+}
+
+// =============================================================================
 // PageSourceWorld — page.rs source-level regression tests (issue #132)
 // =============================================================================
 
@@ -4327,6 +4460,12 @@ async fn main() {
     // Form fill textarea fix (issue #136) — source-level regression tests verify that
     // FILL_JS and CLEAR_JS select the correct prototype based on element tag name.
     FormSourceWorld::run("tests/features/136-fix-form-fill-textarea.feature").await;
+
+    // Form fill React-controlled inputs fix (issue #161) — source-level regression tests
+    // verify that fill_element/clear_element branch on element type and use keyboard
+    // simulation for text inputs. Chrome-dependent scenarios are commented out.
+    FormFillReactWorld::run("tests/features/161-fix-form-fill-react-controlled-inputs.feature")
+        .await;
 
     // Form submit (issue #147) — CLI-testable scenarios only (help text, missing args).
     // Chrome-dependent scenarios are commented out in the feature file.
