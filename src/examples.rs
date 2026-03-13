@@ -666,6 +666,7 @@ mod tests {
             ws_url: None,
             timeout: None,
             tab: None,
+            page_id: None,
             auto_dismiss_dialogs: false,
             config: None,
             output: crate::cli::OutputFormat {
@@ -767,6 +768,7 @@ mod tests {
             ws_url: None,
             timeout: None,
             tab: None,
+            page_id: None,
             auto_dismiss_dialogs: false,
             config: None,
             output: crate::cli::OutputFormat {
