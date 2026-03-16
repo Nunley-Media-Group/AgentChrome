@@ -429,42 +429,7 @@ fn format_text_node(node: &SnapshotNode, depth: usize, verbose: bool, output: &m
 }
 
 // =============================================================================
-// Tree filtering (for --search)
-// =============================================================================
-
-/// Filter the tree to only nodes whose name or role matches the query (case-insensitive).
-/// Ancestor nodes are preserved for tree context.
-pub fn filter_tree(root: &SnapshotNode, query: &str) -> Option<SnapshotNode> {
-    let query_lower = query.to_lowercase();
-    filter_node(root, &query_lower)
-}
-
-fn filter_node(node: &SnapshotNode, query: &str) -> Option<SnapshotNode> {
-    let self_matches =
-        node.name.to_lowercase().contains(query) || node.role.to_lowercase().contains(query);
-
-    let filtered_children: Vec<SnapshotNode> = node
-        .children
-        .iter()
-        .filter_map(|child| filter_node(child, query))
-        .collect();
-
-    if self_matches || !filtered_children.is_empty() {
-        Some(SnapshotNode {
-            role: node.role.clone(),
-            name: node.name.clone(),
-            uid: node.uid.clone(),
-            properties: node.properties.clone(),
-            backend_dom_node_id: node.backend_dom_node_id,
-            children: filtered_children,
-        })
-    } else {
-        None
-    }
-}
-
-// =============================================================================
-// Summary helpers (for large-response guidance)
+// Summary helpers (for large-response temp file output)
 // =============================================================================
 
 /// Count total nodes in a snapshot tree (as a `serde_json::Value`).
@@ -1468,64 +1433,6 @@ mod tests {
         assert_eq!(result.root.children.len(), 2);
         assert_eq!(result.root.children[0].role, "button");
         assert_eq!(result.root.children[1].role, "link");
-    }
-
-    // =========================================================================
-    // filter_tree tests
-    // =========================================================================
-
-    #[test]
-    fn filter_tree_matches_by_name() {
-        let nodes = search_test_nodes();
-        let build = build_tree(&nodes, false);
-        let filtered = filter_tree(&build.root, "Login");
-        assert!(filtered.is_some());
-        let root = filtered.unwrap();
-        // Root should be preserved (ancestor), with Login button as child
-        assert_eq!(root.role, "document");
-        assert_eq!(root.children.len(), 1);
-        assert_eq!(root.children[0].name, "Login");
-    }
-
-    #[test]
-    fn filter_tree_matches_by_role() {
-        let nodes = search_test_nodes();
-        let build = build_tree(&nodes, false);
-        let filtered = filter_tree(&build.root, "heading");
-        assert!(filtered.is_some());
-        let root = filtered.unwrap();
-        // Should have the heading child preserved
-        assert!(root.children.iter().any(|c| c.role == "heading"));
-    }
-
-    #[test]
-    fn filter_tree_case_insensitive() {
-        let nodes = search_test_nodes();
-        let build = build_tree(&nodes, false);
-        let filtered = filter_tree(&build.root, "login");
-        assert!(filtered.is_some());
-    }
-
-    #[test]
-    fn filter_tree_no_match_returns_none() {
-        let nodes = sample_cdp_nodes();
-        let build = build_tree(&nodes, false);
-        let filtered = filter_tree(&build.root, "nonexistent_xyz_123");
-        assert!(filtered.is_none());
-    }
-
-    #[test]
-    fn filter_tree_preserves_ancestors() {
-        let nodes = sample_cdp_nodes();
-        let build = build_tree(&nodes, false);
-        // "This domain is for use in..." is nested under paragraph
-        let filtered = filter_tree(&build.root, "This domain");
-        assert!(filtered.is_some());
-        let root = filtered.unwrap();
-        // Root (document) → paragraph → text
-        assert_eq!(root.role, "document");
-        assert_eq!(root.children.len(), 1);
-        assert_eq!(root.children[0].role, "paragraph");
     }
 
     // =========================================================================

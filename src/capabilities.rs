@@ -638,7 +638,6 @@ mod tests {
                 json: false,
                 pretty: false,
                 plain: false,
-                full_response: false,
                 large_response_threshold: None,
             },
         };

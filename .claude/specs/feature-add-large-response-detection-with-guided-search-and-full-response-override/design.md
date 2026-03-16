@@ -1,7 +1,7 @@
-# Design: Large Response Detection with Guided Search and Full-Response Override
+# Design: Large Response Detection with Temp File Output
 
-**Issues**: #168
-**Date**: 2026-03-12
+**Issues**: #168, #177
+**Date**: 2026-03-13
 **Status**: Draft
 **Author**: AI (nmg-sdlc)
 
@@ -9,11 +9,13 @@
 
 ## Overview
 
-This feature introduces a unified output gate that intercepts serialized JSON before it reaches stdout, compares its byte length against a configurable threshold (default 16 KB), and either passes it through or replaces it with a structured guidance object. Two escape hatches — a per-command `--search` flag and a global `--full-response` flag — let agents filter or bypass the gate.
+This feature provides a unified output gate that intercepts serialized JSON before it reaches stdout, compares its byte length against a configurable threshold (default 16 KB), and either passes it through or writes it to a temp file.
 
-The design introduces a new `src/output.rs` module that centralizes the size-check-and-emit logic. Each command module continues to produce its normal typed output, but delegates final printing to the new module. The `--search` flag is handled per-command before the output stage, since each command's data has different structure. The `--full-response` and `--large-response-threshold` flags are added to the global `OutputFormat` struct.
+The original design (#168) introduced a guidance object + `--search`/`--full-response` flags requiring agents to re-invoke commands. Issue #177 simplifies this: when output exceeds the threshold, the full JSON is written to a UUID-named temp file in the OS temp directory, and stdout receives a small output object containing the file path, size, command name, and a command-specific summary. The agent reads the file directly — single-step, no re-invocation.
 
-The key architectural principle is **serialize once, check once, print once**: the output is serialized to a JSON string, the byte length is checked against the threshold, and either the original string or a guidance object is printed. No double-serialization occurs.
+The existing `src/output.rs` module is refactored: `LargeResponseGuidance` is replaced by `TempFileOutput`, `emit()` is updated to write to a temp file instead of printing a guidance object, and `emit_searched()` is removed. The `--search` per-command flags and `--full-response` global flag are removed from the CLI. The `build_guidance_text()` and `command_specific_guidance()` helper functions are removed.
+
+The key architectural principle remains **serialize once, check once, act once**: the output is serialized to a JSON string, the byte length is checked against the threshold, and either the original string is printed inline or written to a temp file with a reference object printed to stdout.
 
 ---
 
@@ -24,8 +26,8 @@ The key architectural principle is **serialize once, check once, print once**: t
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                         CLI Layer                                │
-│  GlobalOpts { OutputFormat { full_response, threshold, ... } }  │
-│  Per-command Args { search: Option<String>, ... }               │
+│  GlobalOpts { OutputFormat { threshold, ... } }                  │
+│  (--search and --full-response REMOVED)                         │
 └──────────────────────────┬──────────────────────────────────────┘
                            ↓
 ┌─────────────────────────────────────────────────────────────────┐
@@ -33,67 +35,71 @@ The key architectural principle is **serialize once, check once, print once**: t
 │  page/snapshot.rs, page/text.rs, js.rs, network.rs              │
 │                                                                  │
 │  1. Execute CDP commands, produce typed result                   │
-│  2. If --search: filter result, return filtered data             │
-│  3. If --plain: print plain text, return (no gate)               │
-│  4. Call output::emit() with typed result + summary generator    │
+│  2. If --plain: delegate to output::emit_plain() (NEW)          │
+│  3. Call output::emit() with typed result + summary generator    │
+│     (search filtering removed from all commands)                 │
 └──────────────────────────┬──────────────────────────────────────┘
                            ↓
 ┌─────────────────────────────────────────────────────────────────┐
-│                    output.rs (NEW)                                │
+│                    output.rs (MODIFIED)                           │
 │                                                                  │
 │  emit(value, output_format, command_name, summary_fn)            │
 │    1. Serialize value to JSON string                             │
-│    2. If full_response: print JSON string, return                │
+│    2. Determine effective threshold                              │
 │    3. If len <= threshold: print JSON string, return             │
-│    4. Generate summary via summary_fn(value)                     │
-│    5. Build LargeResponseGuidance                                │
-│    6. Serialize and print guidance object                        │
+│    4. Generate UUID filename                                     │
+│    5. Write JSON string to temp file                             │
+│    6. Build TempFileOutput object                                │
+│    7. Serialize and print output object to stdout                │
+│                                                                  │
+│  emit_plain(text, output_format)                                 │
+│    1. If len <= threshold: print text, return                    │
+│    2. Write text to temp file (.txt)                             │
+│    3. Print file path to stdout as plain text                    │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
 ### Data Flow
 
 ```
-1. CLI parses args → GlobalOpts (with threshold + full_response) + command Args (with search)
+1. CLI parses args → GlobalOpts (with threshold) + command Args (no --search)
 2. Config loaded → threshold merged (CLI > config > default 16384)
 3. Command module executes CDP calls → produces typed result (e.g., SnapshotNode)
-4. If --search present: command module filters result in-place → uses filtered result
-5. If --plain: command prints plain text directly → exits (no output gate)
-6. Command calls output::emit(&result, &output_format, "page snapshot", summary_fn)
-7. output::emit() serializes result to JSON string
-8. If --full-response OR byte_len <= threshold: print JSON string
-9. Else: call summary_fn(&result) → build LargeResponseGuidance → print guidance JSON
+4. If --plain: command calls output::emit_plain(&text, &output_format)
+   a. If len <= threshold: print text, return
+   b. Else: write text to {temp_dir}/agentchrome-{uuid}.txt, print path to stdout
+5. Command calls output::emit(&result, &output_format, "page snapshot", summary_fn)
+6. output::emit() serializes result to JSON string
+7. If byte_len <= threshold: print JSON string
+8. Else: write JSON to {temp_dir}/agentchrome-{uuid}.json → print TempFileOutput object
 ```
 
 ---
 
 ## API / Interface Changes
 
-### New Global CLI Flags
+### Removed Global CLI Flags
+
+| Flag | Status | Notes |
+|------|--------|-------|
+| `--full-response` | **REMOVED** | No longer needed — full data is always in the temp file |
+| `--search` (per-command) | **REMOVED** | Removed from all 5 commands |
+
+### Retained Global CLI Flags
 
 | Flag | Type | Default | Purpose |
 |------|------|---------|---------|
-| `--full-response` | bool | `false` | Bypass large-response gate, return complete output |
-| `--large-response-threshold` | usize | `16384` | Byte threshold for triggering guidance object |
+| `--large-response-threshold` | usize | `16384` | Byte threshold for triggering temp file output |
 
-Added to `OutputFormat` struct in `src/cli/mod.rs`. The `OutputFormat` group constraint changes from `multiple = false` to allow these flags alongside `--json`/`--pretty`/`--plain`.
+### Removed Per-Command Flags
 
-### New Per-Command Flag
-
-| Flag | Type | Commands | Purpose |
-|------|------|----------|---------|
-| `--search <query>` | String | `page snapshot`, `page text`, `js exec`, `network list`, `network get` | Filter output to matching content |
-
-Added to each command's Args struct (e.g., `PageSnapshotArgs`, `PageTextArgs`, `JsExecArgs`, `NetworkListArgs`, `NetworkGetArgs`).
-
-### New Config File Key
-
-```toml
-[output]
-large_response_threshold = 16384
-```
-
-Added to `OutputConfig` in `src/config.rs`.
+| Command | Flag Removed |
+|---------|-------------|
+| `page snapshot` | `--search` |
+| `page text` | `--search` |
+| `js exec` | `--search` |
+| `network list` | `--search` |
+| `network get` | `--search` |
 
 ### CLI Struct Changes
 
@@ -102,59 +108,79 @@ Added to `OutputConfig` in `src/config.rs`.
 #[derive(Args)]
 pub struct OutputFormat {
     /// Output as compact JSON (mutually exclusive with --pretty, --plain)
-    #[arg(long, global = true)]
+    #[arg(long, global = true, conflicts_with_all = ["pretty", "plain"])]
     pub json: bool,
 
     /// Output as pretty-printed JSON (mutually exclusive with --json, --plain)
-    #[arg(long, global = true)]
+    #[arg(long, global = true, conflicts_with_all = ["json", "plain"])]
     pub pretty: bool,
 
     /// Output as human-readable plain text (mutually exclusive with --json, --pretty)
-    #[arg(long, global = true)]
+    #[arg(long, global = true, conflicts_with_all = ["json", "pretty"])]
     pub plain: bool,
 
-    /// Return complete output even when it exceeds the large-response threshold
-    #[arg(long, global = true)]
-    pub full_response: bool,
+    // REMOVED: pub full_response: bool,
 
     /// Byte threshold for large-response detection (default: 16384)
-    #[arg(long, global = true)]
+    #[arg(long, global = true, value_parser = parse_nonzero_usize)]
     pub large_response_threshold: Option<usize>,
 }
 ```
 
-Note: The mutual-exclusivity group `#[group(multiple = false)]` must be restructured. The format flags (`--json`, `--pretty`, `--plain`) remain mutually exclusive via a named group, while `--full-response` and `--large-response-threshold` are independent.
-
-### Guidance Object Schema
+### Per-Command Args Changes
 
 ```rust
-// src/output.rs
+// Example: src/cli/mod.rs — PageSnapshotArgs (modified)
+#[derive(Args)]
+pub struct PageSnapshotArgs {
+    // REMOVED: pub search: Option<String>,
+    // ... remaining fields unchanged
+}
+
+// Same pattern for PageTextArgs, JsExecArgs, NetworkListArgs, NetworkGetArgs
+```
+
+### Temp File Output Object Schema
+
+```rust
+// src/output.rs (replaces LargeResponseGuidance)
 #[derive(Serialize)]
-pub struct LargeResponseGuidance {
-    pub large_response: bool,          // always true
-    pub size_bytes: u64,
+pub struct TempFileOutput {
+    pub output_file: String,           // absolute path to temp file
+    pub size_bytes: u64,               // byte count of the written file
     pub command: String,               // e.g., "page snapshot"
     pub summary: serde_json::Value,    // command-specific metadata
-    pub guidance: String,              // human-readable instructions
 }
 ```
 
-**Example output:**
+**Example output (JSON mode):**
 
 ```json
 {
-  "large_response": true,
+  "output_file": "/tmp/agentchrome-a1b2c3d4-e5f6-7890-abcd-ef1234567890.json",
   "size_bytes": 536576,
   "command": "page snapshot",
   "summary": {
     "total_nodes": 8500,
     "top_roles": ["main", "navigation", "complementary"]
-  },
-  "guidance": "Response is 524 KB (above 16 KB threshold). Summary: accessibility tree with 8,500 nodes (top roles: main, navigation, complementary). Options: (1) Use --search \"<query>\" to retrieve matching nodes only. Example: page snapshot --search \"login\". (2) Use --full-response to retrieve the complete tree. Use --full-response when: you need to inspect all interactive elements, --search doesn't narrow results sufficiently, or you are performing a comprehensive page audit."
+  }
 }
 ```
 
-### Command-Specific Summary Schemas
+**Example output (plain mode):**
+
+```
+/tmp/agentchrome-a1b2c3d4-e5f6-7890-abcd-ef1234567890.txt
+```
+
+### Config File Key (Unchanged)
+
+```toml
+[output]
+large_response_threshold = 16384
+```
+
+### Command-Specific Summary Schemas (Unchanged)
 
 | Command | Summary Fields | Example |
 |---------|---------------|---------|
@@ -166,34 +192,31 @@ pub struct LargeResponseGuidance {
 
 ---
 
-## New Module: `src/output.rs`
+## Module Changes: `src/output.rs`
 
-### Public API
+### Removed
+
+- `LargeResponseGuidance` struct
+- `emit_searched()` function
+- `build_guidance_text()` function
+- `command_specific_guidance()` function
+- All tests for guidance text building and `emit_searched`
+
+### Added
+
+- `TempFileOutput` struct (replaces `LargeResponseGuidance`)
+- `write_temp_file()` helper — writes content to `{temp_dir}/agentchrome-{uuid}.json`
+- `emit_plain()` function — handles `--plain` mode with temp file support
+
+### Modified: `emit()` function
 
 ```rust
-/// Default large-response threshold in bytes (16 KB).
-pub const DEFAULT_THRESHOLD: usize = 16_384;
-
-/// Emit a serializable value through the large-response gate.
-///
-/// If `--plain` mode is active, this function is NOT called (plain mode
-/// is handled by the command module before reaching this point).
-///
-/// Returns Ok(()) on success.
-pub fn emit<T: Serialize, F>(
+pub fn emit<T, F>(
     value: &T,
     output: &OutputFormat,
     command_name: &str,
     summary_fn: F,
 ) -> Result<(), AppError>
-where
-    F: FnOnce(&T) -> serde_json::Value;
-```
-
-### Internal Logic
-
-```rust
-pub fn emit<T, F>(value: &T, output: &OutputFormat, command_name: &str, summary_fn: F) -> Result<(), AppError>
 where
     T: Serialize,
     F: FnOnce(&T) -> serde_json::Value,
@@ -205,224 +228,102 @@ where
         serde_json::to_string(value)
     }.map_err(serialization_error)?;
 
-    // 2. If full_response, print and return
-    if output.full_response {
-        println!("{json_string}");
-        return Ok(());
-    }
-
-    // 3. Determine effective threshold
+    // 2. Determine effective threshold
     let threshold = output.large_response_threshold.unwrap_or(DEFAULT_THRESHOLD);
 
-    // 4. If under threshold, print and return
+    // 3. If under threshold, print inline and return
     if json_string.len() <= threshold {
         println!("{json_string}");
         return Ok(());
     }
 
-    // 5. Build guidance object
-    let summary = summary_fn(value);
+    // 4. Write to temp file
+    let file_path = write_temp_file(&json_string, "json")?;
     let size_bytes = json_string.len() as u64;
-    let guidance_text = build_guidance_text(command_name, size_bytes, &summary);
 
-    let guidance = LargeResponseGuidance {
-        large_response: true,
+    // 5. Build and print output object
+    let summary = summary_fn(value);
+    let output_obj = TempFileOutput {
+        output_file: file_path,
         size_bytes,
         command: command_name.to_string(),
         summary,
-        guidance: guidance_text,
     };
-
-    // 6. Serialize and print guidance (always compact JSON, even with --pretty)
-    let guidance_json = serde_json::to_string(&guidance).map_err(serialization_error)?;
-    println!("{guidance_json}");
+    let output_json = serde_json::to_string(&output_obj).map_err(serialization_error)?;
+    println!("{output_json}");
     Ok(())
 }
 ```
 
-### Guidance Text Builder
+### New: `emit_plain()` function
 
 ```rust
-fn build_guidance_text(
-    command_name: &str,
-    size_bytes: u64,
-    summary: &serde_json::Value,
-) -> String {
-    let human_size = format_human_size(size_bytes);
-    let threshold_str = format_human_size(DEFAULT_THRESHOLD as u64);
+/// Emit plain text through the large-response gate.
+///
+/// If text exceeds the threshold, writes to a temp file and prints the path.
+pub fn emit_plain(text: &str, output: &OutputFormat) -> Result<(), AppError> {
+    let threshold = output.large_response_threshold.unwrap_or(DEFAULT_THRESHOLD);
 
-    // Command-specific summary sentence + search example
-    let (summary_sentence, search_example, full_response_reasons) =
-        command_specific_guidance(command_name, summary);
-
-    format!(
-        "Response is {human_size} (above {threshold_str} threshold). \
-         {summary_sentence} \
-         Options: (1) Use --search \"<query>\" to retrieve matching content only. \
-         Example: {search_example}. \
-         (2) Use --full-response to retrieve the complete response. \
-         Use --full-response when: {full_response_reasons}."
-    )
-}
-
-fn format_human_size(bytes: u64) -> String {
-    if bytes >= 1_048_576 {
-        format!("{:.1} MB", bytes as f64 / 1_048_576.0)
-    } else if bytes >= 1024 {
-        format!("{} KB", bytes / 1024)
-    } else {
-        format!("{bytes} bytes")
+    if text.len() <= threshold {
+        print!("{text}");
+        return Ok(());
     }
+
+    let file_path = write_temp_file(text, "txt")?;
+    println!("{file_path}");
+    Ok(())
 }
 ```
 
----
-
-## Search Implementation Per Command
-
-### `page snapshot --search <query>`
-
-**Location**: `src/page/snapshot.rs`
-
-**Algorithm**:
-1. Build the full accessibility tree as normal
-2. Walk the tree, mark nodes where `name`, `role`, or any text property contains the query (case-insensitive)
-3. For each matching node, include all ancestors up to root (for tree context)
-4. Prune branches with no matching descendants
-5. Return the filtered tree in the normal `SnapshotNode` schema
+### New: `write_temp_file()` helper
 
 ```rust
-// New function in snapshot.rs
-pub fn filter_tree(root: &SnapshotNode, query: &str) -> Option<SnapshotNode> {
-    let query_lower = query.to_lowercase();
-    filter_node(root, &query_lower)
+use std::io::Write;
+use uuid::Uuid;
+
+fn write_temp_file(content: &str, extension: &str) -> Result<String, AppError> {
+    let uuid = Uuid::new_v4();
+    let file_name = format!("agentchrome-{uuid}.{extension}");
+    let file_path = std::env::temp_dir().join(&file_name);
+    let path_str = file_path.display().to_string();
+
+    let mut file = std::fs::File::create(&file_path).map_err(|e| AppError {
+        message: format!("failed to create temp file {path_str}: {e}"),
+        code: ExitCode::GeneralError,
+        custom_json: None,
+    })?;
+
+    file.write_all(content.as_bytes()).map_err(|e| AppError {
+        message: format!("failed to write temp file {path_str}: {e}"),
+        code: ExitCode::GeneralError,
+        custom_json: None,
+    })?;
+
+    Ok(path_str)
 }
-
-fn filter_node(node: &SnapshotNode, query: &str) -> Option<SnapshotNode> {
-    let self_matches = node.name.to_lowercase().contains(query)
-        || node.role.to_lowercase().contains(query);
-
-    let filtered_children: Vec<SnapshotNode> = node.children.iter()
-        .filter_map(|child| filter_node(child, query))
-        .collect();
-
-    if self_matches || !filtered_children.is_empty() {
-        Some(SnapshotNode {
-            role: node.role.clone(),
-            name: node.name.clone(),
-            uid: node.uid.clone(),
-            properties: node.properties.clone(),
-            backend_dom_node_id: node.backend_dom_node_id,
-            children: filtered_children,
-        })
-    } else {
-        None
-    }
-}
-```
-
-### `page text --search <query>`
-
-**Location**: `src/page/text.rs`
-
-**Algorithm**:
-1. Extract full page text as normal
-2. Split text into paragraphs (double-newline separated)
-3. Return only paragraphs containing the query (case-insensitive)
-4. Rejoin with double newlines
-
-### `js exec --search <query>`
-
-**Location**: `src/js.rs`
-
-**Algorithm**:
-1. Execute JS and get result as `serde_json::Value`
-2. If result is object: retain only key-value pairs where key or serialized value contains query
-3. If result is array: retain only elements where serialized element contains query
-4. If result is string: return the string only if it contains query, else empty string
-5. Other types: return as-is (no filtering for numbers/bools/null)
-
-### `network list --search <query>`
-
-**Location**: `src/network.rs`
-
-**Algorithm**:
-1. Collect network requests as normal
-2. Filter to requests where URL or method contains query (case-insensitive)
-3. Existing `--url` and `--method` filters still apply (search is additive)
-
-### `network get --search <query>`
-
-**Location**: `src/network.rs`
-
-**Algorithm**:
-1. Fetch full request detail as normal
-2. If response body is a string: check if it contains query; if not, set body to `null`
-3. Filter response headers to those whose name or value contains query
-4. Return the filtered `NetworkRequestDetail`
-
----
-
-## Config Changes
-
-### `src/config.rs`
-
-```rust
-// OutputConfig (modified)
-#[derive(Debug, Default, Clone, Deserialize, Serialize)]
-#[serde(default)]
-pub struct OutputConfig {
-    pub format: Option<String>,
-    pub large_response_threshold: Option<usize>,  // NEW
-}
-
-// ResolvedOutput (modified)
-#[derive(Debug, Serialize)]
-pub struct ResolvedOutput {
-    pub format: String,
-    pub large_response_threshold: usize,  // NEW — resolved with default
-}
-```
-
-### Resolution in `resolve_config()`:
-
-```rust
-output: ResolvedOutput {
-    format: file.output.format.clone().unwrap_or_else(|| "json".to_string()),
-    large_response_threshold: file.output.large_response_threshold
-        .unwrap_or(output::DEFAULT_THRESHOLD),
-},
-```
-
-### Merging in `apply_config_defaults()` (main.rs):
-
-```rust
-output: cli::OutputFormat {
-    json: cli_global.output.json,
-    pretty: cli_global.output.pretty,
-    plain: cli_global.output.plain,
-    full_response: cli_global.output.full_response,
-    large_response_threshold: cli_global.output.large_response_threshold
-        .or(config.output.large_response_threshold),
-},
 ```
 
 ---
 
 ## Command Module Changes
 
-### Pattern for Each Affected Command
+### Pattern: Remove --search and Use emit() Directly
 
-Each command module currently ends with:
+Each affected command module currently has:
 
 ```rust
 // Before (e.g., page/text.rs)
+if let Some(ref query) = args.search {
+    let filtered = filter_text_paragraphs(&text, query);
+    let result = PageTextResult { text: filtered, url, title };
+    return output::emit_searched(&result, &global.output);
+}
 if global.output.plain {
     print!("{text}");
     return Ok(());
 }
-let output = PageTextResult { text, url, title };
-print_output(&output, &global.output)
+let result = PageTextResult { text, url, title };
+output::emit(&result, &global.output, "page text", |r| { ... })
 ```
 
 Changes to:
@@ -430,22 +331,9 @@ Changes to:
 ```rust
 // After
 if global.output.plain {
-    // --search in plain mode: filter text, then print
-    let text = if let Some(ref query) = args.search {
-        filter_text_by_query(&text, query)
-    } else {
-        text
-    };
-    print!("{text}");
-    return Ok(());
+    return output::emit_plain(&text, &global.output);
 }
-
-let result = if let Some(ref query) = args.search {
-    PageTextResult { text: filter_text_by_query(&text, query), url, title }
-} else {
-    PageTextResult { text, url, title }
-};
-
+let result = PageTextResult { text, url, title };
 output::emit(&result, &global.output, "page text", |r| {
     serde_json::json!({
         "character_count": r.text.len(),
@@ -454,70 +342,109 @@ output::emit(&result, &global.output, "page text", |r| {
 })
 ```
 
-### Snapshot Special Case
+### Files Modified
 
-`page/snapshot.rs` has custom serialization logic (adding `truncated` and `total_nodes` fields to the JSON value). This needs to be adapted:
+| File | Changes |
+|------|---------|
+| `src/page/snapshot.rs` | Remove `--search` branch and `filter_tree()` call; remove `emit_searched()` call; update `--plain` path to use `emit_plain()` |
+| `src/page/text.rs` | Remove `--search` branch and `filter_text_paragraphs()` call; remove `emit_searched()` call; update `--plain` path to use `emit_plain()` |
+| `src/js.rs` | Remove `--search` branch and `filter_json_value()` call; remove `emit_searched()` call; update `--plain` path to use `emit_plain()` |
+| `src/network.rs` | Remove `--search` branches from both `network list` and `network get`; remove `emit_searched()` calls; update `--plain` paths to use `emit_plain()` |
+| `src/snapshot.rs` | Remove `filter_tree()` and `filter_node()` functions (dead code after --search removal); retain `count_nodes()` and `extract_top_roles()` for summary generation |
 
-1. Build tree and produce `serde_json::Value` as before
-2. If `--search`: filter tree nodes, then proceed
-3. Pass the `serde_json::Value` to `output::emit()` with a snapshot-specific summary function
+### Summary Functions (Unchanged)
 
-The `output::emit()` function accepts `&impl Serialize`, so `serde_json::Value` works directly.
-
-### Summary Functions
-
-Each command provides a closure to `output::emit()`:
+Each command continues to provide a summary closure to `output::emit()`. These are unchanged from the #168 design:
 
 ```rust
 // page/snapshot.rs
-output::emit(&json_value, &global.output, "page snapshot", |v| {
-    let total_nodes = count_nodes(v);
-    let top_roles = extract_top_roles(v, 5);
-    serde_json::json!({
-        "total_nodes": total_nodes,
-        "top_roles": top_roles,
-    })
+|v| serde_json::json!({
+    "total_nodes": count_nodes(v),
+    "top_roles": extract_top_roles(v, 5),
 })
 
 // page/text.rs
-output::emit(&result, &global.output, "page text", |r| {
-    serde_json::json!({
-        "character_count": r.text.len(),
-        "line_count": r.text.lines().count(),
-    })
+|r| serde_json::json!({
+    "character_count": r.text.len(),
+    "line_count": r.text.lines().count(),
 })
 
 // js.rs
-output::emit(&result, &global.output, "js exec", |r| {
-    let type_str = &r.r#type;
-    let size = serde_json::to_string(&r.result).map(|s| s.len()).unwrap_or(0);
-    serde_json::json!({
-        "result_type": type_str,
-        "size_bytes": size,
-    })
+|r| serde_json::json!({
+    "result_type": &r.r#type,
+    "size_bytes": serde_json::to_string(&r.result).map(|s| s.len()).unwrap_or(0),
 })
 
 // network.rs (list)
-output::emit(&requests, &global.output, "network list", |reqs| {
-    let methods: HashSet<&str> = reqs.iter().map(|r| r.method.as_str()).collect();
-    let domains: HashSet<String> = reqs.iter().filter_map(|r| extract_domain(&r.url)).collect();
-    serde_json::json!({
-        "request_count": reqs.len(),
-        "methods": methods.into_iter().collect::<Vec<_>>(),
-        "domains": domains.into_iter().take(10).collect::<Vec<_>>(),
-    })
+|reqs| serde_json::json!({
+    "request_count": reqs.len(),
+    "methods": unique_methods(reqs),
+    "domains": unique_domains(reqs, 10),
 })
 
 // network.rs (get)
-output::emit(&detail, &global.output, "network get", |d| {
-    serde_json::json!({
-        "url": d.request.url,
-        "status": d.response.status,
-        "content_type": d.response.mime_type,
-        "body_size_bytes": d.response.body.as_ref().map(|b| b.len()),
-    })
+|d| serde_json::json!({
+    "url": d.request.url,
+    "status": d.response.status,
+    "content_type": d.response.mime_type,
+    "body_size_bytes": d.response.body.as_ref().map(|b| b.len()),
 })
 ```
+
+---
+
+## Config Changes
+
+### `src/config.rs` (Unchanged)
+
+The `OutputConfig` and `ResolvedOutput` structs remain the same — `large_response_threshold` key is unchanged.
+
+### `src/main.rs` — `apply_config_defaults()` (Modified)
+
+```rust
+// Before
+output: cli::OutputFormat {
+    json: cli_global.output.json,
+    pretty: cli_global.output.pretty,
+    plain: cli_global.output.plain,
+    full_response: cli_global.output.full_response,    // REMOVED
+    large_response_threshold: cli_global
+        .output
+        .large_response_threshold
+        .or(config.output.large_response_threshold),
+},
+
+// After
+output: cli::OutputFormat {
+    json: cli_global.output.json,
+    pretty: cli_global.output.pretty,
+    plain: cli_global.output.plain,
+    large_response_threshold: cli_global
+        .output
+        .large_response_threshold
+        .or(config.output.large_response_threshold),
+},
+```
+
+### Other Files Referencing `full_response`
+
+| File | Change |
+|------|--------|
+| `src/examples.rs` | Remove `full_response: false` from test `OutputFormat` initializers |
+| `src/capabilities.rs` | Remove `full_response: false` from test `OutputFormat` initializers |
+
+---
+
+## New Dependency: `uuid`
+
+Add to `Cargo.toml`:
+
+```toml
+[dependencies]
+uuid = { version = "1", features = ["v4"] }
+```
+
+This provides `Uuid::new_v4()` for generating collision-resistant file names. The `uuid` crate is well-established (1B+ downloads), adds minimal binary size (~20 KB), and is the standard approach for this pattern in Rust.
 
 ---
 
@@ -525,17 +452,20 @@ output::emit(&detail, &global.output, "network get", |d| {
 
 | Option | Description | Pros | Cons | Decision |
 |--------|-------------|------|------|----------|
-| **A: Middleware/trait-based** | Define a `CommandOutput` trait with `size_hint()`, `summarize()`, `search()` methods; implement for each output type | Clean abstraction, composable | Requires refactoring all output types to implement trait; over-engineered for 5 commands | Rejected — too much refactoring |
-| **B: Centralized emit function** | New `output::emit()` function with summary closure; commands call it instead of `print_output()` | Minimal refactoring, summary logic stays close to data, single serialization pass | Summary closures are ad-hoc (no compile-time guarantee of schema) | **Selected** |
-| **C: Post-serialization wrapper in main.rs** | Intercept all stdout in `main.rs` after command returns | Zero changes to command modules | Cannot generate command-specific summaries; can't handle `--search` which needs pre-serialization filtering | Rejected — can't support search or summaries |
+| **A: Centralized emit function (original #168)** | Guidance object + `--search`/`--full-response` re-invocation pattern | Agents can filter server-side | Two-step pattern adds latency; complex per-command search implementations | **Replaced by #177** |
+| **B: Temp file with UUID** | Write full output to temp file, return path object | Single-step; agent reads file directly; no re-invocation; simpler implementation | Requires filesystem I/O; temp file cleanup left to OS/agent | **Selected (#177)** |
+| **C: Random hex instead of UUID** | Use `rand` to generate hex string for file names | Avoids `uuid` dependency | Less standard; `rand` is a heavier dependency than `uuid`; collision resistance less well-understood | Rejected |
+| **D: Named pipe / stdout redirect** | Use OS pipes to stream large output | No temp files | Platform-specific; complex; doesn't solve context consumption | Rejected |
 
 ---
 
 ## Security Considerations
 
-- [x] **Input Validation**: `--search` query is used only for string matching (no regex, no injection vector). `--large-response-threshold` validated as > 0 by clap.
-- [x] **No new external communication**: All processing is local.
-- [x] **No sensitive data in guidance**: Summary contains only structural metadata (counts, roles, types), never actual page content.
+- [x] **No new external communication**: All processing is local; temp file is written to the OS temp directory.
+- [x] **File path in output**: The `output_file` field contains an absolute path. This is safe — the temp directory is a well-known, user-writable location.
+- [x] **No sensitive data in output object**: Summary contains only structural metadata (counts, roles, types), never actual page content.
+- [x] **Temp file permissions**: `std::fs::File::create()` uses default OS permissions (typically `0600` on Unix). The file is readable only by the current user.
+- [x] **Input validation**: `--large-response-threshold` validated as > 0 by clap's `parse_nonzero_usize`.
 
 ---
 
@@ -543,8 +473,10 @@ output::emit(&detail, &global.output, "network get", |d| {
 
 - [x] **Single serialization pass**: Output is serialized once to a JSON string; byte length check is O(1) on the string length.
 - [x] **Summary generation is lazy**: Summary closure is only called when the threshold is exceeded.
-- [x] **Search filtering**: Tree filtering is O(n) where n = number of nodes. Text filtering is O(n) where n = text length. Both are bounded by existing per-command truncation limits.
-- [x] **No memory duplication**: The serialized JSON string is owned once; if guidance is emitted, the original string is dropped.
+- [x] **Temp file I/O**: Writing to temp directory is fast (typically in-memory tmpfs on Linux, SSD-backed on macOS). Expected < 10ms for typical payloads (< 10 MB).
+- [x] **No memory duplication**: The serialized JSON string is owned once; after writing to the temp file, only the small output object is serialized.
+- [x] **UUID generation**: `Uuid::new_v4()` is negligible overhead (~100ns).
+- [x] **Reduced complexity vs #168**: Removing `--search` eliminates O(n) filtering operations that occurred before output.
 
 ---
 
@@ -552,13 +484,16 @@ output::emit(&detail, &global.output, "network get", |d| {
 
 | Layer | Type | Coverage |
 |-------|------|----------|
-| `output::emit()` | Unit | Threshold logic, guidance object schema, format_human_size, below/above threshold paths |
-| Search functions | Unit | Per-command filtering: snapshot tree filtering, text paragraph filtering, JSON key/value filtering, network URL filtering |
-| Summary functions | Unit | Per-command summary generation with known inputs |
-| CLI flags | BDD | `--full-response`, `--large-response-threshold`, `--search` integration with real commands |
+| `output::emit()` | Unit | Below-threshold inline output; above-threshold temp file write; file content verification; output object schema |
+| `output::emit_plain()` | Unit | Below-threshold inline print; above-threshold temp file write (.txt); path printed to stdout |
+| `write_temp_file()` | Unit | File creation, content integrity, UUID uniqueness |
+| `TempFileOutput` | Unit | Serialization schema (exactly 4 fields, correct types) |
+| Summary functions | Unit | Per-command summary generation with known inputs (unchanged from #168) |
+| CLI flag removal | BDD | `--search` and `--full-response` produce clap validation errors |
 | Config file | BDD | `large_response_threshold` loaded from config, CLI override |
-| Cross-command consistency | BDD | Guidance object schema is identical across all commands that trigger it |
-| Plain mode exemption | BDD | `--plain` never produces guidance object |
+| Cross-command consistency | BDD | Output object schema is identical across all commands that trigger temp file output |
+| Plain mode temp file | BDD | `--plain` mode writes to temp file when above threshold |
+| Below-threshold | BDD | Small responses are inline, no temp file written |
 
 ---
 
@@ -566,17 +501,19 @@ output::emit(&detail, &global.output, "network get", |d| {
 
 | Risk | Likelihood | Impact | Mitigation |
 |------|------------|--------|------------|
-| Guidance object breaks existing scripts | Low | High | Only affects above-threshold responses; `--full-response` provides opt-out; below-threshold is unchanged |
-| `--search` returns empty results | Medium | Low | Return empty array/object in normal schema (not an error); exit code remains 0 |
-| Summary closure panics | Low | High | Summary closures use safe operations only (counting, collecting); no unwrap() |
-| Double serialization for snapshot (custom JSON value manipulation) | Medium | Low | Refactor snapshot to produce a serializable struct, or pass pre-serialized `serde_json::Value` to `emit()` |
+| Temp file write fails (disk full, permissions) | Low | High | Return structured JSON error on stderr with exit code 1; error message includes path and OS error |
+| Breaking change for scripts using `--search`/`--full-response` | Medium | Medium | These flags are removed; scripts will get clap validation errors. This is intentional — document in release notes |
+| Temp files accumulate on disk | Low | Low | Out of scope — OS tmp cleanup or agent cleanup handles lifecycle; file names are prefixed with `agentchrome-` for easy glob cleanup |
+| Above-threshold output object breaks scripts that parse full JSON | Low | Medium | Only affects above-threshold responses (same as #168); below-threshold behavior is unchanged |
 
 ---
 
 ## Open Questions
 
-- [x] Should `output::emit()` support `serde_json::Value` directly (for snapshot's custom serialization)? — **Yes, `Value` implements `Serialize`**
-- [x] Should the guidance object be pretty-printed when `--pretty` is active? — **No, guidance is always compact JSON for machine readability**
+- [x] Should `output::emit()` support `serde_json::Value` directly? — **Yes, `Value` implements `Serialize` (unchanged from #168)**
+- [x] Should the output object be pretty-printed when `--pretty` is active? — **No, always compact JSON for machine readability (unchanged from #168)**
+- [x] Should temp files use UUID or random hex? — **UUID v4 via the `uuid` crate**
+- [x] What file extension for plain mode temp files? — **`.txt` (JSON mode uses `.json`)**
 
 ---
 
@@ -584,7 +521,8 @@ output::emit(&detail, &global.output, "network get", |d| {
 
 | Issue | Date | Summary |
 |-------|------|---------|
-| #168 | 2026-03-12 | Initial feature spec |
+| #168 | 2026-03-12 | Initial design: guidance object + `--search` + `--full-response` |
+| #177 | 2026-03-13 | Replace guidance object with temp file output; remove `--search` and `--full-response`; add `emit_plain()` for plain-mode temp file support; add `uuid` dependency; remove search filtering from all commands |
 
 ---
 

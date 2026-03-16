@@ -43,25 +43,9 @@ pub async fn execute_snapshot(
         eprintln!("warning: could not save snapshot state: {e}");
     }
 
-    // Apply --search filter if present
-    let effective_root = if let Some(ref query) = args.search {
-        crate::snapshot::filter_tree(&build.root, query).unwrap_or_else(|| {
-            crate::snapshot::SnapshotNode {
-                role: build.root.role.clone(),
-                name: build.root.name.clone(),
-                uid: build.root.uid.clone(),
-                properties: build.root.properties.clone(),
-                backend_dom_node_id: build.root.backend_dom_node_id,
-                children: vec![],
-            }
-        })
-    } else {
-        build.root
-    };
-
     // Plain/text output path
     if !global.output.json && !global.output.pretty {
-        let mut text = crate::snapshot::format_text(&effective_root, args.verbose);
+        let mut text = crate::snapshot::format_text(&build.root, args.verbose);
         if build.truncated {
             text.push_str(&format!(
                 "[... truncated: {} nodes, showing first {}]\n",
@@ -75,13 +59,13 @@ pub async fn execute_snapshot(
                 AppError::file_write_failed(&file_path.display().to_string(), &e.to_string())
             })?;
         } else {
-            print!("{text}");
+            crate::output::emit_plain(&text, &global.output)?;
         }
         return Ok(());
     }
 
     // JSON output — add truncation info to root if applicable
-    let mut json_value = serde_json::to_value(&effective_root).map_err(|e| AppError {
+    let mut json_value = serde_json::to_value(&build.root).map_err(|e| AppError {
         message: format!("serialization error: {e}"),
         code: ExitCode::GeneralError,
         custom_json: None,
@@ -114,12 +98,7 @@ pub async fn execute_snapshot(
         return Ok(());
     }
 
-    // If --search was used, bypass the large-response gate
-    if args.search.is_some() {
-        return crate::output::emit_searched(&json_value, &global.output);
-    }
-
-    // Normal path: emit through the large-response gate
+    // Emit through the large-response gate
     crate::output::emit(&json_value, &global.output, "page snapshot", |v| {
         let total_nodes = crate::snapshot::count_nodes(v);
         let roles = crate::snapshot::top_roles(v, 5);

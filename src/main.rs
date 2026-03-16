@@ -188,7 +188,6 @@ fn apply_config_defaults(cli_global: &GlobalOpts, config: &config::ConfigFile) -
             json: cli_global.output.json,
             pretty: cli_global.output.pretty,
             plain: cli_global.output.plain,
-            full_response: cli_global.output.full_response,
             large_response_threshold: cli_global
                 .output
                 .large_response_threshold
