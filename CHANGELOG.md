@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.14.0] - 2026-03-15
+
+### Fixed
+
+- Add `--wait-for-selector` flag to `navigate` so the command waits until a CSS selector is present in the DOM after the primary load strategy completes, fixing premature returns on SPA-heavy sites like Outlook Web (#178)
+
 ## [1.13.0] - 2026-03-15
 
 ### Changed
