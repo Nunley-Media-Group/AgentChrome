@@ -807,6 +807,12 @@ pub struct NavigateUrlArgs {
     /// Bypass the browser cache
     #[arg(long)]
     pub ignore_cache: bool,
+
+    /// Wait for a CSS selector to appear after the page loads.
+    /// Useful for SPA sites where content renders asynchronously after the load event.
+    /// Example: --wait-for-selector "div.email-list"
+    #[arg(long)]
+    pub wait_for_selector: Option<String>,
 }
 
 /// Arguments for `navigate reload`.

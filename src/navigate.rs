@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use serde::Serialize;
 
@@ -10,6 +10,7 @@ use crate::cli::{
     GlobalOpts, NavigateArgs, NavigateCommand, NavigateReloadArgs, NavigateUrlArgs, WaitUntil,
 };
 use crate::emulate::apply_emulate_state;
+use crate::page::wait::check_selector_condition;
 
 /// Default navigation wait timeout in milliseconds.
 pub const DEFAULT_NAVIGATE_TIMEOUT_MS: u64 = 30_000;
@@ -120,6 +121,7 @@ async fn execute_url(global: &GlobalOpts, args: &NavigateUrlArgs) -> Result<(), 
     })?;
 
     let timeout_ms = args.timeout.unwrap_or(DEFAULT_NAVIGATE_TIMEOUT_MS);
+    let start = Instant::now();
     let (_client, mut managed) = setup_session(global).await?;
     if global.auto_dismiss_dialogs {
         let _dismiss = managed.spawn_auto_dismiss().await?;
@@ -186,6 +188,39 @@ async fn execute_url(global: &GlobalOpts, args: &NavigateUrlArgs) -> Result<(), 
             }
         }
         WaitUntil::None => {}
+    }
+
+    // Optional: wait for a CSS selector to appear after the primary wait strategy
+    if let Some(ref selector) = args.wait_for_selector {
+        managed.ensure_domain("Runtime").await?;
+
+        #[allow(clippy::cast_possible_truncation)]
+        let elapsed_ms = start.elapsed().as_millis() as u64;
+        if elapsed_ms >= timeout_ms {
+            return Err(AppError::navigation_timeout(
+                timeout_ms,
+                &format!("selector \"{selector}\" (no time remaining after page load)"),
+            ));
+        }
+        let remaining_ms = timeout_ms - elapsed_ms;
+        let deadline = Instant::now() + Duration::from_millis(remaining_ms);
+        let interval = Duration::from_millis(100);
+
+        // Immediate pre-check
+        if !check_selector_condition(&managed, selector).await {
+            loop {
+                tokio::time::sleep(interval).await;
+                if Instant::now() > deadline {
+                    return Err(AppError::navigation_timeout(
+                        timeout_ms,
+                        &format!("selector \"{selector}\" not found"),
+                    ));
+                }
+                if check_selector_condition(&managed, selector).await {
+                    break;
+                }
+            }
+        }
     }
 
     // Extract HTTP status from responseReceived events

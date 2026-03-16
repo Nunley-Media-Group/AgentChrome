@@ -3,7 +3,7 @@ mod find;
 mod screenshot;
 mod snapshot;
 mod text;
-mod wait;
+pub(crate) mod wait;
 
 use std::time::Duration;
 
