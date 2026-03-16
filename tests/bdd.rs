@@ -4722,4 +4722,13 @@ async fn main() {
             },
         )
         .await;
+
+    // Navigate --wait-for-selector (issue #178) — all scenarios require a running Chrome
+    // instance; the fix is validated by the selector polling loop in navigate.rs.
+    CliWorld::cucumber()
+        .filter_run_and_exit(
+            "tests/features/178-fix-navigate-wait-for-selector.feature",
+            |_feature, _rule, _scenario| false, // All scenarios require running Chrome
+        )
+        .await;
 }

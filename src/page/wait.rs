@@ -55,7 +55,7 @@ fn print_wait_plain(result: &WaitResult) {
 
 /// Evaluate a JS expression via Runtime.evaluate, returning the result value.
 /// Returns `None` if the evaluation fails (e.g. page is navigating).
-async fn eval_js(
+pub(crate) async fn eval_js(
     managed: &agentchrome::connection::ManagedSession,
     expression: &str,
 ) -> Option<serde_json::Value> {
@@ -97,7 +97,7 @@ async fn check_text_condition(
 }
 
 /// Check the selector condition: evaluate document.querySelector(sel) !== null.
-async fn check_selector_condition(
+pub(crate) async fn check_selector_condition(
     managed: &agentchrome::connection::ManagedSession,
     selector: &str,
 ) -> bool {
