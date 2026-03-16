@@ -150,6 +150,7 @@ struct NetworkRequestBuilder {
 // Output formatting
 // =============================================================================
 
+#[cfg(test)]
 fn print_list_plain(requests: &[NetworkRequestSummary]) {
     for req in requests {
         let status_str = req
@@ -168,22 +169,29 @@ fn print_list_plain(requests: &[NetworkRequestSummary]) {
     }
 }
 
-fn print_detail_plain(detail: &NetworkRequestDetail) {
-    println!("{} {}", detail.request.method, detail.request.url);
+fn format_detail_plain(detail: &NetworkRequestDetail) -> String {
+    use std::fmt::Write;
+    let mut out = String::new();
+    let _ = writeln!(out, "{} {}", detail.request.method, detail.request.url);
     let status_str = detail
         .response
         .status
         .map_or_else(|| "---".to_string(), |s| s.to_string());
-    println!("  Status: {} {}", status_str, detail.response.status_text);
-    println!("  Type: {}", detail.resource_type);
-    println!("  Timestamp: {}", detail.timestamp);
+    let _ = writeln!(
+        out,
+        "  Status: {} {}",
+        status_str, detail.response.status_text
+    );
+    let _ = writeln!(out, "  Type: {}", detail.resource_type);
+    let _ = writeln!(out, "  Timestamp: {}", detail.timestamp);
     if let Some(size) = detail.size {
-        println!("  Size: {size} bytes");
+        let _ = writeln!(out, "  Size: {size} bytes");
     }
     if let Some(dur) = detail.duration_ms {
-        println!("  Duration: {dur:.1}ms");
+        let _ = writeln!(out, "  Duration: {dur:.1}ms");
     }
-    println!(
+    let _ = writeln!(
+        out,
         "  Timing: DNS={:.1}ms Connect={:.1}ms TLS={:.1}ms TTFB={:.1}ms Download={:.1}ms",
         detail.timing.dns_ms,
         detail.timing.connect_ms,
@@ -192,11 +200,17 @@ fn print_detail_plain(detail: &NetworkRequestDetail) {
         detail.timing.download_ms,
     );
     if !detail.redirect_chain.is_empty() {
-        println!("  Redirects:");
+        let _ = writeln!(out, "  Redirects:");
         for hop in &detail.redirect_chain {
-            println!("    {} -> {}", hop.status, hop.url);
+            let _ = writeln!(out, "    {} -> {}", hop.status, hop.url);
         }
     }
+    out
+}
+
+#[cfg(test)]
+fn print_detail_plain(detail: &NetworkRequestDetail) {
+    print!("{}", format_detail_plain(detail));
 }
 
 // =============================================================================
@@ -359,21 +373,6 @@ fn filter_by_method(
     requests
         .into_iter()
         .filter(|r| r.method.to_uppercase() == upper)
-        .collect()
-}
-
-/// Filter requests by search query matching URL or method (case-insensitive).
-fn filter_by_search(
-    requests: Vec<NetworkRequestSummary>,
-    query: &str,
-) -> Vec<NetworkRequestSummary> {
-    let query_lower = query.to_lowercase();
-    requests
-        .into_iter()
-        .filter(|r| {
-            r.url.to_lowercase().contains(&query_lower)
-                || r.method.to_lowercase().contains(&query_lower)
-        })
         .collect()
 }
 
@@ -876,23 +875,29 @@ async fn execute_list(global: &GlobalOpts, args: &NetworkListArgs) -> Result<(),
         requests = filter_by_method(requests, method);
     }
 
-    // Apply --search filter if present
-    let searched = args.search.is_some();
-    if let Some(ref query) = args.search {
-        requests = filter_by_search(requests, query);
-    }
-
     // Paginate
     requests = paginate(requests, args.limit, args.page);
 
     // Output
     if global.output.plain {
-        print_list_plain(&requests);
+        let mut text = String::new();
+        for req in &requests {
+            let status_str = req
+                .status
+                .map_or_else(|| "---".to_string(), |s| s.to_string());
+            let size_str = req
+                .size
+                .map_or_else(|| "-".to_string(), |s| format!("{s}B"));
+            let dur_str = req
+                .duration_ms
+                .map_or_else(|| "-".to_string(), |d| format!("{d:.1}ms"));
+            text.push_str(&format!(
+                "{} {} {} {} {}\n",
+                req.method, req.url, status_str, size_str, dur_str
+            ));
+        }
+        crate::output::emit_plain(&text, &global.output)?;
         return Ok(());
-    }
-
-    if searched {
-        return crate::output::emit_searched(&requests, &global.output);
     }
 
     crate::output::emit(&requests, &global.output, "network list", |reqs| {
@@ -1026,7 +1031,7 @@ async fn execute_get(global: &GlobalOpts, args: &NetworkGetArgs) -> Result<(), A
     let mime_for_binary_check = builder.mime_type.as_deref().unwrap_or("");
     let binary = is_binary || is_binary_mime(mime_for_binary_check);
 
-    let mut detail = NetworkRequestDetail {
+    let detail = NetworkRequestDetail {
         id: builder.assigned_id,
         request: RequestInfo {
             method: builder.method.clone(),
@@ -1051,42 +1056,10 @@ async fn execute_get(global: &GlobalOpts, args: &NetworkGetArgs) -> Result<(), A
         timestamp: timestamp_to_iso(builder.wall_time),
     };
 
-    // Apply --search filter if present
-    let searched = args.search.is_some();
-    if let Some(ref query) = args.search {
-        let query_lower = query.to_lowercase();
-
-        // Filter response body: keep only if it contains the query
-        if let Some(ref body) = detail.response.body {
-            if !body.to_lowercase().contains(&query_lower) {
-                detail.response.body = None;
-            }
-        }
-
-        // Filter response headers: keep only matching name/value pairs
-        if let Some(headers_obj) = detail.response.headers.as_object() {
-            let filtered: serde_json::Map<String, serde_json::Value> = headers_obj
-                .iter()
-                .filter(|(k, v)| {
-                    k.to_lowercase().contains(&query_lower)
-                        || v.as_str()
-                            .unwrap_or_default()
-                            .to_lowercase()
-                            .contains(&query_lower)
-                })
-                .map(|(k, v)| (k.clone(), v.clone()))
-                .collect();
-            detail.response.headers = serde_json::Value::Object(filtered);
-        }
-    }
-
     if global.output.plain {
-        print_detail_plain(&detail);
+        let text = format_detail_plain(&detail);
+        crate::output::emit_plain(&text, &global.output)?;
         return Ok(());
-    }
-
-    if searched {
-        return crate::output::emit_searched(&detail, &global.output);
     }
 
     crate::output::emit(&detail, &global.output, "network get", |d| {
@@ -2059,57 +2032,6 @@ mod tests {
         let json: serde_json::Value = serde_json::to_value(&entry).unwrap();
         assert_eq!(json["url"], "http://example.com");
         assert_eq!(json["status"], 301);
-    }
-
-    // =========================================================================
-    // filter_by_search
-    // =========================================================================
-
-    #[test]
-    fn filter_by_search_url_match() {
-        let requests = vec![
-            make_request(
-                0,
-                "GET",
-                "https://api.example.com/v2/users",
-                Some(200),
-                "xhr",
-            ),
-            make_request(
-                1,
-                "GET",
-                "https://cdn.example.com/image.png",
-                Some(200),
-                "image",
-            ),
-        ];
-        let filtered = filter_by_search(requests, "api");
-        assert_eq!(filtered.len(), 1);
-        assert_eq!(filtered[0].id, 0);
-    }
-
-    #[test]
-    fn filter_by_search_method_match() {
-        let requests = vec![
-            make_request(0, "GET", "https://a.com", Some(200), "xhr"),
-            make_request(1, "POST", "https://b.com", Some(200), "xhr"),
-        ];
-        let filtered = filter_by_search(requests, "post");
-        assert_eq!(filtered.len(), 1);
-        assert_eq!(filtered[0].method, "POST");
-    }
-
-    #[test]
-    fn filter_by_search_case_insensitive() {
-        let requests = vec![make_request(
-            0,
-            "GET",
-            "https://API.example.com",
-            Some(200),
-            "xhr",
-        )];
-        let filtered = filter_by_search(requests, "api");
-        assert_eq!(filtered.len(), 1);
     }
 
     // =========================================================================

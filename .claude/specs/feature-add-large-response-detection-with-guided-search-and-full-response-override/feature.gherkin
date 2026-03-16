@@ -1,159 +1,110 @@
 # File: tests/features/large-response-detection.feature
 #
 # Generated from: .claude/specs/feature-add-large-response-detection-with-guided-search-and-full-response-override/requirements.md
-# Issue: #168
+# Issues: #168, #177
 
-Feature: Large Response Detection with Guided Search and Full-Response Override
+Feature: Large Response Detection with Temp File Output
   As an AI agent consuming agentchrome output
-  I want a machine-readable guidance response when output exceeds a size threshold
-  So that I can avoid unnecessary context consumption while still accessing full output when required
+  I want large command outputs automatically written to the OS temp directory with the file path returned on stdout
+  So that I can access complete data without consuming excessive context budget or requiring re-invocation
 
   Background:
     Given a connected Chrome session
 
-  # --- Core Detection ---
+  # --- Core Temp File Output (AC18) ---
 
-  Scenario: Large response returns guidance object instead of raw data
+  Scenario: Large response writes to temp file and returns output object
     Given a page with an accessibility tree exceeding 16 KB when serialized
     When I run "page snapshot"
-    Then stdout contains valid JSON with "large_response" set to true
+    Then stdout contains valid JSON with "output_file" as a string
     And stdout contains "size_bytes" as a positive integer
     And stdout contains "command" set to "page snapshot"
     And stdout contains a "summary" object
-    And stdout contains a "guidance" string
     And the exit code is 0
 
-  Scenario: Search flag filters and returns matching content
-    Given a page with an accessibility tree exceeding 16 KB
-    When I run "page snapshot --search login"
-    Then stdout contains an accessibility tree with only nodes matching "login"
-    And stdout does not contain "large_response"
-    And the exit code is 0
-
-  Scenario: Full-response override returns complete data
-    Given a page with an accessibility tree exceeding 16 KB
-    When I run "page snapshot --full-response"
-    Then stdout contains the complete accessibility tree JSON
-    And stdout does not contain "large_response"
-    And the exit code is 0
-
-  Scenario: Guidance object contains actionable instructions
-    Given a page with an accessibility tree exceeding 16 KB
+  Scenario: Temp file path points to a readable file in the OS temp directory
+    Given a page with an accessibility tree exceeding 16 KB when serialized
     When I run "page snapshot"
-    Then the "guidance" field contains "--search"
-    And the "guidance" field contains "--full-response"
-    And the "guidance" field contains "page snapshot --search"
-    And the "guidance" field contains "Use --full-response when"
+    Then the "output_file" value is a path to an existing file
+    And the file path starts with the OS temp directory
+    And the file name matches the pattern "agentchrome-*.json"
 
-  Scenario: Below-threshold responses are unaffected
+  # --- Temp File Content Integrity (AC19) ---
+
+  Scenario: Temp file contains complete unmodified JSON output
+    Given a page with an accessibility tree exceeding 16 KB when serialized
+    When I run "page snapshot"
+    Then reading the file at "output_file" returns valid JSON
+    And the file JSON contains the accessibility tree with node data
+    And the file JSON matches the normal page snapshot output schema
+
+  # --- Below-Threshold Responses (AC5) ---
+
+  Scenario: Below-threshold responses are returned inline
     Given a page with an accessibility tree under 16 KB when serialized
     When I run "page snapshot"
     Then stdout contains the full accessibility tree JSON
-    And stdout does not contain "large_response"
+    And stdout does not contain "output_file"
     And the exit code is 0
 
-  # --- Threshold Configuration ---
+  # --- UUID Collision Prevention (AC20) ---
 
-  Scenario: Threshold is configurable via CLI flag
+  Scenario: Concurrent commands produce distinct temp files
+    Given a page with content exceeding 16 KB
+    When I run "page snapshot" and "page text" concurrently
+    Then each command returns a different "output_file" path
+    And both files exist and are readable
+
+  # --- Output Object Schema Consistency (AC21) ---
+
+  Scenario: Output object has exactly four fields across all commands
+    Given a page with content exceeding 16 KB
+    When I run "page snapshot"
+    Then the output JSON has exactly these top-level keys: "output_file", "size_bytes", "command", "summary"
+    When I run "page text"
+    Then the output JSON has exactly these top-level keys: "output_file", "size_bytes", "command", "summary"
+
+  # --- Threshold Configuration (AC6, AC7) ---
+
+  Scenario: Threshold is configurable via CLI flag - above threshold
+    Given a page producing 20 KB of serialized JSON output
+    When I run "page snapshot --large-response-threshold 8192"
+    Then stdout contains "output_file"
+
+  Scenario: Threshold is configurable via CLI flag - below threshold
     Given a page producing 20 KB of serialized JSON output
     When I run "page snapshot --large-response-threshold 32768"
     Then stdout contains the full accessibility tree JSON
-    And stdout does not contain "large_response"
-
-  Scenario: Threshold configured via CLI flag triggers at custom value
-    Given a page producing 20 KB of serialized JSON output
-    When I run "page snapshot --large-response-threshold 8192"
-    Then stdout contains valid JSON with "large_response" set to true
+    And stdout does not contain "output_file"
 
   Scenario: Threshold is configurable via config file
     Given a config file with "large_response_threshold = 8192" under "[output]"
     And a page producing 10 KB of serialized JSON output
     When I run "page snapshot"
-    Then stdout contains valid JSON with "large_response" set to true
+    Then stdout contains "output_file"
 
   Scenario: CLI threshold flag overrides config file
     Given a config file with "large_response_threshold = 8192" under "[output]"
     And a page producing 10 KB of serialized JSON output
     When I run "page snapshot --large-response-threshold 32768"
-    Then stdout contains the full response
-    And stdout does not contain "large_response"
+    Then stdout contains the full response inline
+    And stdout does not contain "output_file"
 
-  # --- Schema Consistency ---
+  # --- Plain Mode Temp File (AC22) ---
 
-  Scenario: Guidance object schema is consistent across commands
-    Given a page with content exceeding 16 KB
-    When I run "page snapshot"
-    Then the guidance JSON has exactly these top-level keys: "large_response", "size_bytes", "command", "summary", "guidance"
-    When I run "page text"
-    Then the guidance JSON has exactly these top-level keys: "large_response", "size_bytes", "command", "summary", "guidance"
+  Scenario: Plain mode writes to temp file when above threshold
+    Given a page with an accessibility tree exceeding 16 KB when serialized
+    When I run "page snapshot --plain --large-response-threshold 100"
+    Then stdout contains a file path ending in ".txt"
+    And the file at that path contains plain-text accessibility tree output
 
-  # --- Per-Command Search ---
+  Scenario: Plain mode returns inline when below threshold
+    Given a page with an accessibility tree under 16 KB when serialized
+    When I run "page snapshot --plain"
+    Then stdout contains the full plain-text accessibility tree
+    And stdout does not contain ".txt"
 
-  Scenario: Page snapshot search filters by text and role
-    Given a page with a large accessibility tree containing a "login" button and a "signup" link
-    When I run "page snapshot --search login"
-    Then stdout contains nodes with name or role matching "login"
-    And stdout does not contain nodes exclusively in the "signup" branch
-    And ancestor nodes are preserved for tree context
-
-  Scenario: Page text search filters by content
-    Given a page with text content exceeding 16 KB containing paragraphs about "errors" and "warnings"
-    When I run "page text --search error"
-    Then stdout JSON "text" field contains only paragraphs with "error"
-    And stdout JSON has "url" and "title" fields
-    And the exit code is 0
-
-  Scenario: JS exec search filters JSON keys and values
-    Given a JavaScript expression returning a large JSON object with an "email" field
-    When I run "js exec ... --search email"
-    Then stdout contains only key-value pairs matching "email"
-    And the exit code is 0
-
-  Scenario: Network list search filters by URL pattern
-    Given a page with network requests to "api/v2/users" and "cdn/images"
-    When I run "network list --search api/v2"
-    Then stdout contains only requests with URLs matching "api/v2"
-    And the exit code is 0
-
-  Scenario: Network get search filters response content
-    Given a network request with a large response body containing "token"
-    When I run "network get 1 --search token"
-    Then the response body contains only content matching "token"
-    And the exit code is 0
-
-  # --- Search Bypasses Gate ---
-
-  Scenario: Search flag bypasses large-response gate
-    Given a page with an accessibility tree exceeding 16 KB
-    And a search query that matches most of the tree
-    When I run "page snapshot --search a"
-    Then stdout contains the filtered accessibility tree
-    And stdout does not contain "large_response"
-    And the exit code is 0
-
-  # --- Output Format Compatibility ---
-
-  Scenario: Full-response works with pretty-print
-    Given a page with an accessibility tree exceeding 16 KB
-    When I run "page snapshot --full-response --pretty"
-    Then stdout contains pretty-printed JSON
-    And stdout does not contain "large_response"
-
-  Scenario: Full-response works with compact JSON
-    Given a page with an accessibility tree exceeding 16 KB
-    When I run "page snapshot --full-response --json"
-    Then stdout contains compact JSON
-    And stdout does not contain "large_response"
-
-  # --- Existing Truncation ---
-
-  Scenario: Existing per-command truncation remains as second layer
-    Given a page with 15000 accessibility tree nodes
-    When I run "page snapshot --full-response"
-    Then stdout contains the accessibility tree with "truncated" set to true
-    And the tree contains at most 10000 nodes
-
-  # --- Command-Specific Summary ---
+  # --- Command-Specific Summary (AC23) ---
 
   Scenario: Snapshot summary contains node count and top roles
     Given a page with an accessibility tree exceeding 16 KB
@@ -167,17 +118,24 @@ Feature: Large Response Detection with Guided Search and Full-Response Override
     Then the "summary" object contains "character_count" as a positive integer
     And the "summary" object contains "line_count" as a positive integer
 
-  # --- Plain Mode ---
+  # --- Existing Truncation (AC15) ---
 
-  Scenario: Plain mode is not affected by large-response detection
-    Given a page with an accessibility tree exceeding 16 KB
-    When I run "page snapshot --plain"
-    Then stdout contains the full plain-text accessibility tree
-    And stdout does not contain "large_response"
-    And stdout does not contain "guidance"
+  Scenario: Existing per-command truncation remains as second layer
+    Given a page with 15000 accessibility tree nodes
+    When I run "page snapshot"
+    Then reading the temp file shows the tree with "truncated" set to true
+    And the tree contains at most 10000 nodes
 
-  Scenario: Search works with plain mode
-    Given a page with a large accessibility tree containing a "login" button
-    When I run "page snapshot --plain --search login"
-    Then stdout contains plain-text tree nodes matching "login"
-    And stdout does not contain "large_response"
+  # --- Flag Removal (AC24) ---
+
+  Scenario: --search flag produces validation error
+    When I run "page snapshot --search login"
+    Then stderr contains a clap validation error for unknown argument
+    And the exit code is non-zero
+
+  Scenario: --full-response flag produces validation error
+    When I run "page snapshot --full-response"
+    Then stderr contains a clap validation error for unknown argument
+    And the exit code is non-zero
+
+  # Added by issue #177

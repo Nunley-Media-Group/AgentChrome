@@ -137,10 +137,6 @@ pub struct OutputFormat {
     #[arg(long, global = true, conflicts_with_all = ["json", "pretty"])]
     pub plain: bool,
 
-    /// Return complete output even when it exceeds the large-response threshold
-    #[arg(long, global = true)]
-    pub full_response: bool,
-
     /// Byte threshold for large-response detection (default: 16384)
     #[arg(long, global = true, value_parser = parse_nonzero_usize)]
     pub large_response_threshold: Option<usize>,
@@ -1020,10 +1016,6 @@ pub struct PageTextArgs {
     /// CSS selector to extract text from a specific element
     #[arg(long)]
     pub selector: Option<String>,
-
-    /// Filter text output to paragraphs matching this query (case-insensitive)
-    #[arg(long)]
-    pub search: Option<String>,
 }
 
 /// Arguments for `page snapshot`.
@@ -1036,10 +1028,6 @@ pub struct PageSnapshotArgs {
     /// Save snapshot to file instead of stdout
     #[arg(long)]
     pub file: Option<PathBuf>,
-
-    /// Filter tree to nodes matching this query by name or role (case-insensitive)
-    #[arg(long)]
-    pub search: Option<String>,
 }
 
 /// Arguments for `page find`.
@@ -1228,10 +1216,6 @@ pub struct JsExecArgs {
     /// Truncate result output exceeding this size in bytes
     #[arg(long)]
     pub max_size: Option<usize>,
-
-    /// Filter result to matching keys/values (case-insensitive)
-    #[arg(long)]
-    pub search: Option<String>,
 }
 
 /// Arguments for the `cookie` subcommand group.
@@ -2225,10 +2209,6 @@ pub struct NetworkListArgs {
     /// Include requests from previous navigations
     #[arg(long)]
     pub include_preserved: bool,
-
-    /// Filter requests by URL or method matching this query (case-insensitive)
-    #[arg(long)]
-    pub search: Option<String>,
 }
 
 /// Arguments for `network get`.
@@ -2244,10 +2224,6 @@ pub struct NetworkGetArgs {
     /// Save response body to a file
     #[arg(long)]
     pub save_response: Option<PathBuf>,
-
-    /// Filter response body and headers by this query (case-insensitive)
-    #[arg(long)]
-    pub search: Option<String>,
 }
 
 /// Arguments for `network follow`.
