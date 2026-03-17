@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.15.0] - 2026-03-16
+
+### Added
+
+- Add `audit lighthouse` command for running Google Lighthouse audits via the CLI, returning structured JSON category scores (Performance, Accessibility, Best Practices, SEO, PWA) on stdout. Supports `--only` category filtering, `--output-file` for full report, and optional URL override (#169)
+
 ## [1.14.0] - 2026-03-15
 
 ### Fixed

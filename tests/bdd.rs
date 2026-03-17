@@ -3583,6 +3583,13 @@ const SCROLL_TESTABLE_SCENARIOS: &[&str] = &[
     "Invalid direction value",
 ];
 
+const AUDIT_TESTABLE_SCENARIOS: &[&str] = &[
+    "Audit lighthouse help text is available",
+    "Audit lighthouse accepts --only flag",
+    "Audit without subcommand exits with error",
+    "Error when no Chrome session is connected",
+];
+
 // =============================================================================
 // FormSourceWorld — form.rs source-level regression tests (issue #136)
 // =============================================================================
@@ -4729,6 +4736,15 @@ async fn main() {
         .filter_run_and_exit(
             "tests/features/178-fix-navigate-wait-for-selector.feature",
             |_feature, _rule, _scenario| false, // All scenarios require running Chrome
+        )
+        .await;
+
+    // Audit lighthouse (issue #169) — CLI-testable scenarios only.
+    // Chrome-dependent scenarios verified via manual smoke test.
+    CliWorld::cucumber()
+        .filter_run_and_exit(
+            "tests/features/audit-lighthouse.feature",
+            |_feature, _rule, scenario| AUDIT_TESTABLE_SCENARIOS.contains(&scenario.name.as_str()),
         )
         .await;
 }
