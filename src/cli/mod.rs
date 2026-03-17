@@ -481,6 +481,28 @@ EXAMPLES:
     )]
     Dialog(DialogArgs),
 
+    /// Run audits against the current page (Lighthouse)
+    #[command(
+        long_about = "Run external audits against the current browser page. Currently supports \
+            Google Lighthouse for measuring performance, accessibility, SEO, best practices, \
+            and PWA scores. Connects Lighthouse to the managed Chrome session via the CDP port \
+            and returns structured JSON category scores on stdout.",
+        after_long_help = "\
+EXAMPLES:
+  # Run a full Lighthouse audit on the current page
+  agentchrome audit lighthouse
+
+  # Audit a specific URL
+  agentchrome audit lighthouse https://example.com
+
+  # Only measure performance and accessibility
+  agentchrome audit lighthouse --only performance,accessibility
+
+  # Save the full Lighthouse report to a file
+  agentchrome audit lighthouse --output-file report.json"
+    )]
+    Audit(AuditArgs),
+
     /// Agentic tool skill installation and management
     #[command(
         long_about = "Install, update, uninstall, or list agentchrome skill files for agentic \
@@ -1412,6 +1434,55 @@ pub enum DialogAction {
     Accept,
     /// Dismiss (Cancel) the dialog
     Dismiss,
+}
+
+/// Arguments for the `audit` subcommand group.
+#[derive(Args)]
+pub struct AuditArgs {
+    #[command(subcommand)]
+    pub command: AuditCommand,
+}
+
+/// Audit subcommands.
+#[derive(Subcommand)]
+pub enum AuditCommand {
+    /// Run a Google Lighthouse audit
+    #[command(
+        long_about = "Run a Google Lighthouse audit against the current page (or a given URL). \
+            Requires the `lighthouse` CLI to be installed (`npm install -g lighthouse`). Connects \
+            Lighthouse to the managed Chrome session via the CDP port and returns structured JSON \
+            category scores on stdout. Use --only to limit which categories are measured. Use \
+            --output-file to save the full Lighthouse JSON report.",
+        after_long_help = "\
+EXAMPLES:
+  # Full audit on the current page
+  agentchrome audit lighthouse
+
+  # Audit a specific URL
+  agentchrome audit lighthouse https://example.com
+
+  # Only performance and accessibility
+  agentchrome audit lighthouse --only performance,accessibility
+
+  # Save the full report
+  agentchrome audit lighthouse --output-file report.json"
+    )]
+    Lighthouse(AuditLighthouseArgs),
+}
+
+/// Arguments for `audit lighthouse`.
+#[derive(Args)]
+pub struct AuditLighthouseArgs {
+    /// URL to audit (defaults to the active page URL)
+    pub url: Option<String>,
+
+    /// Comma-separated list of categories to measure (e.g. performance,accessibility)
+    #[arg(long)]
+    pub only: Option<String>,
+
+    /// Save the full Lighthouse JSON report to this file
+    #[arg(long)]
+    pub output_file: Option<PathBuf>,
 }
 
 /// Arguments for the `skill` subcommand group.
