@@ -1,7 +1,7 @@
 # Requirements: JavaScript Execution in Page Context
 
-**Issue**: #13
-**Date**: 2026-02-12
+**Issues**: #13, #183
+**Date**: 2026-04-16
 **Status**: Draft
 **Author**: Claude (writing-specs)
 
@@ -18,6 +18,8 @@
 ## Background
 
 JavaScript execution is a fundamental building block for browser automation. While dedicated commands like `page text` and `element find` cover common patterns, many automation tasks require running arbitrary JavaScript — evaluating expressions, calling functions, extracting computed values, or triggering UI interactions. The `js exec` command exposes `Runtime.evaluate` and `Runtime.callFunctionOn` from the Chrome DevTools Protocol, giving power users direct access to the page's JavaScript execution context. This is an MVP feature identified in the product steering document.
+
+When running multiple `js exec` calls in sequence, `let` and `const` declarations from previous calls persist in the page context, causing `SyntaxError` on re-declaration. On Windows, inline JS with single quotes and escapes frequently causes `SyntaxError: Invalid or unexpected token` due to PowerShell vs Git Bash differences. The `--file` workaround exists but is clunky. The stdin `-` argument exists but `--stdin` would be more discoverable.
 
 ---
 
@@ -148,120 +150,29 @@ JavaScript execution is a fundamental building block for browser automation. Whi
 **Then** the `result` field is `42`
 **And** a `console` field in the JSON output contains the captured console messages
 
-### Generated Gherkin Preview
+### AC17: Clean scope per invocation
 
-```gherkin
-Feature: JavaScript execution in page context
-  As a developer / automation engineer
-  I want to execute arbitrary JavaScript in the browser page context via the CLI
-  So that I can perform custom automation and data extraction from scripts
+**Given** I have run `agentchrome js exec --code "let x = 1"` successfully
+**When** I run `agentchrome js exec --code "let x = 2"` immediately after in the same browser session
+**Then** the second invocation succeeds without a re-declaration error
+**And** the `result` field is `2`
 
-  Background:
-    Given Chrome is running with CDP enabled
+**Note**: `var` declarations and `window.` property assignments intentionally persist across invocations. Only `let` and `const` are block-scoped per invocation.
 
-  Scenario: Execute a JavaScript expression
-    Given a page is loaded at "https://example.com"
-    When I run "agentchrome js exec 'document.title'"
-    Then stdout contains JSON with keys "result", "type"
-    And the "result" field is "Example Domain"
-    And the "type" field is "string"
+### AC18: Explicit --stdin flag
 
-  Scenario: Execute a JavaScript function
-    Given a page is loaded
-    When I run "agentchrome js exec '() => { return 2 + 2; }'"
-    Then the "result" field is 4
-    And the "type" field is "number"
+**Given** Chrome is running with a page loaded
+**And** JavaScript code is piped via stdin
+**When** I run `echo "document.title" | agentchrome js exec --stdin`
+**Then** the piped code executes and returns the result
+**And** the behavior is identical to using the `-` positional argument
 
-  Scenario Outline: Return all JavaScript value types
-    Given a page is loaded
-    When I run "agentchrome js exec '<expression>'"
-    Then the "type" field is "<expected_type>"
+### AC19: Cross-platform --code named argument
 
-    Examples:
-      | expression            | expected_type |
-      | 'hello'               | string        |
-      | 42                    | number        |
-      | true                  | boolean       |
-      | null                  | object        |
-      | undefined             | undefined     |
-      | ({key: 'val'})        | object        |
-      | [1, 2, 3]             | object        |
-
-  Scenario: Target a specific tab
-    Given multiple tabs are open
-    When I run "agentchrome js exec --tab <ID> 'document.title'"
-    Then the result reflects the targeted tab's context
-
-  Scenario: Await promise results by default
-    Given a page is loaded
-    When I run "agentchrome js exec 'new Promise(r => setTimeout(() => r(\"done\"), 100))'"
-    Then the "result" field is "done"
-
-  Scenario: Disable promise awaiting
-    Given a page is loaded
-    When I run "agentchrome js exec --no-await 'new Promise(r => r(42))'"
-    Then the "type" field is "object"
-
-  Scenario: Execution timeout
-    Given a page is loaded
-    When I run "agentchrome js exec --timeout 100 'new Promise(() => {})'"
-    Then stderr contains a JSON error indicating timeout
-    And the exit code is non-zero
-
-  Scenario: Execute JavaScript from a file
-    Given a page is loaded
-    And a file "/tmp/script.js" contains "document.title"
-    When I run "agentchrome js exec --file /tmp/script.js"
-    Then the "result" field contains the page title
-
-  Scenario: Read code from stdin
-    Given a page is loaded
-    When I pipe "document.title" to "agentchrome js exec -"
-    Then the "result" field contains the page title
-
-  Scenario: Element context execution with UID
-    Given a page is loaded
-    And a snapshot has been taken
-    And element "s1" exists in the snapshot
-    When I run "agentchrome js exec --uid s1 '(el) => el.textContent'"
-    Then the result contains the element's text content
-
-  Scenario: JavaScript exception returned as structured error
-    Given a page is loaded
-    When I run "agentchrome js exec 'throw new Error(\"test error\")'"
-    Then stderr contains a JSON error with "error" and "stack" fields
-    And the exit code is non-zero
-
-  Scenario: Reference error handling
-    Given a page is loaded
-    When I run "agentchrome js exec 'nonExistentVariable'"
-    Then stderr contains a JSON error indicating ReferenceError
-    And the exit code is non-zero
-
-  Scenario: Large result truncation
-    Given a page is loaded
-    When I run "agentchrome js exec --max-size 100 \"'x'.repeat(10000)\""
-    Then the "result" field is truncated
-    And a "truncated" field is true
-
-  Scenario: UID not found error
-    Given a page is loaded
-    When I run "agentchrome js exec --uid s999 '(el) => el.textContent'"
-    Then stderr contains a JSON error about UID not found
-    And the exit code is non-zero
-
-  Scenario: File not found error
-    Given a page is loaded
-    When I run "agentchrome js exec --file /nonexistent/script.js"
-    Then stderr contains a JSON error about file not found
-    And the exit code is non-zero
-
-  Scenario: Console output capture
-    Given a page is loaded
-    When I run "agentchrome js exec 'console.log(\"hello\"); 42'"
-    Then the "result" field is 42
-    And the "console" field contains "hello"
-```
+**Given** JavaScript code containing single quotes (e.g., `document.querySelector('div')`)
+**When** I run `agentchrome js exec --code "document.querySelector('div')"` on any platform including Windows PowerShell
+**Then** the code executes without a syntax error caused by shell quoting
+**And** the `--code` flag accepts the same code that the positional argument would
 
 ---
 
@@ -281,6 +192,9 @@ Feature: JavaScript execution in page context
 | FR10 | `--max-size <BYTES>` truncates large results | Should | Prevent overwhelming output |
 | FR11 | Console output captured during execution | Should | Debugging support |
 | FR12 | Handles all JS return types: string, number, boolean, null, undefined, object, array | Must | Complete type coverage |
+| FR13 | Wrap `js exec` expressions in a block scope `{ ... }` so that `let`/`const` declarations are isolated per invocation | Must | Scope isolation (issue #183) |
+| FR14 | Add `--stdin` flag as an explicit, discoverable alias for reading code from stdin (in addition to `-`) | Must | Discoverability (issue #183) |
+| FR15 | Add `--code <CODE>` as a named argument alternative to the positional code argument for cross-platform quoting resilience | Must | Windows/PowerShell compatibility (issue #183) |
 
 ---
 
@@ -317,8 +231,10 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 
 | Field | Type | Validation | Required |
 |-------|------|------------|----------|
-| `<CODE>` | String (positional) | Must be valid JavaScript or `-` for stdin | Yes (unless `--file`) |
-| `--file` | String (file path) | File must exist and be readable | No (mutually exclusive with `<CODE>`) |
+| `<CODE>` | String (positional) | Must be valid JavaScript or `-` for stdin | Yes (unless `--file`, `--code`, or `--stdin`) |
+| `--code` | String (named) | Must be valid JavaScript; mutually exclusive with positional `<CODE>` and `--file` | No (alternative to positional) |
+| `--file` | String (file path) | File must exist and be readable | No (mutually exclusive with `<CODE>` and `--code`) |
+| `--stdin` | Boolean flag | Reads all of stdin as JavaScript code; mutually exclusive with `<CODE>`, `--code`, and `--file` | No |
 | `--tab` | String (tab ID) | Must resolve to a valid target | No (defaults to first page target) |
 | `--uid` | String (snapshot UID) | Must exist in current snapshot state | No |
 | `--timeout` | u64 (milliseconds) | Positive integer | No (inherits global timeout) |
@@ -350,6 +266,7 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - [x] Issue #4 — CDP client (merged)
 - [x] Issue #6 — Session/connection management (merged)
 - [x] Issue #10 — Accessibility tree / snapshot (merged, needed for `--uid`)
+- [x] Issue #13 — JavaScript execution base feature (merged)
 
 ### Blocked By
 - None (all dependencies resolved)
@@ -358,12 +275,13 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 
 ## Out of Scope
 
-- Multi-expression batching (execute multiple scripts in sequence)
-- REPL / interactive JavaScript console mode
+- Persistent variable sharing between invocations (use `window.` globals for that)
+- Full REPL / interactive JavaScript console mode
 - Source maps or TypeScript transpilation
 - Injecting scripts that persist across navigations (use `Page.addScriptToEvaluateOnNewDocument` later)
 - Execution in iframe contexts (main frame only for now)
 - Custom serialization of DOM elements in return values (elements returned as `{}`)
+- Scope isolation for `var` declarations (block wrapping isolates `let`/`const` only; `var` and `window.` property assignments persist by design)
 
 ---
 
@@ -374,6 +292,8 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 | Type coverage | All 7 JS types handled | Test with each type |
 | Error fidelity | Exception message + stack trace returned | Test with throwing code |
 | Pipeline support | stdin and file input work | Test with `echo ... \| agentchrome js exec -` |
+| Scope isolation | Sequential `let`/`const` re-declarations succeed | Test two `js exec` calls with same `let` binding |
+| Cross-platform quoting | `--code` flag handles single quotes on all platforms | Test `--code "document.querySelector('div')"` |
 
 ---
 
@@ -381,6 +301,15 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 
 - [x] ~~Should `--await` be the default?~~ — Yes, per the issue spec. Use `--no-await` to disable.
 - [x] ~~Should console capture be opt-in?~~ — Include by default when console messages are present; omit the field when empty.
+
+---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #13 | 2026-02-12 | Initial feature spec |
+| #183 | 2026-04-16 | Added AC17-AC19, FR13-FR15: scope isolation via block wrapping, `--stdin` flag, `--code` named argument |
 
 ---
 

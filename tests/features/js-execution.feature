@@ -139,3 +139,48 @@ Feature: JavaScript execution in page context
     Then the "result" field is 42
     And the "console" field is an array
     And the "console" array contains an entry with level "log" and text "hello"
+
+  # --- Scope Isolation (Added by issue #183) ---
+
+  # Added by issue #183
+  Scenario: Clean scope per invocation with let declarations
+    Given a page is loaded at "https://example.com"
+    When I run "agentchrome js exec --code 'let x = 1; x'"
+    Then the "result" field is 1
+    When I run "agentchrome js exec --code 'let x = 2; x'"
+    Then the "result" field is 2
+    And no re-declaration error occurred
+
+  # Added by issue #183
+  Scenario: Clean scope per invocation with const declarations
+    Given a page is loaded at "https://example.com"
+    When I run "agentchrome js exec --code 'const y = 10; y'"
+    Then the "result" field is 10
+    When I run "agentchrome js exec --code 'const y = 20; y'"
+    Then the "result" field is 20
+    And no re-declaration error occurred
+
+  # --- Explicit --stdin Flag (Added by issue #183) ---
+
+  # Added by issue #183
+  Scenario: Read code from stdin with --stdin flag
+    Given a page is loaded at "https://example.com"
+    When I pipe "document.title" to "agentchrome js exec --stdin"
+    Then the "result" field is "Example Domain"
+    And the "type" field is "string"
+
+  # --- Cross-Platform --code Flag (Added by issue #183) ---
+
+  # Added by issue #183
+  Scenario: Execute code via --code named argument
+    Given a page is loaded at "https://example.com"
+    When I run "agentchrome js exec --code \"document.querySelector('html').tagName\""
+    Then the "result" field is "HTML"
+    And the "type" field is "string"
+
+  # Added by issue #183
+  Scenario: --code flag with simple expression
+    Given a page is loaded at "https://example.com"
+    When I run "agentchrome js exec --code 'document.title'"
+    Then the "result" field is "Example Domain"
+    And the "type" field is "string"

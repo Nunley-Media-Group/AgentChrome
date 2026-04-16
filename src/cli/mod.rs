@@ -1306,14 +1306,18 @@ pub enum JsCommand {
     /// Execute JavaScript in the page context
     #[command(
         long_about = "Execute a JavaScript expression or script in the page context and return \
-            the result as JSON. Code can be provided as an inline argument, read from a file \
-            with --file, or piped via stdin using '-'. When --uid is specified, the code is \
-            wrapped in a function that receives the element as its first argument. By default, \
-            promise results are awaited; use --no-await to return immediately.",
+            the result as JSON. Code can be provided as an inline argument, via --code (recommended \
+            for cross-platform quoting), read from a file with --file, or piped via stdin using \
+            '--stdin' or '-'. When --uid is specified, the code is wrapped in a function that \
+            receives the element as its first argument. By default, promise results are awaited; \
+            use --no-await to return immediately.",
         after_long_help = "\
 EXAMPLES:
   # Evaluate an expression
   agentchrome js exec \"document.title\"
+
+  # Use --code for cross-platform quoting (recommended on Windows)
+  agentchrome js exec --code \"document.querySelector('div')\"
 
   # Execute a script file
   agentchrome js exec --file script.js
@@ -1322,6 +1326,9 @@ EXAMPLES:
   agentchrome js exec --uid s3 \"(el) => el.textContent\"
 
   # Read from stdin
+  echo 'document.URL' | agentchrome js exec --stdin
+
+  # Legacy stdin syntax (also works)
   echo 'document.URL' | agentchrome js exec -
 
   # Skip awaiting promises
@@ -1333,12 +1340,20 @@ EXAMPLES:
 /// Arguments for `js exec`.
 #[derive(Args)]
 pub struct JsExecArgs {
-    /// JavaScript code to execute (use '-' to read from stdin; conflicts with --file)
-    #[arg(conflicts_with = "file")]
+    /// JavaScript code to execute (use '-' to read from stdin)
+    #[arg(conflicts_with_all = ["file", "code_flag", "stdin"])]
     pub code: Option<String>,
 
-    /// Read JavaScript from a file instead of inline argument (conflicts with CODE)
-    #[arg(long)]
+    /// JavaScript code as a named argument (avoids shell quoting issues on Windows)
+    #[arg(long = "code", id = "code_flag", conflicts_with_all = ["code", "file", "stdin"])]
+    pub code_flag: Option<String>,
+
+    /// Read JavaScript code from stdin
+    #[arg(long, conflicts_with_all = ["code", "code_flag", "file"])]
+    pub stdin: bool,
+
+    /// Read JavaScript from a file instead of inline argument
+    #[arg(long, conflicts_with_all = ["code", "code_flag", "stdin"])]
     pub file: Option<PathBuf>,
 
     /// Element UID from 'page snapshot'; code is wrapped in a function receiving the element

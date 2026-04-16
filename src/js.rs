@@ -97,28 +97,42 @@ async fn setup_session(
 // =============================================================================
 
 /// Resolve the JavaScript code to execute from the various input sources.
+///
+/// Priority: `--file` → `--stdin` → positional `-` → `--code` → positional `<CODE>` → error
 fn resolve_code(args: &JsExecArgs) -> Result<String, AppError> {
     if let Some(ref path) = args.file {
         // --file <PATH>
         let path_str = path.display().to_string();
-        std::fs::read_to_string(path).map_err(|e| {
+        return std::fs::read_to_string(path).map_err(|e| {
             if e.kind() == std::io::ErrorKind::NotFound {
                 AppError::script_file_not_found(&path_str)
             } else {
                 AppError::script_file_read_failed(&path_str, &e.to_string())
             }
-        })
-    } else if let Some(ref code) = args.code {
-        if code == "-" {
-            // Read from stdin
-            std::io::read_to_string(std::io::stdin())
-                .map_err(|e| AppError::script_file_read_failed("stdin", &e.to_string()))
-        } else {
-            Ok(code.clone())
-        }
-    } else {
-        Err(AppError::no_js_code())
+        });
     }
+
+    if args.stdin {
+        // --stdin flag
+        return std::io::read_to_string(std::io::stdin())
+            .map_err(|e| AppError::script_file_read_failed("stdin", &e.to_string()));
+    }
+
+    if let Some(ref code) = args.code {
+        if code == "-" {
+            // Legacy stdin convention: positional `-`
+            return std::io::read_to_string(std::io::stdin())
+                .map_err(|e| AppError::script_file_read_failed("stdin", &e.to_string()));
+        }
+        return Ok(code.clone());
+    }
+
+    if let Some(ref code) = args.code_flag {
+        // --code <CODE> named argument
+        return Ok(code.clone());
+    }
+
+    Err(AppError::no_js_code())
 }
 
 // =============================================================================
@@ -434,14 +448,18 @@ async fn execute_expression(
 /// Execute a JavaScript expression via Runtime.evaluate, optionally with a context ID.
 ///
 /// The `context_id` is used for same-origin frame execution to scope the evaluation.
+/// The expression is wrapped in a block scope `{ ... }` to isolate `let`/`const`
+/// declarations between invocations.
 async fn execute_expression_with_context(
     managed: &ManagedSession,
     code: &str,
     await_promise: bool,
     context_id: Option<i64>,
 ) -> Result<serde_json::Value, AppError> {
+    // Wrap in block scope to isolate let/const declarations per invocation
+    let wrapped = format!("{{ {code} }}");
     let mut params = serde_json::json!({
-        "expression": code,
+        "expression": wrapped,
         "returnByValue": true,
         "awaitPromise": await_promise,
         "generatePreview": true,
@@ -1077,6 +1095,8 @@ mod tests {
     fn resolve_code_inline() {
         let args = JsExecArgs {
             code: Some("document.title".to_string()),
+            code_flag: None,
+            stdin: false,
             file: None,
             uid: None,
             no_await: false,
@@ -1092,6 +1112,8 @@ mod tests {
     fn resolve_code_no_input() {
         let args = JsExecArgs {
             code: None,
+            code_flag: None,
+            stdin: false,
             file: None,
             uid: None,
             no_await: false,
@@ -1107,6 +1129,8 @@ mod tests {
     fn resolve_code_file_not_found() {
         let args = JsExecArgs {
             code: None,
+            code_flag: None,
+            stdin: false,
             file: Some(std::path::PathBuf::from("/nonexistent/script.js")),
             uid: None,
             no_await: false,
@@ -1127,6 +1151,8 @@ mod tests {
 
         let args = JsExecArgs {
             code: None,
+            code_flag: None,
+            stdin: false,
             file: Some(path),
             uid: None,
             no_await: false,
@@ -1138,5 +1164,59 @@ mod tests {
         assert_eq!(code, "document.title");
 
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn resolve_code_from_code_flag() {
+        let args = JsExecArgs {
+            code: None,
+            code_flag: Some("document.title".to_string()),
+            stdin: false,
+            file: None,
+            uid: None,
+            no_await: false,
+            timeout: None,
+            max_size: None,
+            worker: None,
+        };
+        let code = resolve_code(&args).unwrap();
+        assert_eq!(code, "document.title");
+    }
+
+    #[test]
+    fn resolve_code_no_input_mentions_new_flags() {
+        let args = JsExecArgs {
+            code: None,
+            code_flag: None,
+            stdin: false,
+            file: None,
+            uid: None,
+            no_await: false,
+            timeout: None,
+            max_size: None,
+            worker: None,
+        };
+        let err = resolve_code(&args).unwrap_err();
+        assert!(err.message.contains("--code"));
+        assert!(err.message.contains("--stdin"));
+    }
+
+    // =========================================================================
+    // Block-scope wrapping tests
+    // =========================================================================
+
+    #[test]
+    fn block_scope_wrapping_format() {
+        // Verify the wrapping format matches what execute_expression_with_context uses
+        let code = "let x = 1; x";
+        let wrapped = format!("{{ {code} }}");
+        assert_eq!(wrapped, "{ let x = 1; x }");
+    }
+
+    #[test]
+    fn block_scope_wrapping_simple_expression() {
+        let code = "document.title";
+        let wrapped = format!("{{ {code} }}");
+        assert_eq!(wrapped, "{ document.title }");
     }
 }

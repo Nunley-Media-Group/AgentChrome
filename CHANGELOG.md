@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.23.0] - 2026-04-16
+
+### Added
+
+- Add scope isolation for `js exec` by wrapping expressions in block scope so `let`/`const` re-declarations across sequential invocations no longer cause `SyntaxError`. Add `--stdin` flag as a discoverable alias for piping JavaScript via stdin, and `--code` named argument for cross-platform quoting resilience (avoids PowerShell single-quote issues). (#183)
+
 ## [1.22.0] - 2026-04-16
 
 ### Added
