@@ -4379,6 +4379,20 @@ const PAGE_HITTEST_TESTABLE_SCENARIOS: &[&str] = &[
 /// AC4 (documentation) is the only scenario testable via CLI alone.
 const PAGE_ANALYZE_TESTABLE_SCENARIOS: &[&str] = &["AC4 - Documentation updated"];
 
+/// Coordinate-based drag and decomposed mouse actions BDD scenarios testable without Chrome.
+/// Only CLI argument validation, help text, and examples scenarios can be tested without Chrome.
+const COORD_DRAG_TESTABLE_SCENARIOS: &[&str] = &[
+    "Drag-at requires four coordinate arguments",
+    "Drag-at rejects too few coordinate arguments",
+    "Mousedown-at requires x and y arguments",
+    "Mouseup-at requires x and y arguments",
+    "Interact help displays new subcommands",
+    "Drag-at help displays all options",
+    "Mousedown-at help displays button option",
+    "Mouseup-at help displays button option",
+    "Examples include new commands",
+];
+
 /// Element-targeted scrolling BDD scenarios testable without Chrome.
 /// AC4 (selector/uid conflict) fails at clap validation before connecting.
 const ELEMENT_SCROLL_TESTABLE_SCENARIOS: &[&str] =
@@ -4894,6 +4908,18 @@ async fn main() {
             "tests/features/element-targeted-scrolling.feature",
             |_feature, _rule, scenario| {
                 ELEMENT_SCROLL_TESTABLE_SCENARIOS.contains(&scenario.name.as_str())
+            },
+        )
+        .await;
+
+    // Coordinate-based drag and decomposed mouse actions (issue #194) — only CLI argument
+    // validation, help text, and examples scenarios can be tested without Chrome.
+    // Chrome-dependent scenarios (AC1-AC17) verified via manual smoke test.
+    CliWorld::cucumber()
+        .filter_run_and_exit(
+            "tests/features/coordinate-drag-decomposed-mouse.feature",
+            |_feature, _rule, scenario| {
+                COORD_DRAG_TESTABLE_SCENARIOS.contains(&scenario.name.as_str())
             },
         )
         .await;
