@@ -4379,6 +4379,11 @@ const PAGE_HITTEST_TESTABLE_SCENARIOS: &[&str] = &[
 /// AC4 (documentation) is the only scenario testable via CLI alone.
 const PAGE_ANALYZE_TESTABLE_SCENARIOS: &[&str] = &["AC4 - Documentation updated"];
 
+/// Element-targeted scrolling BDD scenarios testable without Chrome.
+/// AC4 (selector/uid conflict) fails at clap validation before connecting.
+const ELEMENT_SCROLL_TESTABLE_SCENARIOS: &[&str] =
+    &["Selector and UID flags conflict with each other (AC4)"];
+
 /// Full-page screenshot scrollable containers BDD scenarios testable without Chrome.
 /// AC5 (requires --full-page) and AC6 (conflicts) fail at validation before connecting.
 const SCROLL_CONTAINER_TESTABLE_SCENARIOS: &[&str] = &[
@@ -4878,6 +4883,17 @@ async fn main() {
             "tests/features/full-page-screenshot-scrollable-containers.feature",
             |_feature, _rule, scenario| {
                 SCROLL_CONTAINER_TESTABLE_SCENARIOS.contains(&scenario.name.as_str())
+            },
+        )
+        .await;
+
+    // Element-targeted scrolling (issue #182) — only AC4 (selector/uid conflict) can be tested
+    // without Chrome. Chrome-dependent scenarios (AC1-AC3, AC5, AC6) verified via manual smoke test.
+    CliWorld::cucumber()
+        .filter_run_and_exit(
+            "tests/features/element-targeted-scrolling.feature",
+            |_feature, _rule, scenario| {
+                ELEMENT_SCROLL_TESTABLE_SCENARIOS.contains(&scenario.name.as_str())
             },
         )
         .await;

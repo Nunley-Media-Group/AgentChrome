@@ -2003,8 +2003,10 @@ EXAMPLES:
         long_about = "Scroll the page or a specific container element. By default, scrolls \
             down by one viewport height. Use --direction to scroll in other directions, \
             --amount to set a custom distance in pixels, or the shortcut flags --to-top, \
-            --to-bottom, --to-element to scroll to specific positions. Use --container to \
-            scroll within a scrollable child element. Use --smooth for animated scrolling.",
+            --to-bottom, --to-element to scroll to specific positions. Use --selector or \
+            --uid to scroll within a specific scrollable container by CSS selector or \
+            accessibility UID. Use --container for the legacy combined-target syntax. \
+            Use --smooth for animated scrolling.",
         after_long_help = "\
 EXAMPLES:
   # Scroll down one viewport height
@@ -2018,6 +2020,12 @@ EXAMPLES:
 
   # Scroll until an element is visible
   agentchrome interact scroll --to-element s15
+
+  # Scroll a container by CSS selector
+  agentchrome interact scroll --selector \".stage\" --direction down
+
+  # Scroll a container by UID (requires prior snapshot)
+  agentchrome interact scroll --uid s42 --direction down --amount 300
 
   # Smooth scroll within a container
   agentchrome interact scroll --container css:.scrollable --smooth"
@@ -2202,8 +2210,16 @@ pub struct ScrollArgs {
     #[arg(long)]
     pub smooth: bool,
 
+    /// CSS selector to target a scrollable container (e.g., '.stage', '#panel')
+    #[arg(long, conflicts_with_all = ["uid", "to_element", "to_top", "to_bottom", "container"])]
+    pub selector: Option<String>,
+
+    /// Accessibility UID to target a scrollable container (e.g., 's42', requires prior snapshot)
+    #[arg(long, conflicts_with_all = ["selector", "to_element", "to_top", "to_bottom", "container"])]
+    pub uid: Option<String>,
+
     /// Scroll within a container element (UID like 's3' or CSS selector like 'css:.scrollable')
-    #[arg(long, conflicts_with_all = ["to_element", "to_top", "to_bottom"])]
+    #[arg(long, conflicts_with_all = ["to_element", "to_top", "to_bottom", "selector", "uid"])]
     pub container: Option<String>,
 
     /// Include updated accessibility snapshot in output
