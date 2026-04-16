@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.22.0] - 2026-04-16
+
+### Added
+
+- Add `--scroll-container` flag to `page screenshot --full-page` for capturing inner scrollable containers whose content overflows beyond the viewport. Auto-detects and warns when full-page dimensions match viewport dimensions, suggesting `--scroll-container` usage. Includes validation for flag conflicts and viewport restoration after capture (#184)
+
 ## [1.21.0] - 2026-04-16
 
 ### Added
