@@ -1,0 +1,149 @@
+# File: tests/features/coordinate-drag-decomposed-mouse.feature
+#
+# Generated from: .claude/specs/feature-add-coordinate-drag-and-decomposed-mouse-actions/requirements.md
+# Issue: #194
+
+Feature: Coordinate-based Drag and Decomposed Mouse Actions
+  As a browser automation engineer
+  I want coordinate-based drag commands and decomposed mouse actions
+  So that I can automate drag-and-drop, long-press, and multi-step mouse interactions
+
+  Background:
+    Given the agentchrome binary is available
+
+  # --- Happy Path ---
+
+  # AC1: Coordinate-based drag
+  Scenario: Drag at viewport coordinates
+    When I run agentchrome with "interact drag-at 100 200 300 400"
+    Then the exit code should be 0
+    And the JSON output should have "dragged_at.from.x" equal to 100.0
+    And the JSON output should have "dragged_at.from.y" equal to 200.0
+    And the JSON output should have "dragged_at.to.x" equal to 300.0
+    And the JSON output should have "dragged_at.to.y" equal to 400.0
+
+  # AC2: Decomposed mousedown
+  Scenario: Mousedown at viewport coordinates
+    When I run agentchrome with "interact mousedown-at 150 250"
+    Then the exit code should be 0
+    And the JSON output should have "mousedown_at.x" equal to 150.0
+    And the JSON output should have "mousedown_at.y" equal to 250.0
+
+  # AC3: Decomposed mouseup
+  Scenario: Mouseup at viewport coordinates
+    When I run agentchrome with "interact mouseup-at 300 400"
+    Then the exit code should be 0
+    And the JSON output should have "mouseup_at.x" equal to 300.0
+    And the JSON output should have "mouseup_at.y" equal to 400.0
+
+  # --- Multi-invocation ---
+
+  # AC4: Decomposed multi-invocation drag sequence
+  Scenario: Mousedown followed by mouseup in separate invocations
+    When I run agentchrome with "interact mousedown-at 100 200"
+    Then the exit code should be 0
+    And the JSON output should have "mousedown_at.x" equal to 100.0
+    When I run agentchrome with "interact mouseup-at 300 400"
+    Then the exit code should be 0
+    And the JSON output should have "mouseup_at.x" equal to 300.0
+
+  # --- Frame-scoped dispatch ---
+
+  # AC5: Frame-scoped dispatch for drag-at
+  Scenario: Drag at coordinates inside an iframe
+    When I run agentchrome with "interact --frame 1 drag-at 50 60 200 300"
+    Then the exit code should be 0
+    And the JSON output should have "dragged_at.from.x" equal to 50.0
+
+  # AC6: Frame-scoped dispatch for mousedown-at
+  Scenario: Mousedown at coordinates inside an iframe
+    When I run agentchrome with "interact --frame 1 mousedown-at 50 60"
+    Then the exit code should be 0
+    And the JSON output should have "mousedown_at.x" equal to 50.0
+
+  # AC7: Frame-scoped dispatch for mouseup-at
+  Scenario: Mouseup at coordinates inside an iframe
+    When I run agentchrome with "interact --frame 1 mouseup-at 50 60"
+    Then the exit code should be 0
+    And the JSON output should have "mouseup_at.x" equal to 50.0
+
+  # --- Steps interpolation ---
+
+  # AC8: Optional drag steps for interpolated movement
+  Scenario: Drag at coordinates with interpolated steps
+    When I run agentchrome with "interact drag-at 0 0 100 100 --steps 5"
+    Then the exit code should be 0
+    And the JSON output should have "steps" equal to 5
+    And the JSON output should have "dragged_at.to.x" equal to 100.0
+
+  # AC9: Drag-at default single-step movement
+  Scenario: Drag at coordinates with default single step
+    When I run agentchrome with "interact drag-at 0 0 100 100"
+    Then the exit code should be 0
+    And the JSON output should not have "steps"
+
+  # --- Button option ---
+
+  # AC10: Button option on mousedown-at
+  Scenario: Mousedown with right button
+    When I run agentchrome with "interact mousedown-at 100 200 --button right"
+    Then the exit code should be 0
+    And the JSON output should have "button" equal to "right"
+    And the JSON output should have "mousedown_at.x" equal to 100.0
+
+  # AC11: Button option on mouseup-at
+  Scenario: Mouseup with right button
+    When I run agentchrome with "interact mouseup-at 100 200 --button right"
+    Then the exit code should be 0
+    And the JSON output should have "button" equal to "right"
+    And the JSON output should have "mouseup_at.x" equal to 100.0
+
+  # --- Plain text output ---
+
+  # AC12: Plain text output for drag-at
+  Scenario: Drag at coordinates with plain text output
+    When I run agentchrome with "--plain interact drag-at 100 200 300 400"
+    Then the exit code should be 0
+    And the output should contain "Dragged from (100, 200) to (300, 400)"
+
+  # AC13: Plain text output for mousedown-at
+  Scenario: Mousedown at coordinates with plain text output
+    When I run agentchrome with "--plain interact mousedown-at 100 200"
+    Then the exit code should be 0
+    And the output should contain "Mousedown at (100, 200)"
+
+  # AC14: Plain text output for mouseup-at
+  Scenario: Mouseup at coordinates with plain text output
+    When I run agentchrome with "--plain interact mouseup-at 100 200"
+    Then the exit code should be 0
+    And the output should contain "Mouseup at (100, 200)"
+
+  # --- Include snapshot ---
+
+  # AC15: Include-snapshot on drag-at
+  Scenario: Drag at coordinates with include-snapshot
+    When I run agentchrome with "interact drag-at 100 200 300 400 --include-snapshot"
+    Then the exit code should be 0
+    And the JSON output should have a "snapshot" field
+
+  # AC16: Include-snapshot on mousedown-at
+  Scenario: Mousedown at coordinates with include-snapshot
+    When I run agentchrome with "interact mousedown-at 100 200 --include-snapshot"
+    Then the exit code should be 0
+    And the JSON output should have a "snapshot" field
+
+  # AC17: Include-snapshot on mouseup-at
+  Scenario: Mouseup at coordinates with include-snapshot
+    When I run agentchrome with "interact mouseup-at 100 200 --include-snapshot"
+    Then the exit code should be 0
+    And the JSON output should have a "snapshot" field
+
+  # --- Documentation ---
+
+  # AC18: Documentation updated
+  Scenario: Examples include new commands
+    When I run agentchrome with "examples interact"
+    Then the exit code should be 0
+    And the output should contain "drag-at"
+    And the output should contain "mousedown-at"
+    And the output should contain "mouseup-at"
