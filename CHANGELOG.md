@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.29.0] - 2026-04-16
+
+### Added
+
+- Add top-level `diagnose` command that scans a page for automation challenges (iframes, overlays, shadow DOM, canvas/WebGL, media gates, framework quirks) and matches known patterns (Storyline acc-blocker, SCORM player, React portal), emitting a structured JSON report with per-category severity and actionable strategy suggestions. Supports both URL mode and `--current` mode. (#200)
+
 ## [1.28.0] - 2026-04-16
 
 ### Added
