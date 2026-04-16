@@ -1842,6 +1842,7 @@ pub enum ToolName {
     Continue,
     CopilotJb,
     Cursor,
+    Gemini,
 }
 
 /// Mouse button for decomposed mouse events.

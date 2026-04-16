@@ -32,7 +32,7 @@ Feature: Skill command group for agentic tool integration
     When I run "agentchrome skill list"
     Then the exit code is 0
     And stdout contains valid JSON with a "tools" array
-    And the "tools" array contains entries for "claude-code", "windsurf", "aider", "continue", "copilot-jb", and "cursor"
+    And the "tools" array contains entries for "claude-code", "windsurf", "aider", "continue", "copilot-jb", "cursor", and "gemini"
     And each tool entry has "name", "detection", "path", and "installed" fields
 
   Scenario: Uninstall skill (AC4)
@@ -117,3 +117,62 @@ Feature: Skill command group for agentic tool integration
       | install --tool claude-code |
       | uninstall --tool claude-code |
       | update --tool claude-code  |
+      | install --tool gemini      |
+      | uninstall --tool gemini    |
+      | update --tool gemini       |
+
+  # --- Gemini CLI Support (Added by issue #214) ---
+
+  Scenario: Gemini skill installs successfully (AC13)
+    Given no particular agentic environment is active
+    When I run "agentchrome skill install --tool gemini"
+    Then the exit code is 0
+    And stdout contains valid JSON with "tool" equal to "gemini"
+    And stdout contains "action" equal to "installed"
+    And stdout contains a "path" field pointing to "~/.gemini/instructions/agentchrome.md"
+    And the skill file exists at the Gemini install path
+
+  Scenario: Gemini appears in skill list (AC14)
+    Given the skill command is available
+    When I run "agentchrome skill list"
+    Then the exit code is 0
+    And the "tools" array contains an entry with "name" equal to "gemini"
+    And the gemini entry has "path" equal to "~/.gemini/instructions/agentchrome.md"
+    And the gemini entry has "detection" and "installed" fields
+
+  Scenario: Gemini auto-detection via env var (AC15)
+    Given an agentic coding tool environment is active with env var "GEMINI_API_KEY" set
+    When I run "agentchrome skill install"
+    Then the exit code is 0
+    And stdout contains valid JSON with "tool" equal to "gemini"
+    And stdout contains "action" equal to "installed"
+    And the skill file exists at the Gemini install path
+
+  Scenario: Gemini auto-detection via config directory (AC15)
+    Given the "~/.gemini/" directory exists
+    And no GEMINI_* environment variables are set
+    And no higher-priority tool signals are present
+    When I run "agentchrome skill install"
+    Then the exit code is 0
+    And stdout contains valid JSON with "tool" equal to "gemini"
+
+  Scenario: Gemini skill uninstalls cleanly (AC16)
+    Given a skill was previously installed for "gemini"
+    When I run "agentchrome skill uninstall --tool gemini"
+    Then the exit code is 0
+    And stdout contains valid JSON with "tool" equal to "gemini"
+    And stdout contains "action" equal to "uninstalled"
+    And the skill file no longer exists at the Gemini install path
+
+  Scenario: Gemini skill updates in place (AC17)
+    Given a skill was previously installed for "gemini"
+    When I run "agentchrome skill update --tool gemini"
+    Then the exit code is 0
+    And stdout contains valid JSON with "action" equal to "updated"
+    And stdout contains a "version" field matching the current agentchrome version
+    And the skill file at the Gemini path contains the updated version
+
+  Scenario: README lists Gemini as supported tool (AC18)
+    Given the project README.md exists
+    When I read the skill installer documentation
+    Then it lists "gemini" or "Gemini CLI" as a supported tool
