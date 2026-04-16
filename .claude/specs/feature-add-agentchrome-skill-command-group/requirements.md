@@ -1,7 +1,7 @@
 # Requirements: Add agentchrome skill Command Group
 
-**Issues**: #172
-**Date**: 2026-03-12
+**Issues**: #172, #214
+**Date**: 2026-04-16
 **Status**: Draft
 **Author**: Claude (AI-assisted)
 
@@ -120,6 +120,46 @@ agentchrome is an AI-native CLI tool with rich built-in help (`--help`, `capabil
 **When** they look at the setup/quickstart section
 **Then** `agentchrome skill install` is prominently featured as the recommended first step for AI agent integration, ahead of manual configuration, and `agentchrome skill update` is documented as the way to refresh the skill after upgrading agentchrome
 
+### AC13: Gemini skill installs successfully
+
+**Given** agentchrome is built with Gemini support
+**When** the user runs `agentchrome skill install --tool gemini`
+**Then** a standalone skill file is created at `~/.gemini/instructions/agentchrome.md` containing the standard skill template with the current version
+
+**Example**:
+- When: `agentchrome skill install --tool gemini`
+- Then: stdout contains `{"tool":"gemini","path":"~/.gemini/instructions/agentchrome.md","action":"installed","version":"..."}`
+
+### AC14: Gemini appears in skill list
+
+**Given** agentchrome supports Gemini
+**When** the user runs `agentchrome skill list`
+**Then** the JSON output includes a `gemini` entry with the correct path (`~/.gemini/instructions/agentchrome.md`), detection description, and installed status
+
+### AC15: Gemini auto-detection works
+
+**Given** a `GEMINI_*` environment variable (e.g. `GEMINI_API_KEY`) is set, or `~/.gemini/` directory exists
+**When** the user runs `agentchrome skill install` without `--tool`
+**Then** Gemini is detected and the skill is installed to `~/.gemini/instructions/agentchrome.md`
+
+### AC16: Gemini skill uninstalls cleanly
+
+**Given** the Gemini skill is installed at `~/.gemini/instructions/agentchrome.md`
+**When** the user runs `agentchrome skill uninstall --tool gemini`
+**Then** the file is removed and empty parent directories are cleaned up
+
+### AC17: Gemini skill updates in place
+
+**Given** the Gemini skill is already installed
+**When** the user runs `agentchrome skill update --tool gemini`
+**Then** the skill file is overwritten with the latest version content
+
+### AC18: README lists Gemini as a supported tool
+
+**Given** the project README.md documents the skill installer
+**When** a user reads the supported tools section
+**Then** Gemini CLI is listed alongside the other 6 tools with its install path and detection method
+
 ### AC12: All subcommand JSON output compliance
 
 **Given** any `agentchrome skill` subcommand is invoked
@@ -147,6 +187,13 @@ agentchrome is an AI-native CLI tool with rich built-in help (`--help`, `capabil
 | FR13 | For Aider, install creates `~/.aider/agentchrome.md` and adds a `read` entry to `~/.aider.conf.yml` | Must | Uninstall reverses both |
 | FR14 | `skill list` shows `installed` field per tool indicating whether the skill file currently exists at the expected path | Should | |
 | FR15 | Update README.md to feature `agentchrome skill install` prominently in the setup/quickstart section, positioning it as the recommended first step for AI agent users. Include documentation for `agentchrome skill update` as the recommended post-upgrade step to refresh the installed skill. | Must | Make skill install the focus of the setup flow; document update workflow |
+| FR16 | Add `Gemini` variant to `ToolName` enum in `src/cli/mod.rs` | Must | Issue #214 |
+| FR17 | Add `ToolInfo` entry to `TOOLS` registry in `src/skill.rs` with `Standalone` install mode and path `~/.gemini/instructions/agentchrome.md` | Must | Issue #214 |
+| FR18 | Add `tool_for_name` mapping for `ToolName::Gemini` → `"gemini"` in `src/skill.rs` | Must | Issue #214 |
+| FR19 | Add Tier 1 detection for `GEMINI_*` env var prefix in `detect_tool()` | Must | Issue #214 |
+| FR20 | Add Tier 3 detection for `~/.gemini/` directory existence in `detect_tool()` | Must | Issue #214 |
+| FR21 | Update unit tests: registry count (6→7), `tool_for_name` mapping, list output count, and add Gemini-specific assertions | Must | Issue #214 |
+| FR22 | Update README.md to list Gemini CLI as a supported tool in the skill installer section, including the `--tool gemini` example and `~/.gemini/instructions/agentchrome.md` install path | Must | Issue #214 |
 
 ---
 
@@ -167,7 +214,7 @@ agentchrome is an AI-native CLI tool with rich built-in help (`--help`, `capabil
 
 | Field | Type | Validation | Required |
 |-------|------|------------|----------|
-| `--tool` | String (enum) | Must be one of: `claude-code`, `windsurf`, `aider`, `continue`, `copilot-jb`, `cursor` | No (auto-detect if omitted) |
+| `--tool` | String (enum) | Must be one of: `claude-code`, `windsurf`, `aider`, `continue`, `copilot-jb`, `cursor`, `gemini` | No (auto-detect if omitted) |
 | Subcommand | Enum | Must be one of: `install`, `uninstall`, `update`, `list` | Yes |
 
 ### Output Data (install/uninstall/update)
@@ -201,6 +248,7 @@ agentchrome is an AI-native CLI tool with rich built-in help (`--help`, `capabil
 | Continue.dev | `~/.continue/` exists | `~/.continue/rules/agentchrome.md` |
 | GitHub Copilot (JB) | `~/.config/github-copilot/` exists | `~/.config/github-copilot/intellij/global-copilot-instructions.md` (append section) |
 | Cursor | `CURSOR_*` env or `~/.cursor/` exists | `.cursor/rules/agentchrome.mdc` (project-level only) |
+| Gemini CLI | `GEMINI_*` env var or `~/.gemini/` directory exists | `~/.gemini/instructions/agentchrome.md` |
 
 ---
 
@@ -224,6 +272,9 @@ agentchrome is an AI-native CLI tool with rich built-in help (`--help`, `capabil
 - Automatic updates (agent must run `skill update` manually)
 - Skill content customization by the user
 - MCP server integration or other non-file-based skill delivery
+- MCP server registration in Gemini's `~/.gemini/settings.json` (separate feature)
+- Gemini-specific skill template content (uses the shared template; customization is a follow-up)
+- GEMINI.md project-level file generation
 
 ---
 
@@ -231,7 +282,7 @@ agentchrome is an AI-native CLI tool with rich built-in help (`--help`, `capabil
 
 | Metric | Target | Measurement |
 |--------|--------|-------------|
-| Supported tools | 6 (Claude Code, Windsurf, Aider, Continue.dev, Copilot JB, Cursor) | Count of working tool integrations |
+| Supported tools | 7 (Claude Code, Windsurf, Aider, Continue.dev, Copilot JB, Cursor, Gemini CLI) | Count of working tool integrations |
 | Install round-trip | install → list shows installed → uninstall → list shows not installed | End-to-end verification |
 | Startup overhead | < 50ms for all skill subcommands | Benchmark timing |
 
@@ -248,6 +299,7 @@ agentchrome is an AI-native CLI tool with rich built-in help (`--help`, `capabil
 | Issue | Date | Summary |
 |-------|------|---------|
 | #172 | 2026-03-12 | Initial feature spec |
+| #214 | 2026-04-16 | Add Gemini CLI as 7th supported tool (AC13–AC18, FR16–FR22) |
 
 ---
 

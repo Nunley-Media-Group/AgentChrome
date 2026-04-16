@@ -1,7 +1,7 @@
 # Tasks: Add agentchrome skill Command Group
 
-**Issues**: #172
-**Date**: 2026-03-12
+**Issues**: #172, #214
+**Date**: 2026-04-16
 **Status**: Planning
 **Author**: Claude (AI-assisted)
 
@@ -16,7 +16,8 @@
 | Integration | 2 | [ ] |
 | Testing | 3 | [ ] |
 | Documentation | 1 | [ ] |
-| **Total** | **13** | |
+| Gemini CLI (#214) | 5 | [ ] |
+| **Total** | **18** | |
 
 ---
 
@@ -209,6 +210,75 @@
 
 ---
 
+## Phase 6: Gemini CLI Support (Issue #214)
+
+### T014: Add Gemini variant to ToolName enum
+
+**File(s)**: `src/cli/mod.rs`
+**Type**: Modify
+**Depends**: None (existing infrastructure from T001 is already implemented)
+**Acceptance**:
+- [ ] `Gemini` variant added to `ToolName` enum
+- [ ] `cargo check` passes with no errors
+
+**Notes**: Simple addition to the existing `ValueEnum` derive enum. Clap automatically derives the `--tool gemini` CLI value from the variant name.
+
+### T015: Add Gemini to tool registry, name mapping, and detection
+
+**File(s)**: `src/skill.rs`
+**Type**: Modify
+**Depends**: T014
+**Acceptance**:
+- [ ] `ToolInfo` entry added to `TOOLS` array with name `"gemini"`, detection description `"GEMINI_* env var or ~/.gemini/ directory exists"`, and `InstallMode::Standalone { path_template: "~/.gemini/instructions/agentchrome.md" }`
+- [ ] `tool_for_name` match arm added: `ToolName::Gemini => "gemini"`
+- [ ] Tier 1 detection: `has_env_prefix("GEMINI_")` check added in `detect_tool()` after the `CURSOR_*` check
+- [ ] Tier 3 detection: `home.join(".gemini").is_dir()` check added in `detect_tool()` after the `~/.cursor/` check
+- [ ] `cargo check` passes
+
+**Notes**: Follows the exact same pattern as the existing 6 tools. Standalone install mode means no special append-section or config-patching logic needed. Detection ordering: Tier 1 GEMINI_* env vars (after CURSOR_*), Tier 3 ~/.gemini/ directory (after ~/.cursor/).
+
+### T016: Update unit tests for Gemini
+
+**File(s)**: `src/skill.rs`
+**Type**: Modify
+**Depends**: T015
+**Acceptance**:
+- [ ] `tool_registry_has_six_tools` assertion updated to `TOOLS.len() == 7` (and test renamed to `tool_registry_has_seven_tools`)
+- [ ] `tool_for_name_maps_all_variants` test includes `assert_eq!(tool_for_name(&ToolName::Gemini).name, "gemini")`
+- [ ] `list_output_has_all_tools` assertion updated for 7 tools
+- [ ] `cargo test --lib` passes with all tests green
+
+**Notes**: All existing tests remain; only counts and Gemini-specific assertions are added.
+
+### T017: Update README with Gemini support
+
+**File(s)**: `README.md`
+**Type**: Modify
+**Depends**: T015
+**Acceptance**:
+- [ ] Gemini CLI listed as a supported tool wherever the other 6 tools are mentioned in skill installer documentation
+- [ ] Install path `~/.gemini/instructions/agentchrome.md` documented
+- [ ] Detection method (GEMINI_* env var or ~/.gemini/ directory) documented
+- [ ] If there is a supported tools table or list, Gemini is included
+
+**Notes**: Follow the existing documentation pattern. The README already has a "Claude Code Integration" section with `agentchrome skill install`; Gemini should appear in any tool enumeration.
+
+### T018: Smoke test Gemini install/uninstall/list
+
+**File(s)**: (manual verification)
+**Type**: Verify
+**Depends**: T015, T016
+**Acceptance**:
+- [ ] `cargo build` succeeds
+- [ ] `./target/debug/agentchrome skill list` returns valid JSON with 7 tools including `gemini`
+- [ ] `./target/debug/agentchrome skill install --tool gemini` writes file to `~/.gemini/instructions/agentchrome.md`
+- [ ] `./target/debug/agentchrome skill list` shows `"installed": true` for gemini
+- [ ] `./target/debug/agentchrome skill update --tool gemini` replaces file with current version
+- [ ] `./target/debug/agentchrome skill uninstall --tool gemini` removes the file and cleans empty dirs
+- [ ] `./target/debug/agentchrome skill list` shows `"installed": false` for gemini
+
+---
+
 ## Dependency Graph
 
 ```
@@ -223,6 +293,12 @@ T001 ──┬──▶ T002 ─────────────────
                                                         ├──▶ T012
                                                         │
                                                         └──▶ T013
+
+Phase 6 (Issue #214 — independent of Phases 1-5, runs on existing infrastructure):
+
+T014 ──▶ T015 ──┬──▶ T016 ──▶ T018
+                │
+                └──▶ T017
 ```
 
 ---
@@ -232,6 +308,7 @@ T001 ──┬──▶ T002 ─────────────────
 | Issue | Date | Summary |
 |-------|------|---------|
 | #172 | 2026-03-12 | Initial feature spec |
+| #214 | 2026-04-16 | Add Phase 6: Gemini CLI support (T014–T018) |
 
 ---
 

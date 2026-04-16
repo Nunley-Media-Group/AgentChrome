@@ -1,7 +1,7 @@
 # Design: Add agentchrome skill Command Group
 
-**Issues**: #172
-**Date**: 2026-03-12
+**Issues**: #172, #214
+**Date**: 2026-04-16
 **Status**: Draft
 **Author**: Claude (AI-assisted)
 
@@ -123,6 +123,7 @@ pub enum ToolName {
     Continue,
     CopilotJb,
     Cursor,
+    Gemini,
 }
 ```
 
@@ -156,7 +157,7 @@ pub enum ToolName {
 ```json
 {
   "error": "no supported agentic tool detected",
-  "supported_tools": ["claude-code", "windsurf", "aider", "continue", "copilot-jb", "cursor"]
+  "supported_tools": ["claude-code", "windsurf", "aider", "continue", "copilot-jb", "cursor", "gemini"]
 }
 ```
 
@@ -200,6 +201,7 @@ Detection follows a strict priority order, returning the first match:
    - `WINDSURF_*` (any env var starting with `WINDSURF_`) → Windsurf
    - `AIDER_*` (any env var starting with `AIDER_`) → Aider
    - `CURSOR_*` (any env var starting with `CURSOR_`) → Cursor
+   - `GEMINI_*` (any env var starting with `GEMINI_`) → Gemini CLI
 
 2. **Parent process name**:
    - Process tree contains `claude` → Claude Code
@@ -210,12 +212,13 @@ Detection follows a strict priority order, returning the first match:
    - `~/.continue/` exists → Continue.dev
    - `~/.config/github-copilot/` exists → GitHub Copilot JB
    - `~/.cursor/` exists → Cursor
+   - `~/.gemini/` exists → Gemini CLI
 
 Parent process inspection uses `std::env::var("_")` on Unix (which contains the parent process path in many shells) or falls back to platform-specific APIs if needed. The detection is best-effort — the `--tool` flag exists for cases where auto-detection is insufficient.
 
 ### Install Strategies
 
-**Standalone file** (Claude Code, Continue.dev, Cursor):
+**Standalone file** (Claude Code, Continue.dev, Cursor, Gemini CLI):
 1. Resolve `~` to `$HOME`
 2. Create parent directories if missing (`std::fs::create_dir_all`)
 3. Write the skill content to the file (overwrite if exists)
@@ -313,7 +316,7 @@ The `{version}` placeholder is replaced at runtime with the binary's version fro
 
 | Layer | Type | Coverage |
 |-------|------|----------|
-| Tool registry | Unit | All 6 tools have name, detection, and path |
+| Tool registry | Unit | All 7 tools have name, detection, and path |
 | Detection logic | Unit | Env var detection, parent process detection, config dir detection |
 | Install mode | Unit | Standalone write, append-section with markers, config patching |
 | Uninstall mode | Unit | Standalone delete, section removal, config cleanup |
@@ -341,6 +344,7 @@ The `{version}` placeholder is replaced at runtime with the binary's version fro
 | Issue | Date | Summary |
 |-------|------|---------|
 | #172 | 2026-03-12 | Initial feature spec |
+| #214 | 2026-04-16 | Add Gemini CLI: `Gemini` variant in `ToolName`, `ToolInfo` entry with `Standalone` mode, Tier 1 + Tier 3 detection, README update |
 
 ---
 

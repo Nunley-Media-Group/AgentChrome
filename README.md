@@ -22,7 +22,7 @@ cargo install agentchrome
 agentchrome skill install
 ```
 
-This auto-detects Claude Code and installs a skill file that tells the AI agent what agentchrome is and how to discover its capabilities. After upgrading agentchrome, run `agentchrome skill update` to refresh the skill with the current version.
+This auto-detects your agentic coding tool and installs a skill file that tells the AI agent what agentchrome is and how to discover its capabilities. Supported tools: Claude Code, Windsurf, Aider, Continue.dev, GitHub Copilot (JetBrains), Cursor, and Gemini CLI. After upgrading agentchrome, run `agentchrome skill update` to refresh the skill with the current version.
 
 <details>
 <summary>Alternative: manual CLAUDE.md template</summary>

@@ -4032,6 +4032,35 @@ fn skill_both_claude_and_continue(world: &mut SkillWorld) {
     std::fs::create_dir_all(temp_home.join(".continue")).unwrap();
 }
 
+#[given("an agentic coding tool environment is active with env var \"GEMINI_API_KEY\" set")]
+fn skill_gemini_env_set(world: &mut SkillWorld) {
+    let path = binary_path();
+    assert!(path.exists(), "Binary not found at {}", path.display());
+    world.binary_path = Some(path);
+    world
+        .extra_env
+        .push(("GEMINI_API_KEY".into(), "test".into()));
+}
+
+#[given("the \"~/.gemini/\" directory exists")]
+fn skill_gemini_dir_exists(world: &mut SkillWorld) {
+    let path = binary_path();
+    assert!(path.exists(), "Binary not found at {}", path.display());
+    world.binary_path = Some(path);
+    let temp_home = world.ensure_temp_home();
+    std::fs::create_dir_all(temp_home.join(".gemini")).unwrap();
+}
+
+#[given("no GEMINI_* environment variables are set")]
+fn skill_no_gemini_env(_world: &mut SkillWorld) {
+    // env_clear() in run_skill_command_with_env ensures no GEMINI_* vars are set
+}
+
+#[given("no higher-priority tool signals are present")]
+fn skill_no_higher_priority(_world: &mut SkillWorld) {
+    // env_clear() in run_skill_command_with_env ensures no higher-priority env vars are set
+}
+
 #[given("the project README.md exists")]
 fn skill_readme_exists(world: &mut SkillWorld) {
     let readme_path = project_root().join("README.md");
@@ -4059,6 +4088,14 @@ fn skill_run_command_again(world: &mut SkillWorld, command_line: String) {
 
 #[when("I read the Claude Code Integration section")]
 fn skill_read_claude_section(world: &mut SkillWorld) {
+    assert!(
+        !world.readme_content.is_empty(),
+        "README content not loaded"
+    );
+}
+
+#[when("I read the skill installer documentation")]
+fn skill_read_skill_docs(world: &mut SkillWorld) {
     assert!(
         !world.readme_content.is_empty(),
         "README content not loaded"
@@ -4319,6 +4356,109 @@ fn skill_output_contains_json(world: &mut SkillWorld) {
 #[then("the output conforms to the global JSON output contract")]
 fn skill_output_conforms(_world: &mut SkillWorld) {
     // Validated by prior "stdout or stderr contains valid JSON" step
+}
+
+// --- Gemini-specific Then steps ---
+
+#[then("stdout contains a \"path\" field pointing to \"~/.gemini/instructions/agentchrome.md\"")]
+fn skill_stdout_path_gemini(world: &mut SkillWorld) {
+    let json: serde_json::Value = serde_json::from_str(world.stdout.trim())
+        .unwrap_or_else(|e| panic!("stdout is not valid JSON: {e}\nstdout: {}", world.stdout));
+    let path = json["path"].as_str().expect("missing 'path' field");
+    assert!(
+        path.ends_with(".gemini/instructions/agentchrome.md"),
+        "Expected path ending with .gemini/instructions/agentchrome.md, got: {path}"
+    );
+}
+
+#[then("the skill file exists at the Gemini install path")]
+fn skill_file_exists_gemini(world: &mut SkillWorld) {
+    let temp_home = world.temp_home.as_ref().expect("No temp home");
+    let path = temp_home.path().join(".gemini/instructions/agentchrome.md");
+    assert!(
+        path.exists(),
+        "Gemini skill file does not exist at {}",
+        path.display()
+    );
+}
+
+#[then("the \"tools\" array contains an entry with \"name\" equal to \"gemini\"")]
+fn skill_tools_contains_gemini(world: &mut SkillWorld) {
+    let json: serde_json::Value = serde_json::from_str(world.stdout.trim())
+        .unwrap_or_else(|e| panic!("stdout is not valid JSON: {e}\nstdout: {}", world.stdout));
+    let tools = json["tools"].as_array().expect("tools is not an array");
+    let names: Vec<&str> = tools.iter().filter_map(|t| t["name"].as_str()).collect();
+    assert!(
+        names.contains(&"gemini"),
+        "Missing 'gemini' in tools list. Found: {names:?}"
+    );
+}
+
+#[then("the gemini entry has \"path\" equal to \"~/.gemini/instructions/agentchrome.md\"")]
+fn skill_gemini_path(world: &mut SkillWorld) {
+    let json: serde_json::Value = serde_json::from_str(world.stdout.trim())
+        .unwrap_or_else(|e| panic!("stdout is not valid JSON: {e}\nstdout: {}", world.stdout));
+    let tools = json["tools"].as_array().expect("tools is not an array");
+    let gemini = tools
+        .iter()
+        .find(|t| t["name"].as_str() == Some("gemini"))
+        .expect("gemini not found in tools list");
+    assert_eq!(
+        gemini["path"].as_str(),
+        Some("~/.gemini/instructions/agentchrome.md"),
+        "Gemini path mismatch"
+    );
+}
+
+#[then("the gemini entry has \"detection\" and \"installed\" fields")]
+fn skill_gemini_fields(world: &mut SkillWorld) {
+    let json: serde_json::Value = serde_json::from_str(world.stdout.trim())
+        .unwrap_or_else(|e| panic!("stdout is not valid JSON: {e}\nstdout: {}", world.stdout));
+    let tools = json["tools"].as_array().expect("tools is not an array");
+    let gemini = tools
+        .iter()
+        .find(|t| t["name"].as_str() == Some("gemini"))
+        .expect("gemini not found in tools list");
+    assert!(
+        gemini["detection"].is_string(),
+        "missing 'detection' field for gemini"
+    );
+    assert!(
+        gemini["installed"].is_boolean(),
+        "missing 'installed' field for gemini"
+    );
+}
+
+#[then("the skill file no longer exists at the Gemini install path")]
+fn skill_file_removed_gemini(world: &mut SkillWorld) {
+    let temp_home = world.temp_home.as_ref().expect("No temp home");
+    let path = temp_home.path().join(".gemini/instructions/agentchrome.md");
+    assert!(
+        !path.exists(),
+        "Gemini skill file should have been removed at {}",
+        path.display()
+    );
+}
+
+#[then("the skill file at the Gemini path contains the updated version")]
+fn skill_gemini_file_has_version(world: &mut SkillWorld) {
+    let temp_home = world.temp_home.as_ref().expect("No temp home");
+    let path = temp_home.path().join(".gemini/instructions/agentchrome.md");
+    let content = std::fs::read_to_string(&path).expect("Failed to read Gemini skill file");
+    assert!(
+        content.contains("Version:"),
+        "Gemini skill file does not contain version stamp"
+    );
+}
+
+#[then("it lists \"gemini\" or \"Gemini CLI\" as a supported tool")]
+fn skill_readme_lists_gemini(world: &mut SkillWorld) {
+    let has_gemini =
+        world.readme_content.contains("gemini") || world.readme_content.contains("Gemini");
+    assert!(
+        has_gemini,
+        "README does not mention Gemini as a supported tool"
+    );
 }
 
 // =============================================================================

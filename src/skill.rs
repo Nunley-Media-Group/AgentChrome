@@ -103,6 +103,13 @@ static TOOLS: &[ToolInfo] = &[
             path_template: ".cursor/rules/agentchrome.mdc",
         },
     },
+    ToolInfo {
+        name: "gemini",
+        detection: "GEMINI_* env var or ~/.gemini/ directory exists",
+        install_mode: InstallMode::Standalone {
+            path_template: "~/.gemini/instructions/agentchrome.md",
+        },
+    },
 ];
 
 // =============================================================================
@@ -165,6 +172,9 @@ fn detect_tool() -> Option<&'static ToolInfo> {
     if has_env_prefix("CURSOR_") {
         return find_tool("cursor");
     }
+    if has_env_prefix("GEMINI_") {
+        return find_tool("gemini");
+    }
 
     // Tier 2: Parent process name
     if let Ok(parent) = std::env::var("_") {
@@ -191,6 +201,9 @@ fn detect_tool() -> Option<&'static ToolInfo> {
     if home.join(".cursor").is_dir() {
         return find_tool("cursor");
     }
+    if home.join(".gemini").is_dir() {
+        return find_tool("gemini");
+    }
 
     None
 }
@@ -211,6 +224,7 @@ fn tool_for_name(name: &ToolName) -> &'static ToolInfo {
         ToolName::Continue => "continue",
         ToolName::CopilotJb => "copilot-jb",
         ToolName::Cursor => "cursor",
+        ToolName::Gemini => "gemini",
     };
     find_tool(key).expect("all ToolName variants have a matching ToolInfo entry")
 }
@@ -675,8 +689,8 @@ mod tests {
     use super::*;
 
     #[test]
-    fn tool_registry_has_six_tools() {
-        assert_eq!(TOOLS.len(), 6);
+    fn tool_registry_has_seven_tools() {
+        assert_eq!(TOOLS.len(), 7);
     }
 
     #[test]
@@ -711,6 +725,7 @@ mod tests {
         assert_eq!(tool_for_name(&ToolName::Continue).name, "continue");
         assert_eq!(tool_for_name(&ToolName::CopilotJb).name, "copilot-jb");
         assert_eq!(tool_for_name(&ToolName::Cursor).name, "cursor");
+        assert_eq!(tool_for_name(&ToolName::Gemini).name, "gemini");
     }
 
     #[test]
@@ -887,7 +902,7 @@ mod tests {
     #[test]
     fn list_output_has_all_tools() {
         let output = list_tools().unwrap();
-        assert_eq!(output.tools.len(), 6);
+        assert_eq!(output.tools.len(), 7);
         let names: Vec<&str> = output.tools.iter().map(|t| t.name.as_str()).collect();
         assert!(names.contains(&"claude-code"));
         assert!(names.contains(&"windsurf"));
@@ -895,6 +910,7 @@ mod tests {
         assert!(names.contains(&"continue"));
         assert!(names.contains(&"copilot-jb"));
         assert!(names.contains(&"cursor"));
+        assert!(names.contains(&"gemini"));
     }
 
     #[test]
@@ -903,7 +919,7 @@ mod tests {
         let json = serde_json::to_string(&output).unwrap();
         let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
         let tools = parsed["tools"].as_array().unwrap();
-        assert_eq!(tools.len(), 6);
+        assert_eq!(tools.len(), 7);
         for tool in tools {
             assert!(tool["name"].is_string());
             assert!(tool["detection"].is_string());
