@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.26.0] - 2026-04-16
+
+### Added
+
+- Add `--js-expression` condition to `page wait` for blocking on arbitrary JavaScript expressions evaluated to truthy via `Runtime.evaluate`, with consecutive error detection that reports expression failures after 3 consecutive JS exceptions (#195)
+- Add `--count` modifier for `page wait --selector` to wait until at least N elements match the selector, enabling dynamic content count thresholds without custom JS polling (#195)
+- Add frame-scoped support (`--frame`) for `--js-expression` and `--count` conditions (#195)
+
+### Fixed
+
+- Fix intermittent exit code 1 in `page wait` when poll-based conditions are already satisfied on first check, caused by transient CDP evaluation errors during page load being treated as failures instead of retried (#195)
+
 ## [1.25.0] - 2026-04-16
 
 ### Added
