@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.18.0] - 2026-04-16
+
+### Added
+
+- Add `dom events` subcommand for event listener introspection via CDP `DOMDebugger.getEventListeners`, returning structured JSON with event type, capture/bubble phase, handler source location, `once` flag, and `passive` flag. Supports UID and CSS selector targeting with `--frame` for frame-scoped queries (#192)
+
 ## [1.17.0] - 2026-04-15
 
 ### Added
