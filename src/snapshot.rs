@@ -582,6 +582,12 @@ pub struct SnapshotState {
     pub url: String,
     pub timestamp: String,
     pub uid_map: HashMap<String, i64>,
+    /// Which frame index this snapshot was taken from (None = main frame).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub frame_index: Option<u32>,
+    /// CDP frame ID for the frame this snapshot was taken from (None = main frame).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub frame_id: Option<String>,
 }
 
 /// Errors from snapshot state file operations.
@@ -1131,6 +1137,8 @@ mod tests {
             url: "https://example.com/".to_string(),
             timestamp: "2026-02-12T10:00:00Z".to_string(),
             uid_map: HashMap::from([("s1".to_string(), 42), ("s2".to_string(), 87)]),
+            frame_index: None,
+            frame_id: None,
         };
 
         write_snapshot_state_to(&path, &state).unwrap();

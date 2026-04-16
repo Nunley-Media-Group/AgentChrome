@@ -156,6 +156,26 @@ fn all_examples() -> Vec<CommandGroupSummary> {
                     description: "Resize the viewport to specific dimensions".into(),
                     flags: None,
                 },
+                ExampleEntry {
+                    cmd: "agentchrome page frames".into(),
+                    description: "List all iframes and frames in the page hierarchy".into(),
+                    flags: None,
+                },
+                ExampleEntry {
+                    cmd: "agentchrome page snapshot --frame 1".into(),
+                    description: "Capture accessibility tree of a specific iframe".into(),
+                    flags: Some(vec!["--frame".into()]),
+                },
+                ExampleEntry {
+                    cmd: "agentchrome page snapshot --pierce-shadow".into(),
+                    description: "Include shadow DOM elements in the accessibility tree".into(),
+                    flags: Some(vec!["--pierce-shadow".into()]),
+                },
+                ExampleEntry {
+                    cmd: "agentchrome page workers".into(),
+                    description: "List service workers, shared workers, and web workers".into(),
+                    flags: None,
+                },
             ],
         },
         CommandGroupSummary {
@@ -187,6 +207,16 @@ fn all_examples() -> Vec<CommandGroupSummary> {
                     description: "View the DOM tree with limited depth".into(),
                     flags: Some(vec!["--depth".into()]),
                 },
+                ExampleEntry {
+                    cmd: "agentchrome dom --frame 1 select \"css:button\"".into(),
+                    description: "Query elements inside an iframe".into(),
+                    flags: Some(vec!["--frame".into()]),
+                },
+                ExampleEntry {
+                    cmd: "agentchrome dom --pierce-shadow select \"css:#shadow-btn\"".into(),
+                    description: "Query elements inside shadow DOM".into(),
+                    flags: Some(vec!["--pierce-shadow".into()]),
+                },
             ],
         },
         CommandGroupSummary {
@@ -212,6 +242,16 @@ fn all_examples() -> Vec<CommandGroupSummary> {
                     cmd: "echo 'document.URL' | agentchrome js exec -".into(),
                     description: "Read JavaScript from stdin".into(),
                     flags: None,
+                },
+                ExampleEntry {
+                    cmd: "agentchrome js --frame 1 exec \"document.title\"".into(),
+                    description: "Execute JavaScript inside an iframe".into(),
+                    flags: Some(vec!["--frame".into()]),
+                },
+                ExampleEntry {
+                    cmd: "agentchrome js exec --worker 0 \"self.registration.scope\"".into(),
+                    description: "Execute JavaScript in a Service Worker".into(),
+                    flags: Some(vec!["--worker".into()]),
                 },
             ],
         },
@@ -265,6 +305,11 @@ fn all_examples() -> Vec<CommandGroupSummary> {
                     description: "Stream network requests matching a URL pattern".into(),
                     flags: Some(vec!["--url".into()]),
                 },
+                ExampleEntry {
+                    cmd: "agentchrome network list --frame 1".into(),
+                    description: "List network requests from a specific frame".into(),
+                    flags: Some(vec!["--frame".into()]),
+                },
             ],
         },
         CommandGroupSummary {
@@ -301,6 +346,16 @@ fn all_examples() -> Vec<CommandGroupSummary> {
                     description: "Scroll to the bottom of the page".into(),
                     flags: Some(vec!["--to-bottom".into()]),
                 },
+                ExampleEntry {
+                    cmd: "agentchrome interact --frame 1 click s3".into(),
+                    description: "Click an element inside an iframe".into(),
+                    flags: Some(vec!["--frame".into()]),
+                },
+                ExampleEntry {
+                    cmd: "agentchrome interact --frame 1 click-at 100 200".into(),
+                    description: "Click at coordinates inside an iframe".into(),
+                    flags: Some(vec!["--frame".into()]),
+                },
             ],
         },
         CommandGroupSummary {
@@ -326,6 +381,11 @@ fn all_examples() -> Vec<CommandGroupSummary> {
                     cmd: "agentchrome form upload s10 ./photo.jpg".into(),
                     description: "Upload a file to a file input element".into(),
                     flags: None,
+                },
+                ExampleEntry {
+                    cmd: "agentchrome form --frame 1 fill s2 \"value\"".into(),
+                    description: "Fill a form field inside an iframe".into(),
+                    flags: Some(vec!["--frame".into()]),
                 },
             ],
         },

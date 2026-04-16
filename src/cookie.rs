@@ -378,12 +378,12 @@ mod tests {
         let cookie = CookieInfo {
             name: "test".into(),
             value: "val".into(),
-            domain: "".into(),
+            domain: String::new(),
             path: "/".into(),
             expires: 0.0,
             http_only: false,
             secure: false,
-            same_site: "".into(),
+            same_site: String::new(),
             size: 0,
         };
         let json: serde_json::Value = serde_json::to_value(&cookie).unwrap();
@@ -428,7 +428,7 @@ mod tests {
                     "value": "abc123",
                     "domain": ".example.com",
                     "path": "/",
-                    "expires": 1735689600.0,
+                    "expires": 1_735_689_600.0,
                     "size": 22,
                     "httpOnly": true,
                     "secure": true,

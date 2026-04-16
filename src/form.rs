@@ -15,6 +15,41 @@ use crate::emulate::apply_emulate_state;
 use crate::snapshot;
 
 // =============================================================================
+// Frame resolution helper (form)
+// =============================================================================
+
+/// Resolve the optional `--frame` argument and return a `FrameContext`.
+///
+/// `uid` is the target element identifier; it is required when `frame` is
+/// `"auto"` so that `resolve_frame_auto` can locate the correct frame.
+async fn resolve_form_frame(
+    client: &CdpClient,
+    managed: &mut ManagedSession,
+    frame: Option<&str>,
+    uid: Option<&str>,
+) -> Result<Option<agentchrome::frame::FrameContext>, AppError> {
+    if let Some(frame_str) = frame {
+        let arg = agentchrome::frame::parse_frame_arg(frame_str)?;
+        if matches!(arg, agentchrome::frame::FrameArg::Auto) {
+            let target_uid = uid.unwrap_or_default();
+            // Read persisted snapshot state for the fast path hint.
+            let state = snapshot::read_snapshot_state().ok().flatten();
+            let hint = state
+                .as_ref()
+                .and_then(|s| s.frame_index.map(|idx| (idx, &s.uid_map)));
+            let (ctx, _frame_idx) =
+                agentchrome::frame::resolve_frame_auto(client, managed, target_uid, hint).await?;
+            Ok(Some(ctx))
+        } else {
+            let ctx = agentchrome::frame::resolve_frame(client, managed, &arg).await?;
+            Ok(Some(ctx))
+        }
+    } else {
+        Ok(None)
+    }
+}
+
+// =============================================================================
 // Output types
 // =============================================================================
 
@@ -172,7 +207,7 @@ fn is_css_selector(target: &str) -> bool {
 
 /// Resolve a target (UID or CSS selector) to a backend DOM node ID.
 async fn resolve_target_to_backend_node_id(
-    session: &mut ManagedSession,
+    session: &ManagedSession,
     target: &str,
 ) -> Result<i64, AppError> {
     if is_uid(target) {
@@ -245,6 +280,8 @@ async fn take_snapshot(
         url: url.to_string(),
         timestamp: agentchrome::session::now_iso8601(),
         uid_map: build_result.uid_map,
+        frame_index: None,
+        frame_id: None,
     };
     snapshot::write_snapshot_state(&state)?;
 
@@ -376,10 +413,7 @@ function() {
 // =============================================================================
 
 /// Resolve a target to a Runtime object ID via DOM.resolveNode.
-async fn resolve_to_object_id(
-    session: &mut ManagedSession,
-    target: &str,
-) -> Result<String, AppError> {
+async fn resolve_to_object_id(session: &ManagedSession, target: &str) -> Result<String, AppError> {
     let backend_node_id = resolve_target_to_backend_node_id(session, target).await?;
 
     let resolve_params = serde_json::json!({ "backendNodeId": backend_node_id });
@@ -399,7 +433,7 @@ async fn resolve_to_object_id(
 /// Uses `DOM.describeNode` which is read-only and does not invalidate cached
 /// accessibility tree backend node IDs (unlike `DOM.resolveNode`).
 async fn describe_element(
-    session: &mut ManagedSession,
+    session: &ManagedSession,
     backend_node_id: i64,
 ) -> Result<(String, Option<String>), AppError> {
     let params = serde_json::json!({ "backendNodeId": backend_node_id });
@@ -445,7 +479,7 @@ fn is_text_input(node_name: &str, input_type: Option<&str>) -> bool {
 /// char key events trigger React's synthetic event system. Uses `activeElement.select()`
 /// for cross-platform select-all (Ctrl+A is not select-all on macOS Chrome).
 async fn fill_element_keyboard(
-    session: &mut ManagedSession,
+    session: &ManagedSession,
     backend_node_id: i64,
     value: &str,
 ) -> Result<(), AppError> {
@@ -489,7 +523,7 @@ async fn fill_element_keyboard(
 /// that React's synthetic event system recognizes. Backspace `keyDown`/`keyUp` events do not
 /// reliably trigger React `onChange` when the selection was set programmatically.
 async fn clear_element_keyboard(
-    session: &mut ManagedSession,
+    session: &ManagedSession,
     backend_node_id: i64,
 ) -> Result<(), AppError> {
     // Focus the element
@@ -517,11 +551,7 @@ async fn clear_element_keyboard(
 
 /// Fill an element's value. Text-type inputs use keyboard simulation (React-compatible);
 /// select/checkbox/radio use the existing JS setter approach.
-async fn fill_element(
-    session: &mut ManagedSession,
-    target: &str,
-    value: &str,
-) -> Result<(), AppError> {
+async fn fill_element(session: &ManagedSession, target: &str, value: &str) -> Result<(), AppError> {
     let backend_node_id = resolve_target_to_backend_node_id(session, target).await?;
     let (node_name, input_type) = describe_element(session, backend_node_id).await?;
 
@@ -546,7 +576,7 @@ async fn fill_element(
 
 /// Clear an element's value. Text-type inputs use keyboard simulation (React-compatible);
 /// select/checkbox/radio use the existing JS setter approach.
-async fn clear_element(session: &mut ManagedSession, target: &str) -> Result<(), AppError> {
+async fn clear_element(session: &ManagedSession, target: &str) -> Result<(), AppError> {
     let backend_node_id = resolve_target_to_backend_node_id(session, target).await?;
     let (node_name, input_type) = describe_element(session, backend_node_id).await?;
 
@@ -573,8 +603,7 @@ async fn clear_element(session: &mut ManagedSession, target: &str) -> Result<(),
 // Get current URL helper
 // =============================================================================
 
-async fn get_current_url(session: &mut ManagedSession) -> Result<String, AppError> {
-    session.ensure_domain("Runtime").await?;
+async fn get_current_url(session: &ManagedSession) -> Result<String, AppError> {
     let url_response = session
         .send_command(
             "Runtime.evaluate",
@@ -592,22 +621,41 @@ async fn get_current_url(session: &mut ManagedSession) -> Result<String, AppErro
 // =============================================================================
 
 /// Execute the `form fill` command.
-async fn execute_fill(global: &GlobalOpts, args: &FormFillArgs) -> Result<(), AppError> {
-    let (_client, mut managed) = setup_session(global).await?;
+async fn execute_fill(
+    global: &GlobalOpts,
+    args: &FormFillArgs,
+    frame: Option<&str>,
+) -> Result<(), AppError> {
+    let (client, mut managed) = setup_session(global).await?;
     if global.auto_dismiss_dialogs {
         let _dismiss = managed.spawn_auto_dismiss().await?;
     }
 
-    // Enable required domains
-    managed.ensure_domain("DOM").await?;
-    managed.ensure_domain("Runtime").await?;
+    let mut frame_ctx =
+        resolve_form_frame(&client, &mut managed, frame, Some(&args.target)).await?;
 
-    // Fill the element
-    fill_element(&mut managed, &args.target, &args.value).await?;
+    {
+        let eff_mut = if let Some(ref mut ctx) = frame_ctx {
+            agentchrome::frame::frame_session_mut(ctx, &mut managed)
+        } else {
+            &mut managed
+        };
+        eff_mut.ensure_domain("DOM").await?;
+        eff_mut.ensure_domain("Runtime").await?;
+    }
+
+    let effective = if let Some(ref ctx) = frame_ctx {
+        agentchrome::frame::frame_session(ctx, &managed)
+    } else {
+        &managed
+    };
+
+    // Fill the element via the effective (frame-scoped) session
+    fill_element(effective, &args.target, &args.value).await?;
 
     // Take snapshot if requested
     let snapshot = if args.include_snapshot {
-        let url = get_current_url(&mut managed).await?;
+        let url = get_current_url(&managed).await?;
         Some(take_snapshot(&mut managed, &url, args.compact).await?)
     } else {
         None
@@ -628,7 +676,11 @@ async fn execute_fill(global: &GlobalOpts, args: &FormFillArgs) -> Result<(), Ap
 }
 
 /// Execute the `form fill-many` command.
-async fn execute_fill_many(global: &GlobalOpts, args: &FormFillManyArgs) -> Result<(), AppError> {
+async fn execute_fill_many(
+    global: &GlobalOpts,
+    args: &FormFillManyArgs,
+    frame: Option<&str>,
+) -> Result<(), AppError> {
     // Parse the JSON input (inline or from file)
     let json_str = if let Some(file_path) = &args.file {
         read_json_file(file_path)?
@@ -648,19 +700,33 @@ async fn execute_fill_many(global: &GlobalOpts, args: &FormFillManyArgs) -> Resu
         custom_json: None,
     })?;
 
-    let (_client, mut managed) = setup_session(global).await?;
+    let (client, mut managed) = setup_session(global).await?;
     if global.auto_dismiss_dialogs {
         let _dismiss = managed.spawn_auto_dismiss().await?;
     }
 
-    // Enable required domains
-    managed.ensure_domain("DOM").await?;
-    managed.ensure_domain("Runtime").await?;
+    let mut frame_ctx = resolve_form_frame(&client, &mut managed, frame, None).await?;
 
-    // Fill each element
+    {
+        let eff_mut = if let Some(ref mut ctx) = frame_ctx {
+            agentchrome::frame::frame_session_mut(ctx, &mut managed)
+        } else {
+            &mut managed
+        };
+        eff_mut.ensure_domain("DOM").await?;
+        eff_mut.ensure_domain("Runtime").await?;
+    }
+
+    let effective = if let Some(ref ctx) = frame_ctx {
+        agentchrome::frame::frame_session(ctx, &managed)
+    } else {
+        &managed
+    };
+
+    // Fill each element via the effective session
     let mut results = Vec::with_capacity(entries.len());
     for entry in &entries {
-        fill_element(&mut managed, &entry.uid, &entry.value).await?;
+        fill_element(effective, &entry.uid, &entry.value).await?;
         results.push(FillResult {
             filled: entry.uid.clone(),
             value: entry.value.clone(),
@@ -670,7 +736,7 @@ async fn execute_fill_many(global: &GlobalOpts, args: &FormFillManyArgs) -> Resu
 
     // Take snapshot once after all fills if requested
     if args.include_snapshot {
-        let url = get_current_url(&mut managed).await?;
+        let url = get_current_url(&managed).await?;
         let snapshot = take_snapshot(&mut managed, &url, args.compact).await?;
         let output = FillManyOutput::WithSnapshot { results, snapshot };
         if global.output.plain {
@@ -695,22 +761,41 @@ async fn execute_fill_many(global: &GlobalOpts, args: &FormFillManyArgs) -> Resu
 }
 
 /// Execute the `form clear` command.
-async fn execute_clear(global: &GlobalOpts, args: &FormClearArgs) -> Result<(), AppError> {
-    let (_client, mut managed) = setup_session(global).await?;
+async fn execute_clear(
+    global: &GlobalOpts,
+    args: &FormClearArgs,
+    frame: Option<&str>,
+) -> Result<(), AppError> {
+    let (client, mut managed) = setup_session(global).await?;
     if global.auto_dismiss_dialogs {
         let _dismiss = managed.spawn_auto_dismiss().await?;
     }
 
-    // Enable required domains
-    managed.ensure_domain("DOM").await?;
-    managed.ensure_domain("Runtime").await?;
+    let mut frame_ctx =
+        resolve_form_frame(&client, &mut managed, frame, Some(&args.target)).await?;
 
-    // Clear the element
-    clear_element(&mut managed, &args.target).await?;
+    {
+        let eff_mut = if let Some(ref mut ctx) = frame_ctx {
+            agentchrome::frame::frame_session_mut(ctx, &mut managed)
+        } else {
+            &mut managed
+        };
+        eff_mut.ensure_domain("DOM").await?;
+        eff_mut.ensure_domain("Runtime").await?;
+    }
+
+    let effective = if let Some(ref ctx) = frame_ctx {
+        agentchrome::frame::frame_session(ctx, &managed)
+    } else {
+        &managed
+    };
+
+    // Clear the element via the effective session
+    clear_element(effective, &args.target).await?;
 
     // Take snapshot if requested
     let snapshot = if args.include_snapshot {
-        let url = get_current_url(&mut managed).await?;
+        let url = get_current_url(&managed).await?;
         Some(take_snapshot(&mut managed, &url, args.compact).await?)
     } else {
         None
@@ -755,7 +840,11 @@ const LARGE_FILE_THRESHOLD: u64 = 100 * 1024 * 1024;
 // =============================================================================
 
 /// Execute the `form upload` command.
-async fn execute_upload(global: &GlobalOpts, args: &FormUploadArgs) -> Result<(), AppError> {
+async fn execute_upload(
+    global: &GlobalOpts,
+    args: &FormUploadArgs,
+    frame: Option<&str>,
+) -> Result<(), AppError> {
     // --- Validate files before connecting to Chrome ---
     let mut total_size: u64 = 0;
     let mut resolved_paths: Vec<String> = Vec::with_capacity(args.files.len());
@@ -787,17 +876,33 @@ async fn execute_upload(global: &GlobalOpts, args: &FormUploadArgs) -> Result<()
     }
 
     // --- Setup CDP session ---
-    let (_client, mut managed) = setup_session(global).await?;
+    let (client, mut managed) = setup_session(global).await?;
     if global.auto_dismiss_dialogs {
         let _dismiss = managed.spawn_auto_dismiss().await?;
     }
 
-    managed.ensure_domain("DOM").await?;
-    managed.ensure_domain("Runtime").await?;
+    let mut frame_ctx =
+        resolve_form_frame(&client, &mut managed, frame, Some(&args.target)).await?;
+
+    {
+        let eff_mut = if let Some(ref mut ctx) = frame_ctx {
+            agentchrome::frame::frame_session_mut(ctx, &mut managed)
+        } else {
+            &mut managed
+        };
+        eff_mut.ensure_domain("DOM").await?;
+        eff_mut.ensure_domain("Runtime").await?;
+    }
+
+    let effective = if let Some(ref ctx) = frame_ctx {
+        agentchrome::frame::frame_session(ctx, &managed)
+    } else {
+        &managed
+    };
 
     // --- Resolve target to backend node ID and object ID ---
-    let backend_node_id = resolve_target_to_backend_node_id(&mut managed, &args.target).await?;
-    let object_id = resolve_to_object_id(&mut managed, &args.target).await?;
+    let backend_node_id = resolve_target_to_backend_node_id(effective, &args.target).await?;
+    let object_id = resolve_to_object_id(effective, &args.target).await?;
 
     // --- Validate element is a file input ---
     let check_params = serde_json::json!({
@@ -805,7 +910,7 @@ async fn execute_upload(global: &GlobalOpts, args: &FormUploadArgs) -> Result<()
         "functionDeclaration": IS_FILE_INPUT_JS,
         "returnByValue": true,
     });
-    let check_response = managed
+    let check_response = effective
         .send_command("Runtime.callFunctionOn", Some(check_params))
         .await
         .map_err(|e| AppError::interaction_failed("validate_file_input", &e.to_string()))?;
@@ -820,7 +925,7 @@ async fn execute_upload(global: &GlobalOpts, args: &FormUploadArgs) -> Result<()
         "files": resolved_paths,
         "backendNodeId": backend_node_id,
     });
-    managed
+    effective
         .send_command("DOM.setFileInputFiles", Some(set_files_params))
         .await
         .map_err(|e| AppError::interaction_failed("setFileInputFiles", &e.to_string()))?;
@@ -831,14 +936,14 @@ async fn execute_upload(global: &GlobalOpts, args: &FormUploadArgs) -> Result<()
         "functionDeclaration": DISPATCH_CHANGE_JS,
         "arguments": [],
     });
-    managed
+    effective
         .send_command("Runtime.callFunctionOn", Some(change_params))
         .await
         .map_err(|e| AppError::interaction_failed("dispatch_change", &e.to_string()))?;
 
     // --- Optionally take snapshot ---
     let snapshot = if args.include_snapshot {
-        let url = get_current_url(&mut managed).await?;
+        let url = get_current_url(&managed).await?;
         Some(take_snapshot(&mut managed, &url, args.compact).await?)
     } else {
         None
@@ -877,19 +982,39 @@ fn read_json_file(path: &Path) -> Result<String, AppError> {
 // =============================================================================
 
 /// Execute the `form submit` command.
-async fn execute_submit(global: &GlobalOpts, args: &FormSubmitArgs) -> Result<(), AppError> {
-    let (_client, mut managed) = setup_session(global).await?;
+async fn execute_submit(
+    global: &GlobalOpts,
+    args: &FormSubmitArgs,
+    frame: Option<&str>,
+) -> Result<(), AppError> {
+    let (client, mut managed) = setup_session(global).await?;
     if global.auto_dismiss_dialogs {
         let _dismiss = managed.spawn_auto_dismiss().await?;
     }
 
-    // Enable required domains
-    managed.ensure_domain("DOM").await?;
-    managed.ensure_domain("Runtime").await?;
+    let mut frame_ctx =
+        resolve_form_frame(&client, &mut managed, frame, Some(&args.target)).await?;
+
+    {
+        let eff_mut = if let Some(ref mut ctx) = frame_ctx {
+            agentchrome::frame::frame_session_mut(ctx, &mut managed)
+        } else {
+            &mut managed
+        };
+        eff_mut.ensure_domain("DOM").await?;
+        eff_mut.ensure_domain("Runtime").await?;
+    }
+
     managed.ensure_domain("Page").await?;
 
-    // Resolve target to object ID
-    let object_id = resolve_to_object_id(&mut managed, &args.target).await?;
+    let effective = if let Some(ref ctx) = frame_ctx {
+        agentchrome::frame::frame_session(ctx, &managed)
+    } else {
+        &managed
+    };
+
+    // Resolve target to object ID via the effective session
+    let object_id = resolve_to_object_id(effective, &args.target).await?;
 
     // Find the enclosing form element
     let find_form_params = serde_json::json!({
@@ -897,7 +1022,7 @@ async fn execute_submit(global: &GlobalOpts, args: &FormSubmitArgs) -> Result<()
         "functionDeclaration": FIND_FORM_JS,
         "returnByValue": false,
     });
-    let find_form_response = managed
+    let find_form_response = effective
         .send_command("Runtime.callFunctionOn", Some(find_form_params))
         .await
         .map_err(|e| {
@@ -928,7 +1053,7 @@ async fn execute_submit(global: &GlobalOpts, args: &FormSubmitArgs) -> Result<()
     let mut nav_rx = managed.subscribe("Page.frameNavigated").await?;
 
     // Record pre-submit URL
-    let pre_url = get_current_url(&mut managed).await?;
+    let pre_url = get_current_url(&managed).await?;
 
     // Submit the form via requestSubmit()
     let submit_params = serde_json::json!({
@@ -936,7 +1061,7 @@ async fn execute_submit(global: &GlobalOpts, args: &FormSubmitArgs) -> Result<()
         "functionDeclaration": SUBMIT_JS,
         "arguments": [],
     });
-    managed
+    effective
         .send_command("Runtime.callFunctionOn", Some(submit_params))
         .await
         .map_err(|e| AppError::interaction_failed("submit", &e.to_string()))?;
@@ -947,7 +1072,7 @@ async fn execute_submit(global: &GlobalOpts, args: &FormSubmitArgs) -> Result<()
 
     // Get post-submit URL if navigated
     let url = if navigated {
-        let post_url = get_current_url(&mut managed).await?;
+        let post_url = get_current_url(&managed).await?;
         if post_url == pre_url {
             None
         } else {
@@ -993,12 +1118,15 @@ async fn execute_submit(global: &GlobalOpts, args: &FormSubmitArgs) -> Result<()
 ///
 /// Returns `AppError` if the subcommand fails.
 pub async fn execute_form(global: &GlobalOpts, args: &FormArgs) -> Result<(), AppError> {
+    let frame = args.frame.as_deref();
     match &args.command {
-        FormCommand::Fill(fill_args) => execute_fill(global, fill_args).await,
-        FormCommand::FillMany(fill_many_args) => execute_fill_many(global, fill_many_args).await,
-        FormCommand::Clear(clear_args) => execute_clear(global, clear_args).await,
-        FormCommand::Upload(upload_args) => execute_upload(global, upload_args).await,
-        FormCommand::Submit(submit_args) => execute_submit(global, submit_args).await,
+        FormCommand::Fill(fill_args) => execute_fill(global, fill_args, frame).await,
+        FormCommand::FillMany(fill_many_args) => {
+            execute_fill_many(global, fill_many_args, frame).await
+        }
+        FormCommand::Clear(clear_args) => execute_clear(global, clear_args, frame).await,
+        FormCommand::Upload(upload_args) => execute_upload(global, upload_args, frame).await,
+        FormCommand::Submit(submit_args) => execute_submit(global, submit_args, frame).await,
     }
 }
 

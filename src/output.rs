@@ -201,7 +201,11 @@ mod tests {
         let read_back = std::fs::read_to_string(&path).unwrap();
         assert_eq!(read_back, content);
         assert!(path.contains("agentchrome-"));
-        assert!(path.ends_with(".txt"));
+        assert!(
+            std::path::Path::new(&path)
+                .extension()
+                .is_some_and(|ext| ext.eq_ignore_ascii_case("txt"))
+        );
         let _ = std::fs::remove_file(&path);
     }
 
@@ -209,7 +213,11 @@ mod tests {
     fn write_temp_file_json_extension() {
         let content = r#"{"key":"value"}"#;
         let path = write_temp_file(content, "json").unwrap();
-        assert!(path.ends_with(".json"));
+        assert!(
+            std::path::Path::new(&path)
+                .extension()
+                .is_some_and(|ext| ext.eq_ignore_ascii_case("json"))
+        );
         let _ = std::fs::remove_file(&path);
     }
 

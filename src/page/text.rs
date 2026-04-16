@@ -30,14 +30,33 @@ fn escape_selector(selector: &str) -> String {
 // Command executor
 // =============================================================================
 
-pub async fn execute_text(global: &GlobalOpts, args: &PageTextArgs) -> Result<(), AppError> {
-    let (_client, mut managed) = setup_session(global).await?;
+pub async fn execute_text(
+    global: &GlobalOpts,
+    args: &PageTextArgs,
+    frame: Option<&str>,
+) -> Result<(), AppError> {
+    let (client, mut managed) = setup_session(global).await?;
     if global.auto_dismiss_dialogs {
         let _dismiss = managed.spawn_auto_dismiss().await?;
     }
 
-    // Enable Runtime domain
-    managed.ensure_domain("Runtime").await?;
+    // Resolve optional frame context
+    let mut frame_ctx = if let Some(frame_str) = frame {
+        let arg = agentchrome::frame::parse_frame_arg(frame_str)?;
+        Some(agentchrome::frame::resolve_frame(&client, &mut managed, &arg).await?)
+    } else {
+        None
+    };
+
+    // Enable Runtime domain on effective session (needs &mut)
+    {
+        let eff_mut = if let Some(ref mut ctx) = frame_ctx {
+            agentchrome::frame::frame_session_mut(ctx, &mut managed)
+        } else {
+            &mut managed
+        };
+        eff_mut.ensure_domain("Runtime").await?;
+    }
 
     // Build JS expression
     let expression = match &args.selector {
@@ -55,9 +74,16 @@ pub async fn execute_text(global: &GlobalOpts, args: &PageTextArgs) -> Result<()
         "returnByValue": true,
     });
 
-    let result = managed
-        .send_command("Runtime.evaluate", Some(params))
-        .await?;
+    let result = {
+        let effective = if let Some(ref ctx) = frame_ctx {
+            agentchrome::frame::frame_session(ctx, &managed)
+        } else {
+            &managed
+        };
+        effective
+            .send_command("Runtime.evaluate", Some(params))
+            .await?
+    };
 
     // Check for exception
     if let Some(exception) = result.get("exceptionDetails") {
@@ -80,7 +106,7 @@ pub async fn execute_text(global: &GlobalOpts, args: &PageTextArgs) -> Result<()
 
     let text = value.as_str().unwrap_or_default().to_string();
 
-    // Get page info
+    // Get page info (always from main frame)
     let (url, title) = get_page_info(&managed).await?;
 
     // Output
