@@ -275,7 +275,7 @@ impl AppError {
     pub fn no_js_code() -> Self {
         Self {
             message:
-                "No JavaScript code provided. Specify code as argument, --file, or pipe via stdin."
+                "No JavaScript code provided. Specify code as argument, --code, --file, or pipe via --stdin."
                     .into(),
             code: ExitCode::GeneralError,
             custom_json: None,
@@ -859,8 +859,9 @@ mod tests {
     fn no_js_code_error() {
         let err = AppError::no_js_code();
         assert!(err.message.contains("No JavaScript code provided"));
+        assert!(err.message.contains("--code"));
         assert!(err.message.contains("--file"));
-        assert!(err.message.contains("stdin"));
+        assert!(err.message.contains("--stdin"));
         assert!(matches!(err.code, ExitCode::GeneralError));
     }
 
