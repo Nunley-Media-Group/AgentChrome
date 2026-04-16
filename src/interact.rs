@@ -1363,7 +1363,10 @@ async fn execute_scroll(
                 sel.clone(),
             )
         } else {
-            let uid = args.uid.as_ref().expect("uid must be Some");
+            let uid = args
+                .uid
+                .as_ref()
+                .ok_or_else(|| AppError::interaction_failed("scroll", "uid argument missing"))?;
             mode_label = "uid";
             (
                 resolve_target_to_backend_node_id(effective, uid).await?,
