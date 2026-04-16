@@ -19,10 +19,11 @@ cargo install agentchrome
 **2. Install the agentchrome skill**
 
 ```sh
-agentchrome skill install
+agentchrome skill install                  # auto-detect
+agentchrome skill install --tool gemini    # or target a specific tool
 ```
 
-This auto-detects your agentic coding tool and installs a skill file that tells the AI agent what agentchrome is and how to discover its capabilities. Supported tools: Claude Code, Windsurf, Aider, Continue.dev, GitHub Copilot (JetBrains), Cursor, and Gemini CLI. After upgrading agentchrome, run `agentchrome skill update` to refresh the skill with the current version.
+This auto-detects your agentic coding tool and installs a skill file that tells the AI agent what agentchrome is and how to discover its capabilities. Supported tools: Claude Code, Windsurf, Aider, Continue.dev, GitHub Copilot (JetBrains), Cursor, and Gemini CLI (installs to `~/.gemini/instructions/agentchrome.md`). Run `agentchrome skill list` to see install paths for every supported tool. After upgrading agentchrome, run `agentchrome skill update` to refresh the skill with the current version.
 
 <details>
 <summary>Alternative: manual CLAUDE.md template</summary>
