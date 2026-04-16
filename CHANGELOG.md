@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.28.0] - 2026-04-16
+
+### Added
+
+- Add Google Gemini CLI as a 7th supported agentic tool for `skill install`, with a standalone skill file at `~/.gemini/instructions/agentchrome.md` plus Tier 1 env-var (`GEMINI_*`) and Tier 3 directory (`~/.gemini/`) auto-detection (#214)
+
 ## [1.27.0] - 2026-04-16
 
 ### Added
