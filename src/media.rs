@@ -87,7 +87,7 @@ fn build_list_js() -> String {
     currentSrc: el.currentSrc || '',
     duration: Number.isFinite(el.duration) ? el.duration : null,
     currentTime: el.currentTime,
-    state: el.ended ? 'ended' : el.paused ? 'paused' : 'playing',
+    state: (el.ended || (Number.isFinite(el.duration) && el.currentTime >= el.duration)) ? 'ended' : el.paused ? 'paused' : 'playing',
     muted: el.muted,
     volume: el.volume,
     loop: el.loop,
@@ -113,7 +113,7 @@ fn build_action_by_index_js(index: u32, action: &str) -> String {
         currentSrc: el.currentSrc || '',
         duration: Number.isFinite(el.duration) ? el.duration : null,
         currentTime: el.currentTime,
-        state: el.ended ? 'ended' : el.paused ? 'paused' : 'playing',
+        state: (el.ended || (Number.isFinite(el.duration) && el.currentTime >= el.duration)) ? 'ended' : el.paused ? 'paused' : 'playing',
         muted: el.muted,
         volume: el.volume,
         loop: el.loop,
@@ -143,7 +143,7 @@ fn build_action_by_selector_js(selector: &str, action: &str) -> String {
         currentSrc: el.currentSrc || '',
         duration: Number.isFinite(el.duration) ? el.duration : null,
         currentTime: el.currentTime,
-        state: el.ended ? 'ended' : el.paused ? 'paused' : 'playing',
+        state: (el.ended || (Number.isFinite(el.duration) && el.currentTime >= el.duration)) ? 'ended' : el.paused ? 'paused' : 'playing',
         muted: el.muted,
         volume: el.volume,
         loop: el.loop,
@@ -169,7 +169,7 @@ fn build_bulk_action_js(action: &str) -> String {
         currentSrc: el.currentSrc || '',
         duration: Number.isFinite(el.duration) ? el.duration : null,
         currentTime: el.currentTime,
-        state: el.ended ? 'ended' : el.paused ? 'paused' : 'playing',
+        state: (el.ended || (Number.isFinite(el.duration) && el.currentTime >= el.duration)) ? 'ended' : el.paused ? 'paused' : 'playing',
         muted: el.muted,
         volume: el.volume,
         loop: el.loop,
@@ -188,6 +188,9 @@ fn escape_js_string(s: &str) -> String {
             '\\' => out.push_str("\\\\"),
             '\n' => out.push_str("\\n"),
             '\r' => out.push_str("\\r"),
+            '\0' => out.push_str("\\0"),
+            '\u{2028}' => out.push_str("\\u2028"),
+            '\u{2029}' => out.push_str("\\u2029"),
             _ => out.push(ch),
         }
     }
@@ -248,27 +251,19 @@ async fn execute_list(global: &GlobalOpts, frame: Option<&str>) -> Result<(), Ap
     let mut frame_ctx =
         crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
 
+    let ctx_id = frame_ctx
+        .as_ref()
+        .and_then(agentchrome::frame::execution_context_id);
+
     let eff = if let Some(ref mut ctx) = frame_ctx {
         agentchrome::frame::frame_session_mut(ctx, &mut managed)
     } else {
         &mut managed
     };
+    eff.ensure_domain("Runtime").await?;
 
     let js = build_list_js();
-    let response = eff
-        .send_command(
-            "Runtime.evaluate",
-            Some(serde_json::json!({
-                "expression": js,
-                "returnByValue": true
-            })),
-        )
-        .await
-        .map_err(|e| AppError {
-            message: format!("Runtime.evaluate failed: {e}"),
-            code: ExitCode::ProtocolError,
-            custom_json: None,
-        })?;
+    let response = evaluate_js(eff, &js, ctx_id).await?;
 
     let items = parse_media_list(&response)?;
 
@@ -295,11 +290,16 @@ async fn execute_action(
     let mut frame_ctx =
         crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
 
+    let ctx_id = frame_ctx
+        .as_ref()
+        .and_then(agentchrome::frame::execution_context_id);
+
     let eff = if let Some(ref mut ctx) = frame_ctx {
         agentchrome::frame::frame_session_mut(ctx, &mut managed)
     } else {
         &mut managed
     };
+    eff.ensure_domain("Runtime").await?;
 
     let js_action = match action_name {
         // play() returns a Promise; race it against a short timeout so we
@@ -311,7 +311,7 @@ async fn execute_action(
 
     if args.all {
         let js = build_bulk_action_js(js_action);
-        let response = evaluate_js(eff, &js).await?;
+        let response = evaluate_js(eff, &js, ctx_id).await?;
         let items = parse_media_list(&response)?;
 
         if global.output.plain {
@@ -335,7 +335,7 @@ async fn execute_action(
             MediaTarget::Selector(sel) => build_action_by_selector_js(&sel, js_action),
         };
 
-        let response = evaluate_js(eff, &js).await?;
+        let response = evaluate_js(eff, &js, ctx_id).await?;
         let item = parse_single_media(&response)?;
 
         if global.output.plain {
@@ -361,11 +361,16 @@ async fn execute_seek(
     let mut frame_ctx =
         crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
 
+    let ctx_id = frame_ctx
+        .as_ref()
+        .and_then(agentchrome::frame::execution_context_id);
+
     let eff = if let Some(ref mut ctx) = frame_ctx {
         agentchrome::frame::frame_session_mut(ctx, &mut managed)
     } else {
         &mut managed
     };
+    eff.ensure_domain("Runtime").await?;
 
     // Resolve the effective time from either positional or --time flag
     let effective_time = args.time_pos.or(args.time);
@@ -374,7 +379,7 @@ async fn execute_seek(
         let time = effective_time.unwrap_or(0.0);
         let js_action = format!("el.currentTime = {time};");
         let js = build_bulk_action_js(&js_action);
-        let response = evaluate_js(eff, &js).await?;
+        let response = evaluate_js(eff, &js, ctx_id).await?;
         let items = parse_media_list(&response)?;
 
         if global.output.plain {
@@ -398,7 +403,7 @@ async fn execute_seek(
             MediaTarget::Selector(sel) => build_action_by_selector_js(&sel, &js_action),
         };
 
-        let response = evaluate_js(eff, &js).await?;
+        let response = evaluate_js(eff, &js, ctx_id).await?;
         let item = parse_single_media(&response)?;
 
         if global.output.plain {
@@ -424,16 +429,21 @@ async fn execute_seek_end(
     let mut frame_ctx =
         crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
 
+    let ctx_id = frame_ctx
+        .as_ref()
+        .and_then(agentchrome::frame::execution_context_id);
+
     let eff = if let Some(ref mut ctx) = frame_ctx {
         agentchrome::frame::frame_session_mut(ctx, &mut managed)
     } else {
         &mut managed
     };
+    eff.ensure_domain("Runtime").await?;
 
     if args.all {
         let bulk_action = "if (!Number.isFinite(el.duration)) { throw new Error('Media element at index ' + i + ' has no duration (NaN). Cannot seek to end.'); } el.currentTime = el.duration;";
         let js = build_bulk_action_js(bulk_action);
-        let response = evaluate_js(eff, &js).await?;
+        let response = evaluate_js(eff, &js, ctx_id).await?;
         let items = parse_media_list(&response)?;
 
         if global.output.plain {
@@ -456,7 +466,7 @@ async fn execute_seek_end(
             MediaTarget::Selector(sel) => build_action_by_selector_js(&sel, single_action),
         };
 
-        let response = evaluate_js(eff, &js).await?;
+        let response = evaluate_js(eff, &js, ctx_id).await?;
         let item = parse_single_media(&response)?;
 
         if global.output.plain {
@@ -476,15 +486,22 @@ async fn execute_seek_end(
 ///
 /// Always sets `awaitPromise: true` because our action JS uses async IIFEs
 /// and `Promise.all` for bulk operations.
+///
+/// `context_id` is required for same-origin frame execution to scope the
+/// evaluation to the correct frame context.
 async fn evaluate_js(
     managed: &mut agentchrome::connection::ManagedSession,
     expression: &str,
+    context_id: Option<i64>,
 ) -> Result<serde_json::Value, AppError> {
-    let params = serde_json::json!({
+    let mut params = serde_json::json!({
         "expression": expression,
         "returnByValue": true,
         "awaitPromise": true,
     });
+    if let Some(ctx_id) = context_id {
+        params["contextId"] = serde_json::Value::from(ctx_id);
+    }
 
     let response = managed
         .send_command("Runtime.evaluate", Some(params))
@@ -672,6 +689,9 @@ mod tests {
         assert_eq!(escape_js_string("it's"), "it\\'s");
         assert_eq!(escape_js_string("a\\b"), "a\\\\b");
         assert_eq!(escape_js_string("line\nnew"), "line\\nnew");
+        assert_eq!(escape_js_string("null\0byte"), "null\\0byte");
+        assert_eq!(escape_js_string("line\u{2028}sep"), "line\\u2028sep");
+        assert_eq!(escape_js_string("para\u{2029}sep"), "para\\u2029sep");
     }
 
     #[test]
