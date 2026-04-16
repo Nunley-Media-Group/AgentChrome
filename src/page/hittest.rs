@@ -47,11 +47,13 @@ pub struct HitTestResult {
 // UID lookup helper
 // =============================================================================
 
-/// Try to resolve a `backendNodeId` to a UID from the cached snapshot state.
-/// Returns `None` if no snapshot state exists or the node is not in the map.
-fn lookup_uid(backend_node_id: i64) -> Option<String> {
-    let state = crate::snapshot::read_snapshot_state().ok()??;
-    state
+/// Try to resolve a `backendNodeId` to a UID from a pre-loaded snapshot state.
+/// Returns `None` if no state is provided or the node is not in the map.
+fn lookup_uid(
+    snapshot: Option<&crate::snapshot::SnapshotState>,
+    backend_node_id: i64,
+) -> Option<String> {
+    snapshot?
         .uid_map
         .iter()
         .find(|&(_, &v)| v == backend_node_id)
@@ -81,8 +83,12 @@ fn element_selector(info: &ElementInfo) -> String {
 // Overlay detection
 // =============================================================================
 
-/// Compare the CDP hit target against the first element in the `elementsFromPoint`
-/// stack. If they differ, the topmost stack element is an intercepting overlay.
+/// Interactive HTML tags — elements users expect to click on.
+const INTERACTIVE_TAGS: &[&str] = &["a", "button", "input", "select", "textarea", "label"];
+
+/// Detect an overlay by checking whether the topmost stack element is
+/// non-interactive while an interactive element exists deeper in the stack.
+/// Also catches the case where the CDP hit target differs from stack\[0\].
 fn detect_overlay(
     hit_backend_id: i64,
     stack: &[StackElement],
@@ -92,21 +98,41 @@ fn detect_overlay(
         return None;
     }
 
-    // If the CDP hit target matches the topmost stack element, no overlay.
+    let topmost = &stack[0];
     let topmost_id = stack_backend_ids[0];
-    if topmost_id == hit_backend_id {
-        return None;
+
+    // Case 1: CDP hit target differs from the topmost stack element — clear overlay.
+    // Skip comparison when topmost_id is -1 (unresolved via CSS selector).
+    if topmost_id >= 0 && topmost_id != hit_backend_id {
+        return Some(ElementInfo {
+            tag: topmost.tag.clone(),
+            id: topmost.id.clone(),
+            class: topmost.class.clone(),
+            uid: topmost.uid.clone(),
+        });
     }
 
-    // The topmost element in the stack is different from what CDP resolved —
-    // this means the topmost element is an overlay intercepting the hit target.
-    let overlay = &stack[0];
-    Some(ElementInfo {
-        tag: overlay.tag.clone(),
-        id: overlay.id.clone(),
-        class: overlay.class.clone(),
-        uid: overlay.uid.clone(),
-    })
+    // Case 2: The topmost element is non-interactive but an interactive element
+    // exists deeper in the stack — the topmost element is intercepting clicks.
+    let topmost_is_interactive =
+        INTERACTIVE_TAGS.contains(&topmost.tag.as_str()) || topmost.uid.is_some();
+
+    if !topmost_is_interactive {
+        let has_interactive_below = stack
+            .iter()
+            .skip(1)
+            .any(|e| INTERACTIVE_TAGS.contains(&e.tag.as_str()) || e.uid.is_some());
+        if has_interactive_below {
+            return Some(ElementInfo {
+                tag: topmost.tag.clone(),
+                id: topmost.id.clone(),
+                class: topmost.class.clone(),
+                uid: topmost.uid.clone(),
+            });
+        }
+    }
+
+    None
 }
 
 /// Generate a workaround suggestion when an overlay is detected.
@@ -189,11 +215,7 @@ pub async fn execute_hittest(
     };
 
     // Determine frame label for output
-    let frame_label = if frame.is_some() {
-        frame.unwrap_or("0").to_string()
-    } else {
-        "main".to_string()
-    };
+    let frame_label = frame.map_or_else(|| "main".to_string(), ToString::to_string);
 
     // Viewport bounds check
     let (vp_width, vp_height) = get_viewport_dimensions(effective).await?;
@@ -208,8 +230,8 @@ pub async fn execute_hittest(
         });
     }
 
-    // Get document root (required for DOM.getNodeForLocation)
-    effective
+    // Get document root (required for DOM.getNodeForLocation and stack resolution)
+    let doc_result = effective
         .send_command("DOM.getDocument", None)
         .await
         .map_err(|e| AppError {
@@ -217,6 +239,7 @@ pub async fn execute_hittest(
             code: ExitCode::ProtocolError,
             custom_json: None,
         })?;
+    let root_node_id = doc_result["root"]["nodeId"].as_i64().unwrap_or(1);
 
     // CDP hit test: DOM.getNodeForLocation
     let hit_params = serde_json::json!({
@@ -259,7 +282,10 @@ pub async fn execute_hittest(
         .to_lowercase();
 
     let hit_attrs = extract_attributes(&describe_result["node"]);
-    let hit_uid = lookup_uid(hit_backend_id);
+
+    // Load snapshot state once for all UID lookups
+    let snapshot_state = crate::snapshot::read_snapshot_state().ok().flatten();
+    let hit_uid = lookup_uid(snapshot_state.as_ref(), hit_backend_id);
 
     let hit_target = ElementInfo {
         tag: hit_tag,
@@ -331,10 +357,15 @@ pub async fn execute_hittest(
         let z_index = raw_elem["zIndex"].as_str().unwrap_or("auto").to_string();
 
         // Try to resolve backend node ID for UID lookup
-        let backend_id =
-            resolve_stack_element_backend_id(effective, &tag, id.as_deref(), class.as_deref())
-                .await;
-        let uid = backend_id.and_then(lookup_uid);
+        let backend_id = resolve_stack_element_backend_id(
+            effective,
+            root_node_id,
+            &tag,
+            id.as_deref(),
+            class.as_deref(),
+        )
+        .await;
+        let uid = backend_id.and_then(|bid| lookup_uid(snapshot_state.as_ref(), bid));
 
         stack_backend_ids.push(backend_id.unwrap_or(-1));
         stack.push(StackElement {
@@ -393,8 +424,10 @@ fn extract_attributes(node: &serde_json::Value) -> (Option<String>, Option<Strin
 }
 
 /// Try to resolve a stack element's backend node ID via CSS selector.
+/// Accepts the document `root_node_id` to avoid repeated `DOM.getDocument` calls.
 async fn resolve_stack_element_backend_id(
     session: &ManagedSession,
+    root_node_id: i64,
     tag: &str,
     id: Option<&str>,
     class: Option<&str>,
@@ -411,9 +444,6 @@ async fn resolve_stack_element_backend_id(
     } else {
         return None;
     };
-
-    let doc_response = session.send_command("DOM.getDocument", None).await.ok()?;
-    let root_node_id = doc_response["root"]["nodeId"].as_i64()?;
 
     let query_params = serde_json::json!({
         "nodeId": root_node_id,
@@ -615,6 +645,57 @@ mod tests {
     #[test]
     fn detect_overlay_empty_stack() {
         assert!(detect_overlay(42, &[], &[]).is_none());
+    }
+
+    #[test]
+    fn detect_overlay_non_interactive_above_interactive() {
+        // Same backend ID, but topmost is a non-interactive div covering a button.
+        let stack = vec![
+            StackElement {
+                tag: "div".to_string(),
+                id: Some("blocker".to_string()),
+                class: None,
+                uid: None,
+                z_index: "9999".to_string(),
+            },
+            StackElement {
+                tag: "button".to_string(),
+                id: Some("submit".to_string()),
+                class: None,
+                uid: None,
+                z_index: "auto".to_string(),
+            },
+        ];
+        // CDP resolved to the div (same as stack[0]), but div is non-interactive
+        let backend_ids = vec![42, 99];
+        let result = detect_overlay(42, &stack, &backend_ids);
+        assert!(result.is_some());
+        let overlay = result.unwrap();
+        assert_eq!(overlay.tag, "div");
+        assert_eq!(overlay.id, Some("blocker".to_string()));
+    }
+
+    #[test]
+    fn detect_overlay_non_interactive_only() {
+        // All non-interactive elements — no overlay (no intended target underneath).
+        let stack = vec![
+            StackElement {
+                tag: "div".to_string(),
+                id: Some("wrapper".to_string()),
+                class: None,
+                uid: None,
+                z_index: "auto".to_string(),
+            },
+            StackElement {
+                tag: "body".to_string(),
+                id: None,
+                class: None,
+                uid: None,
+                z_index: "auto".to_string(),
+            },
+        ];
+        let backend_ids = vec![42, 1];
+        assert!(detect_overlay(42, &stack, &backend_ids).is_none());
     }
 
     #[test]
