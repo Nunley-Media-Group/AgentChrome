@@ -1,7 +1,7 @@
 # Tasks: JavaScript Execution in Page Context
 
-**Issue**: #13
-**Date**: 2026-02-12
+**Issues**: #13, #183
+**Date**: 2026-04-16
 **Status**: Planning
 **Author**: Claude (writing-specs)
 
@@ -15,7 +15,8 @@
 | Backend | 2 | [ ] |
 | Integration | 1 | [ ] |
 | Testing | 2 | [ ] |
-| **Total** | **7** | |
+| Enhancement — Issue #183 | 4 | [ ] |
+| **Total** | **11** | |
 
 ---
 
@@ -142,64 +143,6 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ---
 
-## Phase 3: Frontend Implementation
-
-### T007: [Client-side model]
-
-**File(s)**: `{presentation-layer}/models/...`
-**Type**: Create
-**Depends**: T002
-**Acceptance**:
-- [ ] Model matches API response schema
-- [ ] Serialization/deserialization works
-- [ ] Immutable with update method (if applicable)
-- [ ] Unit tests for serialization
-
-### T008: [Client-side service / API client]
-
-**File(s)**: `{presentation-layer}/services/...`
-**Type**: Create
-**Depends**: T007
-**Acceptance**:
-- [ ] All API calls implemented
-- [ ] Error handling with typed exceptions
-- [ ] Uses project's HTTP client pattern
-- [ ] Unit tests pass
-
-### T009: [State management]
-
-**File(s)**: `{presentation-layer}/state/...` or `{presentation-layer}/providers/...`
-**Type**: Create
-**Depends**: T008
-**Acceptance**:
-- [ ] State class defined (immutable if applicable)
-- [ ] Loading/error states handled
-- [ ] State transitions match design spec
-- [ ] Unit tests for state transitions
-
-### T010: [UI components]
-
-**File(s)**: `{presentation-layer}/components/...` or `{presentation-layer}/widgets/...`
-**Type**: Create
-**Depends**: T009
-**Acceptance**:
-- [ ] Components match design specs
-- [ ] Uses project's design tokens (no hardcoded values)
-- [ ] Loading/error/empty states
-- [ ] Component tests pass
-
-### T011: [Screen / Page]
-
-**File(s)**: `{presentation-layer}/screens/...` or `{presentation-layer}/pages/...`
-**Type**: Create
-**Depends**: T010
-**Acceptance**:
-- [ ] Screen layout matches design
-- [ ] State management integration working
-- [ ] Navigation implemented
-
----
-
 ## Phase 3: Integration
 
 ### T005: Verify end-to-end with cargo clippy and existing tests
@@ -244,6 +187,75 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ---
 
+## Phase 5: Enhancement — Issue #183
+
+### T012: Add `--code` and `--stdin` CLI arguments to `JsExecArgs`
+
+**File(s)**: `src/cli/mod.rs`
+**Type**: Modify
+**Depends**: T004
+**Acceptance**:
+- [ ] `JsExecArgs` has a new field `code_flag: Option<String>` with `#[arg(long = "code", id = "code_flag")]`
+- [ ] `JsExecArgs` has a new field `stdin: bool` with `#[arg(long)]`
+- [ ] `--code` conflicts with positional `code`, `--file`, and `--stdin` (via `conflicts_with_all`)
+- [ ] `--stdin` conflicts with positional `code`, `--code`, and `--file` (via `conflicts_with_all`)
+- [ ] Existing positional `code` conflicts updated to include `code_flag` and `stdin`
+- [ ] `--file` conflicts updated to include `code_flag` and `stdin`
+- [ ] `cargo build` compiles without errors
+- [ ] `agentchrome js exec --help` shows `--code`, `--stdin`, and all other options
+
+**Notes**: Use clap's `id` attribute to distinguish the `--code` flag from the positional `code` argument since they have the same long name. The positional `code` has no `#[arg(long)]` so its id defaults to `"code"`. The named flag uses `id = "code_flag"` to avoid collision.
+
+### T013: Update `resolve_code()` to support `--code` and `--stdin`
+
+**File(s)**: `src/js.rs`
+**Type**: Modify
+**Depends**: T012
+**Acceptance**:
+- [ ] `resolve_code()` checks `args.stdin` — if true, reads from stdin
+- [ ] `resolve_code()` checks `args.code_flag` — if Some, uses the value
+- [ ] Priority order: `--file` → `--stdin` → `code == "-"` → `--code` → positional `<code>` → error
+- [ ] `no_js_code` error message updated to mention `--code` and `--stdin`: `"No JavaScript code provided. Specify code as argument, --code, --file, or pipe via --stdin."`
+- [ ] Unit test: `resolve_code` with `code_flag = Some("document.title")` returns `"document.title"`
+- [ ] Unit test: `resolve_code` with `stdin = true` reads from stdin (may require mock or skip)
+- [ ] Unit test: `resolve_code` with no input returns error mentioning `--code` and `--stdin`
+- [ ] Existing unit tests for positional and `--file` still pass
+
+**Notes**: The `--stdin` path reuses the existing stdin-reading logic from the `-` convention. The `--code` path is identical to the positional path — just a different source field.
+
+### T014: Add block-scope wrapping for expression evaluation
+
+**File(s)**: `src/js.rs`
+**Type**: Modify
+**Depends**: T013
+**Acceptance**:
+- [ ] In `execute_expression_with_context()`, the expression is wrapped as `format!("{{ {code} }}")` before being passed to `Runtime.evaluate`
+- [ ] In `execute_expression()` (which delegates to `execute_expression_with_context`), wrapping is applied consistently
+- [ ] Block wrapping is NOT applied in the `--uid` path (`execute_with_uid`, `execute_with_uid_on_session`) — code is a function declaration and must not be wrapped
+- [ ] Block wrapping is NOT applied in the `--worker` path (`execute_in_worker`) — worker evaluation uses `execute_expression()` which already wraps
+- [ ] Unit test: given code `"let x = 1; x"`, the expression passed to Runtime.evaluate is `"{ let x = 1; x }"`
+- [ ] Unit test: `"document.title"` is wrapped as `"{ document.title }"`
+- [ ] `cargo test --lib` passes with all existing and new unit tests
+
+**Notes**: The wrapping should happen in the `execute_expression_with_context()` function, which is the single entry point for all non-UID expression evaluation. This ensures consistent wrapping regardless of whether the code came from positional, `--code`, `--stdin`, `--file`, or `-`.
+
+### T015: Add BDD scenarios for scope isolation, --stdin, and --code
+
+**File(s)**: `tests/features/js-execution.feature`
+**Type**: Modify
+**Depends**: T014
+**Acceptance**:
+- [ ] Scenario "Clean scope per invocation" tests sequential `let` declarations (AC17)
+- [ ] Scenario "Explicit --stdin flag" tests piped input via `--stdin` (AC18)
+- [ ] Scenario "Cross-platform --code named argument" tests `--code` with single quotes (AC19)
+- [ ] All three scenarios use valid Gherkin syntax
+- [ ] Scenarios are tagged with `# Added by issue #183` comment
+- [ ] `cargo test --test bdd` compiles (tests may skip if no Chrome available)
+
+**Notes**: The scope isolation scenario requires two sequential `js exec` invocations in the same browser session. This may require a multi-step BDD scenario with `And` steps for the second invocation.
+
+---
+
 ## Dependency Graph
 
 ```
@@ -252,12 +264,21 @@ T001 ──┐
 T002 ──┘                │
                         ├──▶ T006 ──▶ T007
                         │
-                        └──▶ (done)
+                        └──▶ T012 ──▶ T013 ──▶ T014 ──▶ T015
 ```
 
 T001 and T002 can be done in parallel (no interdependency).
-T006 and T007 can proceed once T004 is complete.
+T006/T007 and T012-T015 can proceed in parallel once T004 is complete.
 T005 is a verification gate before merging.
+
+---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #13 | 2026-02-12 | Initial task breakdown: T001-T007 across Setup, Backend, Integration, Testing |
+| #183 | 2026-04-16 | Added Phase 5 (T012-T015): `--code` flag, `--stdin` flag, block-scope wrapping, new BDD scenarios |
 
 ---
 
