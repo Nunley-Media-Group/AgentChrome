@@ -1144,6 +1144,51 @@ async fn resolve_to_object_id(
         .ok_or_else(|| AppError::interaction_failed("resolve_node", "no objectId returned"))
 }
 
+/// Resolve a raw CSS selector (no `css:` prefix) to a backend node ID.
+async fn resolve_selector_to_backend_node_id(
+    session: &ManagedSession,
+    selector: &str,
+) -> Result<i64, AppError> {
+    resolve_target_to_backend_node_id(session, &format!("css:{selector}")).await
+}
+
+/// Check whether an element is scrollable (has overflow content).
+/// Returns `Ok(())` if scrollable, or an error if not.
+async fn check_element_scrollable(
+    session: &ManagedSession,
+    backend_node_id: i64,
+    descriptor: &str,
+) -> Result<(), AppError> {
+    let object_id = resolve_to_object_id(session, backend_node_id).await?;
+    let call_params = serde_json::json!({
+        "objectId": object_id,
+        "functionDeclaration": "function() { return JSON.stringify({ sh: this.scrollHeight, ch: this.clientHeight, sw: this.scrollWidth, cw: this.clientWidth }); }",
+        "arguments": [],
+        "returnByValue": true,
+    });
+    let response = session
+        .send_command("Runtime.callFunctionOn", Some(call_params))
+        .await
+        .map_err(|e| AppError::interaction_failed("check_scrollable", &e.to_string()))?;
+
+    let json_str = response["result"]["value"]
+        .as_str()
+        .unwrap_or(r#"{"sh":0,"ch":0,"sw":0,"cw":0}"#);
+    let dims: serde_json::Value = serde_json::from_str(json_str)
+        .map_err(|e| AppError::interaction_failed("check_scrollable", &e.to_string()))?;
+
+    let sh = dims["sh"].as_f64().unwrap_or(0.0);
+    let ch = dims["ch"].as_f64().unwrap_or(0.0);
+    let sw = dims["sw"].as_f64().unwrap_or(0.0);
+    let cw = dims["cw"].as_f64().unwrap_or(0.0);
+
+    if sh > ch || sw > cw {
+        Ok(())
+    } else {
+        Err(AppError::element_not_scrollable(descriptor))
+    }
+}
+
 /// Scroll a container element by a delta.
 async fn dispatch_container_scroll(
     session: &ManagedSession,
@@ -1255,6 +1300,7 @@ fn compute_delta(before: (f64, f64), after: (f64, f64)) -> (f64, f64, f64, f64) 
 }
 
 /// Execute the `interact scroll` command.
+#[allow(clippy::too_many_lines)] // Five mutually-exclusive scroll modes in one match
 async fn execute_scroll(
     global: &GlobalOpts,
     args: &ScrollArgs,
@@ -1309,6 +1355,33 @@ async fn execute_scroll(
             wait_for_smooth_page_scroll(effective).await?;
         }
         compute_delta(before, get_scroll_position(effective).await?)
+    } else if args.selector.is_some() || args.uid.is_some() {
+        let (cid, descriptor) = if let Some(ref sel) = args.selector {
+            mode_label = "selector";
+            (
+                resolve_selector_to_backend_node_id(effective, sel).await?,
+                sel.clone(),
+            )
+        } else {
+            let uid = args
+                .uid
+                .as_ref()
+                .ok_or_else(|| AppError::interaction_failed("scroll", "uid argument missing"))?;
+            mode_label = "uid";
+            (
+                resolve_target_to_backend_node_id(effective, uid).await?,
+                uid.clone(),
+            )
+        };
+        check_element_scrollable(effective, cid, &descriptor).await?;
+        let before = get_container_scroll_position(effective, cid).await?;
+        let (vw, vh) = get_viewport_dimensions(effective).await?;
+        let (dx, dy) = compute_scroll_delta(args.direction, args.amount, vw, vh);
+        dispatch_container_scroll(effective, cid, dx, dy, args.smooth).await?;
+        if args.smooth {
+            wait_for_smooth_container_scroll(effective, cid).await?;
+        }
+        compute_delta(before, get_container_scroll_position(effective, cid).await?)
     } else if let Some(ref container_target) = args.container {
         mode_label = "container";
         let cid = resolve_target_to_backend_node_id(effective, container_target).await?;

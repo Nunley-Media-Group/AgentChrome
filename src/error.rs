@@ -542,6 +542,17 @@ impl AppError {
     }
 
     #[must_use]
+    pub fn element_not_scrollable(descriptor: &str) -> Self {
+        Self {
+            message: format!(
+                "Element '{descriptor}' is not scrollable: content does not overflow the container"
+            ),
+            code: ExitCode::GeneralError,
+            custom_json: None,
+        }
+    }
+
+    #[must_use]
     pub fn wait_timeout(timeout_ms: u64, condition: &str) -> Self {
         Self {
             message: format!("Wait timed out after {timeout_ms}ms: {condition}"),
@@ -912,6 +923,15 @@ mod tests {
     fn js_execution_failed_without_json_has_no_custom_json() {
         let err = AppError::js_execution_failed("Error: test");
         assert!(err.custom_json.is_none());
+    }
+
+    #[test]
+    fn element_not_scrollable_error() {
+        let err = AppError::element_not_scrollable(".stage");
+        assert!(err.message.contains(".stage"));
+        assert!(err.message.contains("not scrollable"));
+        assert!(err.message.contains("does not overflow"));
+        assert!(matches!(err.code, ExitCode::GeneralError));
     }
 
     #[test]

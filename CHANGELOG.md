@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.24.0] - 2026-04-16
+
+### Added
+
+- Add `--selector` and `--uid` flags to `interact scroll` for targeting specific scrollable inner containers by CSS selector or accessibility UID, with scrollability validation that returns a descriptive error for non-scrollable targets (#182)
+
+### Fixed
+
+- Fix panic in `interact scroll` when `--uid` references a missing UID by replacing `unwrap()` with proper error propagation (#182)
+
 ## [1.23.0] - 2026-04-16
 
 ### Added
