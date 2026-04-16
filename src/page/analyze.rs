@@ -115,7 +115,7 @@ async fn enumerate_iframes(
                 index: f.index,
                 url: f.url,
                 name: f.name,
-                visible: true, // frames returned by CDP are in the DOM tree
+                visible: f.width > 0 && f.height > 0,
                 width: f.width,
                 height: f.height,
                 cross_origin,
@@ -279,8 +279,17 @@ async fn detect_overlays(effective: &ManagedSession, context_id: Option<i64>) ->
                 var first = el.className.trim().split(/\s+/)[0];
                 if (first) selector += '.' + first;
             }}
-            var hasInteractive = el.querySelectorAll('{INTERACTIVE_SELECTOR}').length > 0
-                || document.querySelectorAll('{INTERACTIVE_SELECTOR}').length > 0;
+            var hasInteractive = false;
+            var allInteractive = document.querySelectorAll('{INTERACTIVE_SELECTOR}');
+            for (var j = 0; j < allInteractive.length; j++) {{
+                var ie = allInteractive[j];
+                if (el.contains(ie)) continue;
+                var ir = ie.getBoundingClientRect();
+                if (ir.top < rect.bottom && ir.bottom > rect.top && ir.left < rect.right && ir.right > rect.left) {{
+                    hasInteractive = true;
+                    break;
+                }}
+            }}
             overlays.push({{
                 selector: selector,
                 zIndex: z,
