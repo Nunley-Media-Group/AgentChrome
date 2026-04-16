@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.27.0] - 2026-04-16
+
+### Added
+
+- Add ARIA combobox support to `form fill` with automatic click-type-confirm sequence for elements with `role="combobox"`, eliminating the need for manual 3-step interaction workarounds (#196)
+- Add `--confirm-key` option to `form fill` for customizing the confirmation key used in combobox interactions (default: Enter) (#196)
+- Add combobox examples to `examples form` output (#196)
+
 ## [1.26.0] - 2026-04-16
 
 ### Added
