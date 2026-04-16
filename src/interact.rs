@@ -6,8 +6,9 @@ use agentchrome::connection::ManagedSession;
 use agentchrome::error::AppError;
 
 use crate::cli::{
-    ClickArgs, ClickAtArgs, DragArgs, GlobalOpts, HoverArgs, InteractArgs, InteractCommand,
-    KeyArgs, ScrollArgs, ScrollDirection, TypeArgs, WaitUntil,
+    ClickArgs, ClickAtArgs, DragArgs, DragAtArgs, GlobalOpts, HoverArgs, InteractArgs,
+    InteractCommand, KeyArgs, MouseButton, MouseDownAtArgs, MouseUpAtArgs, ScrollArgs,
+    ScrollDirection, TypeArgs, WaitUntil,
 };
 use crate::navigate::{DEFAULT_NAVIGATE_TIMEOUT_MS, wait_for_event, wait_for_network_idle};
 use crate::output::{print_output, setup_session};
@@ -123,6 +124,39 @@ struct DragResult {
 }
 
 #[derive(Serialize)]
+struct DragAtCoords {
+    from: Coords,
+    to: Coords,
+}
+
+#[derive(Serialize)]
+struct DragAtResult {
+    dragged_at: DragAtCoords,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    steps: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    snapshot: Option<serde_json::Value>,
+}
+
+#[derive(Serialize)]
+struct MouseDownAtResult {
+    mousedown_at: Coords,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    button: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    snapshot: Option<serde_json::Value>,
+}
+
+#[derive(Serialize)]
+struct MouseUpAtResult {
+    mouseup_at: Coords,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    button: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    snapshot: Option<serde_json::Value>,
+}
+
+#[derive(Serialize)]
 struct TypeResult {
     typed: String,
     length: usize,
@@ -186,6 +220,30 @@ fn print_hover_plain(result: &HoverResult) {
 
 fn print_drag_plain(result: &DragResult) {
     println!("Dragged {} to {}", result.dragged.from, result.dragged.to);
+}
+
+fn print_drag_at_plain(result: &DragAtResult) {
+    println!(
+        "Dragged from ({}, {}) to ({}, {})",
+        result.dragged_at.from.x,
+        result.dragged_at.from.y,
+        result.dragged_at.to.x,
+        result.dragged_at.to.y
+    );
+}
+
+fn print_mousedown_at_plain(result: &MouseDownAtResult) {
+    println!(
+        "Mousedown at ({}, {})",
+        result.mousedown_at.x, result.mousedown_at.y
+    );
+}
+
+fn print_mouseup_at_plain(result: &MouseUpAtResult) {
+    println!(
+        "Mouseup at ({}, {})",
+        result.mouseup_at.x, result.mouseup_at.y
+    );
 }
 
 fn print_type_plain(result: &TypeResult) {
@@ -517,6 +575,86 @@ async fn dispatch_drag(
         .send_command("Input.dispatchMouseEvent", Some(release_params))
         .await
         .map_err(|e| AppError::interaction_failed("drag_release", &e.to_string()))?;
+
+    Ok(())
+}
+
+/// Dispatch a single `mousePressed` event at the given coordinates.
+async fn dispatch_mousedown(
+    session: &mut ManagedSession,
+    x: f64,
+    y: f64,
+    button: &str,
+) -> Result<(), AppError> {
+    let press_params = serde_json::json!({
+        "type": "mousePressed",
+        "x": x,
+        "y": y,
+        "button": button,
+        "clickCount": 1,
+    });
+    session
+        .send_command("Input.dispatchMouseEvent", Some(press_params))
+        .await
+        .map_err(|e| AppError::interaction_failed("mouse_press", &e.to_string()))?;
+    Ok(())
+}
+
+/// Dispatch a single `mouseReleased` event at the given coordinates.
+async fn dispatch_mouseup(
+    session: &mut ManagedSession,
+    x: f64,
+    y: f64,
+    button: &str,
+) -> Result<(), AppError> {
+    let release_params = serde_json::json!({
+        "type": "mouseReleased",
+        "x": x,
+        "y": y,
+        "button": button,
+        "clickCount": 1,
+    });
+    session
+        .send_command("Input.dispatchMouseEvent", Some(release_params))
+        .await
+        .map_err(|e| AppError::interaction_failed("mouse_release", &e.to_string()))?;
+    Ok(())
+}
+
+/// Dispatch a drag with N intermediate mousemove steps via linear interpolation.
+///
+/// When `steps == 1`, this is functionally equivalent to `dispatch_drag`.
+/// When `steps > 1`, linearly interpolates N evenly-spaced points between source and target.
+async fn dispatch_drag_interpolated(
+    session: &mut ManagedSession,
+    from_x: f64,
+    from_y: f64,
+    to_x: f64,
+    to_y: f64,
+    steps: u32,
+) -> Result<(), AppError> {
+    // Press at start position
+    dispatch_mousedown(session, from_x, from_y, "left").await?;
+
+    // Interpolate intermediate moves
+    let steps = steps.max(1);
+    for i in 1..=steps {
+        let t = f64::from(i) / f64::from(steps);
+        let x = from_x + (to_x - from_x) * t;
+        let y = from_y + (to_y - from_y) * t;
+        let move_params = serde_json::json!({
+            "type": "mouseMoved",
+            "x": x,
+            "y": y,
+        });
+        session
+            .send_command("Input.dispatchMouseEvent", Some(move_params))
+            .await
+            .map_err(|e| AppError::interaction_failed("drag_move", &e.to_string()))?;
+    }
+
+    // Release at end position
+    dispatch_mouseup(session, to_x, to_y, "left").await?;
 
     Ok(())
 }
@@ -1794,6 +1932,192 @@ async fn execute_drag(
     }
 }
 
+/// Convert a `MouseButton` enum to the CDP button string.
+fn mouse_button_to_cdp(button: Option<&MouseButton>) -> &'static str {
+    match button {
+        Some(MouseButton::Right) => "right",
+        Some(MouseButton::Middle) => "middle",
+        _ => "left",
+    }
+}
+
+/// Return the button name for output (only when non-default).
+fn mouse_button_for_output(button: Option<&MouseButton>) -> Option<String> {
+    match button {
+        Some(MouseButton::Right) => Some("right".to_string()),
+        Some(MouseButton::Middle) => Some("middle".to_string()),
+        _ => None,
+    }
+}
+
+/// Execute the `interact drag-at` command.
+async fn execute_drag_at(
+    global: &GlobalOpts,
+    args: &DragAtArgs,
+    frame: Option<&str>,
+) -> Result<(), AppError> {
+    let (client, mut managed) = setup_session(global).await?;
+    if global.auto_dismiss_dialogs {
+        let _dismiss = managed.spawn_auto_dismiss().await?;
+    }
+
+    // Resolve frame context for coordinate translation
+    let frame_ctx =
+        crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
+
+    // Translate frame-local coordinates to page-global coordinates
+    let (offset_x, offset_y) = if let Some(ref ctx) = frame_ctx {
+        get_frame_viewport_offset(&mut managed, ctx).await?
+    } else {
+        (0.0, 0.0)
+    };
+    let from_x = args.from_x + offset_x;
+    let from_y = args.from_y + offset_y;
+    let to_x = args.to_x + offset_x;
+    let to_y = args.to_y + offset_y;
+
+    // Dispatch the drag
+    let steps = args.steps.unwrap_or(1);
+    dispatch_drag_interpolated(&mut managed, from_x, from_y, to_x, to_y, steps).await?;
+
+    // Take snapshot if requested
+    let snapshot = if args.include_snapshot {
+        let url = get_current_url(&managed).await?;
+        Some(take_snapshot(&mut managed, &url, args.compact).await?)
+    } else {
+        None
+    };
+
+    // Build result
+    let result = DragAtResult {
+        dragged_at: DragAtCoords {
+            from: Coords {
+                x: args.from_x,
+                y: args.from_y,
+            },
+            to: Coords {
+                x: args.to_x,
+                y: args.to_y,
+            },
+        },
+        steps: if steps > 1 { Some(steps) } else { None },
+        snapshot,
+    };
+
+    if global.output.plain {
+        print_drag_at_plain(&result);
+        Ok(())
+    } else {
+        print_output(&result, &global.output)
+    }
+}
+
+/// Execute the `interact mousedown-at` command.
+async fn execute_mousedown_at(
+    global: &GlobalOpts,
+    args: &MouseDownAtArgs,
+    frame: Option<&str>,
+) -> Result<(), AppError> {
+    let (client, mut managed) = setup_session(global).await?;
+    if global.auto_dismiss_dialogs {
+        let _dismiss = managed.spawn_auto_dismiss().await?;
+    }
+
+    // Resolve frame context for coordinate translation
+    let frame_ctx =
+        crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
+
+    // Translate frame-local coordinates to page-global coordinates
+    let (offset_x, offset_y) = if let Some(ref ctx) = frame_ctx {
+        get_frame_viewport_offset(&mut managed, ctx).await?
+    } else {
+        (0.0, 0.0)
+    };
+    let x = args.x + offset_x;
+    let y = args.y + offset_y;
+
+    let button = mouse_button_to_cdp(args.button.as_ref());
+    dispatch_mousedown(&mut managed, x, y, button).await?;
+
+    // Take snapshot if requested
+    let snapshot = if args.include_snapshot {
+        let url = get_current_url(&managed).await?;
+        Some(take_snapshot(&mut managed, &url, args.compact).await?)
+    } else {
+        None
+    };
+
+    // Build result
+    let result = MouseDownAtResult {
+        mousedown_at: Coords {
+            x: args.x,
+            y: args.y,
+        },
+        button: mouse_button_for_output(args.button.as_ref()),
+        snapshot,
+    };
+
+    if global.output.plain {
+        print_mousedown_at_plain(&result);
+        Ok(())
+    } else {
+        print_output(&result, &global.output)
+    }
+}
+
+/// Execute the `interact mouseup-at` command.
+async fn execute_mouseup_at(
+    global: &GlobalOpts,
+    args: &MouseUpAtArgs,
+    frame: Option<&str>,
+) -> Result<(), AppError> {
+    let (client, mut managed) = setup_session(global).await?;
+    if global.auto_dismiss_dialogs {
+        let _dismiss = managed.spawn_auto_dismiss().await?;
+    }
+
+    // Resolve frame context for coordinate translation
+    let frame_ctx =
+        crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
+
+    // Translate frame-local coordinates to page-global coordinates
+    let (offset_x, offset_y) = if let Some(ref ctx) = frame_ctx {
+        get_frame_viewport_offset(&mut managed, ctx).await?
+    } else {
+        (0.0, 0.0)
+    };
+    let x = args.x + offset_x;
+    let y = args.y + offset_y;
+
+    let button = mouse_button_to_cdp(args.button.as_ref());
+    dispatch_mouseup(&mut managed, x, y, button).await?;
+
+    // Take snapshot if requested
+    let snapshot = if args.include_snapshot {
+        let url = get_current_url(&managed).await?;
+        Some(take_snapshot(&mut managed, &url, args.compact).await?)
+    } else {
+        None
+    };
+
+    // Build result
+    let result = MouseUpAtResult {
+        mouseup_at: Coords {
+            x: args.x,
+            y: args.y,
+        },
+        button: mouse_button_for_output(args.button.as_ref()),
+        snapshot,
+    };
+
+    if global.output.plain {
+        print_mouseup_at_plain(&result);
+        Ok(())
+    } else {
+        print_output(&result, &global.output)
+    }
+}
+
 /// Execute the `interact type` command.
 async fn execute_type(
     global: &GlobalOpts,
@@ -1909,6 +2233,13 @@ pub async fn execute_interact(global: &GlobalOpts, args: &InteractArgs) -> Resul
         }
         InteractCommand::Hover(hover_args) => execute_hover(global, hover_args, frame).await,
         InteractCommand::Drag(drag_args) => execute_drag(global, drag_args, frame).await,
+        InteractCommand::DragAt(drag_at_args) => execute_drag_at(global, drag_at_args, frame).await,
+        InteractCommand::MouseDownAt(mousedown_args) => {
+            execute_mousedown_at(global, mousedown_args, frame).await
+        }
+        InteractCommand::MouseUpAt(mouseup_args) => {
+            execute_mouseup_at(global, mouseup_args, frame).await
+        }
         InteractCommand::Type(type_args) => execute_type(global, type_args, frame).await,
         InteractCommand::Key(key_args) => execute_key(global, key_args, frame).await,
         InteractCommand::Scroll(scroll_args) => execute_scroll(global, scroll_args, frame).await,
@@ -2042,6 +2373,123 @@ mod tests {
         assert_eq!(json["dragged"]["from"], "s1");
         assert_eq!(json["dragged"]["to"], "s2");
         assert!(json.get("snapshot").is_none());
+    }
+
+    #[test]
+    fn drag_at_result_serialization() {
+        let result = DragAtResult {
+            dragged_at: DragAtCoords {
+                from: Coords { x: 100.0, y: 200.0 },
+                to: Coords { x: 300.0, y: 400.0 },
+            },
+            steps: None,
+            snapshot: None,
+        };
+        let json: serde_json::Value = serde_json::to_value(&result).unwrap();
+        assert_eq!(json["dragged_at"]["from"]["x"], 100.0);
+        assert_eq!(json["dragged_at"]["from"]["y"], 200.0);
+        assert_eq!(json["dragged_at"]["to"]["x"], 300.0);
+        assert_eq!(json["dragged_at"]["to"]["y"], 400.0);
+        assert!(json.get("steps").is_none());
+        assert!(json.get("snapshot").is_none());
+    }
+
+    #[test]
+    fn drag_at_result_with_steps() {
+        let result = DragAtResult {
+            dragged_at: DragAtCoords {
+                from: Coords { x: 0.0, y: 0.0 },
+                to: Coords { x: 100.0, y: 100.0 },
+            },
+            steps: Some(5),
+            snapshot: None,
+        };
+        let json: serde_json::Value = serde_json::to_value(&result).unwrap();
+        assert_eq!(json["steps"], 5);
+    }
+
+    #[test]
+    fn mousedown_at_result_serialization() {
+        let result = MouseDownAtResult {
+            mousedown_at: Coords { x: 150.0, y: 250.0 },
+            button: None,
+            snapshot: None,
+        };
+        let json: serde_json::Value = serde_json::to_value(&result).unwrap();
+        assert_eq!(json["mousedown_at"]["x"], 150.0);
+        assert_eq!(json["mousedown_at"]["y"], 250.0);
+        assert!(json.get("button").is_none());
+        assert!(json.get("snapshot").is_none());
+    }
+
+    #[test]
+    fn mousedown_at_result_with_button() {
+        let result = MouseDownAtResult {
+            mousedown_at: Coords { x: 100.0, y: 200.0 },
+            button: Some("right".to_string()),
+            snapshot: None,
+        };
+        let json: serde_json::Value = serde_json::to_value(&result).unwrap();
+        assert_eq!(json["button"], "right");
+    }
+
+    #[test]
+    fn mouseup_at_result_serialization() {
+        let result = MouseUpAtResult {
+            mouseup_at: Coords { x: 300.0, y: 400.0 },
+            button: None,
+            snapshot: None,
+        };
+        let json: serde_json::Value = serde_json::to_value(&result).unwrap();
+        assert_eq!(json["mouseup_at"]["x"], 300.0);
+        assert_eq!(json["mouseup_at"]["y"], 400.0);
+        assert!(json.get("button").is_none());
+        assert!(json.get("snapshot").is_none());
+    }
+
+    #[test]
+    fn mouseup_at_result_with_button() {
+        let result = MouseUpAtResult {
+            mouseup_at: Coords { x: 100.0, y: 200.0 },
+            button: Some("middle".to_string()),
+            snapshot: None,
+        };
+        let json: serde_json::Value = serde_json::to_value(&result).unwrap();
+        assert_eq!(json["button"], "middle");
+    }
+
+    #[test]
+    fn mouse_button_to_cdp_left() {
+        assert_eq!(mouse_button_to_cdp(None), "left");
+        assert_eq!(mouse_button_to_cdp(Some(&MouseButton::Left)), "left");
+    }
+
+    #[test]
+    fn mouse_button_to_cdp_right() {
+        assert_eq!(mouse_button_to_cdp(Some(&MouseButton::Right)), "right");
+    }
+
+    #[test]
+    fn mouse_button_to_cdp_middle() {
+        assert_eq!(mouse_button_to_cdp(Some(&MouseButton::Middle)), "middle");
+    }
+
+    #[test]
+    fn mouse_button_for_output_default() {
+        assert!(mouse_button_for_output(None).is_none());
+        assert!(mouse_button_for_output(Some(&MouseButton::Left)).is_none());
+    }
+
+    #[test]
+    fn mouse_button_for_output_non_default() {
+        assert_eq!(
+            mouse_button_for_output(Some(&MouseButton::Right)),
+            Some("right".to_string())
+        );
+        assert_eq!(
+            mouse_button_for_output(Some(&MouseButton::Middle)),
+            Some("middle".to_string())
+        );
     }
 
     // =========================================================================

@@ -1834,6 +1834,17 @@ pub enum ToolName {
     Cursor,
 }
 
+/// Mouse button for decomposed mouse events.
+#[derive(Debug, Clone, Copy, ValueEnum)]
+pub enum MouseButton {
+    /// Left mouse button (default)
+    Left,
+    /// Middle mouse button (scroll wheel)
+    Middle,
+    /// Right mouse button (context menu)
+    Right,
+}
+
 /// Wait strategy for navigation commands.
 #[derive(Debug, Clone, Copy, ValueEnum, Default, PartialEq, Eq)]
 pub enum WaitUntil {
@@ -1960,6 +1971,65 @@ EXAMPLES:
   agentchrome interact drag css:#item css:#dropzone"
     )]
     Drag(DragArgs),
+
+    /// Drag from coordinates to coordinates
+    #[command(
+        long_about = "Drag from one set of viewport coordinates to another. Simulates mouse down \
+            at the source coordinates, move to the target coordinates, and mouse up at the target. \
+            Use --steps to interpolate intermediate mousemove events for applications that track \
+            drag movement (e.g., canvas-based interfaces).",
+        after_long_help = "\
+EXAMPLES:
+  # Drag from (100,200) to (300,400)
+  agentchrome interact drag-at 100 200 300 400
+
+  # Drag with interpolated steps
+  agentchrome interact drag-at 0 0 500 500 --steps 10
+
+  # Drag inside an iframe
+  agentchrome interact --frame 1 drag-at 50 60 200 300"
+    )]
+    DragAt(DragAtArgs),
+
+    /// Press mouse button at coordinates (no release)
+    #[command(
+        name = "mousedown-at",
+        long_about = "Dispatch only a mousePressed event at specific viewport coordinates. \
+            No mouseReleased event is sent, allowing decomposed mouse interactions such as \
+            long-press, drag sequences across multiple invocations, or custom interaction \
+            patterns. Use --button to specify left, middle, or right mouse button.",
+        after_long_help = "\
+EXAMPLES:
+  # Mousedown at coordinates
+  agentchrome interact mousedown-at 100 200
+
+  # Right-button mousedown
+  agentchrome interact mousedown-at 100 200 --button right
+
+  # Mousedown inside an iframe
+  agentchrome interact --frame 1 mousedown-at 50 60"
+    )]
+    MouseDownAt(MouseDownAtArgs),
+
+    /// Release mouse button at coordinates
+    #[command(
+        name = "mouseup-at",
+        long_about = "Dispatch only a mouseReleased event at specific viewport coordinates. \
+            No mousePressed event is sent, allowing decomposed mouse interactions such as \
+            completing a drag started by a prior mousedown-at invocation. \
+            Use --button to specify left, middle, or right mouse button.",
+        after_long_help = "\
+EXAMPLES:
+  # Mouseup at coordinates
+  agentchrome interact mouseup-at 300 400
+
+  # Right-button mouseup
+  agentchrome interact mouseup-at 300 400 --button right
+
+  # Mouseup inside an iframe
+  agentchrome interact --frame 1 mouseup-at 50 60"
+    )]
+    MouseUpAt(MouseUpAtArgs),
 
     /// Type text character-by-character into the focused element
     #[command(
@@ -2117,6 +2187,78 @@ pub struct DragArgs {
 
     /// Target element to drag to (UID or CSS selector)
     pub to: String,
+
+    /// Include updated accessibility snapshot in output
+    #[arg(long)]
+    pub include_snapshot: bool,
+
+    /// Use compact mode for the included snapshot (only interactive and landmark elements)
+    #[arg(long)]
+    pub compact: bool,
+}
+
+/// Arguments for `interact drag-at`.
+#[derive(Args)]
+pub struct DragAtArgs {
+    /// Source X coordinate in viewport pixels
+    pub from_x: f64,
+
+    /// Source Y coordinate in viewport pixels
+    pub from_y: f64,
+
+    /// Target X coordinate in viewport pixels
+    pub to_x: f64,
+
+    /// Target Y coordinate in viewport pixels
+    pub to_y: f64,
+
+    /// Number of intermediate mousemove steps for interpolated drag movement
+    #[arg(long)]
+    pub steps: Option<u32>,
+
+    /// Include updated accessibility snapshot in output
+    #[arg(long)]
+    pub include_snapshot: bool,
+
+    /// Use compact mode for the included snapshot (only interactive and landmark elements)
+    #[arg(long)]
+    pub compact: bool,
+}
+
+/// Arguments for `interact mousedown-at`.
+#[derive(Args)]
+pub struct MouseDownAtArgs {
+    /// X coordinate in viewport pixels
+    pub x: f64,
+
+    /// Y coordinate in viewport pixels
+    pub y: f64,
+
+    /// Mouse button to press
+    #[arg(long, value_enum)]
+    pub button: Option<MouseButton>,
+
+    /// Include updated accessibility snapshot in output
+    #[arg(long)]
+    pub include_snapshot: bool,
+
+    /// Use compact mode for the included snapshot (only interactive and landmark elements)
+    #[arg(long)]
+    pub compact: bool,
+}
+
+/// Arguments for `interact mouseup-at`.
+#[derive(Args)]
+pub struct MouseUpAtArgs {
+    /// X coordinate in viewport pixels
+    pub x: f64,
+
+    /// Y coordinate in viewport pixels
+    pub y: f64,
+
+    /// Mouse button to release
+    #[arg(long, value_enum)]
+    pub button: Option<MouseButton>,
 
     /// Include updated accessibility snapshot in output
     #[arg(long)]

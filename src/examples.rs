@@ -384,6 +384,26 @@ fn all_examples() -> Vec<CommandGroupSummary> {
                     description: "Click at coordinates inside an iframe".into(),
                     flags: Some(vec!["--frame".into()]),
                 },
+                ExampleEntry {
+                    cmd: "agentchrome interact drag-at 100 200 300 400".into(),
+                    description: "Drag from coordinates to coordinates".into(),
+                    flags: None,
+                },
+                ExampleEntry {
+                    cmd: "agentchrome interact drag-at 0 0 500 500 --steps 10".into(),
+                    description: "Drag with interpolated movement steps".into(),
+                    flags: Some(vec!["--steps".into()]),
+                },
+                ExampleEntry {
+                    cmd: "agentchrome interact mousedown-at 100 200".into(),
+                    description: "Press mouse button at coordinates (no release)".into(),
+                    flags: None,
+                },
+                ExampleEntry {
+                    cmd: "agentchrome interact mouseup-at 300 400".into(),
+                    description: "Release mouse button at coordinates".into(),
+                    flags: None,
+                },
             ],
         },
         CommandGroupSummary {
