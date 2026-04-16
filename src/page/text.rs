@@ -69,10 +69,18 @@ pub async fn execute_text(
         }
     };
 
-    let params = serde_json::json!({
+    let mut params = serde_json::json!({
         "expression": expression,
         "returnByValue": true,
     });
+
+    // For same-origin frames, scope evaluation to the frame's execution context
+    if let Some(ctx_id) = frame_ctx
+        .as_ref()
+        .and_then(agentchrome::frame::execution_context_id)
+    {
+        params["contextId"] = serde_json::Value::from(ctx_id);
+    }
 
     let result = {
         let effective = if let Some(ref ctx) = frame_ctx {

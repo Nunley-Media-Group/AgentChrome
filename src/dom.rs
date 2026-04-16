@@ -100,13 +100,30 @@ struct TreeOutput {
     tree: String,
 }
 
-
 // =============================================================================
 // Core helpers
 // =============================================================================
 
 /// Get the document root nodeId.
-async fn get_document_root(session: &ManagedSession) -> Result<i64, AppError> {
+///
+/// For same-origin frames, this resolves the frame's document root via
+/// `Runtime.evaluate` with the frame's execution context, since
+/// `DOM.getDocument` always returns the main frame's document when using the
+/// shared page session.
+async fn get_document_root(
+    session: &ManagedSession,
+    _frame_ctx: Option<&agentchrome::frame::FrameContext>,
+) -> Result<i64, AppError> {
+    // Same-origin frames: this function cannot reliably return a nodeId for
+    // the frame's document because DOM.querySelectorAll needs the subtree
+    // loaded, but DOM.requestChildNodes is asynchronous and unreliable.
+    // Callers should use `query_selector_in_frame()` for CSS queries in
+    // same-origin frames instead.
+    //
+    // Fall through to the default DOM.getDocument path; callers must handle
+    // this case separately for CSS queries.
+
+    // Default: main frame or OOPIF session
     let doc = session
         .send_command("DOM.getDocument", None)
         .await
@@ -120,6 +137,165 @@ async fn get_document_root(session: &ManagedSession) -> Result<i64, AppError> {
         .ok_or_else(|| AppError::node_not_found("root"))
 }
 
+/// Run `document.querySelector(selector)` via `Runtime.evaluate` in a specific
+/// execution context (for same-origin frames) and return the matched element as
+/// a `ResolvedNode`. This bypasses `DOM.querySelectorAll` which cannot work
+/// with frame documents that haven't been loaded into the DOM agent's tree.
+async fn query_selector_in_context(
+    session: &ManagedSession,
+    selector: &str,
+    context_id: i64,
+) -> Result<ResolvedNode, AppError> {
+    let escaped = selector.replace('\\', "\\\\").replace('"', "\\\"");
+    let js = format!(r#"document.querySelector("{escaped}")"#);
+
+    let eval = session
+        .send_command(
+            "Runtime.evaluate",
+            Some(serde_json::json!({
+                "expression": js,
+                "contextId": context_id,
+            })),
+        )
+        .await
+        .map_err(|e| AppError {
+            message: format!("CSS selector query failed: {e}"),
+            code: ExitCode::ProtocolError,
+            custom_json: None,
+        })?;
+
+    // Check for exception (e.g., invalid selector)
+    if let Some(exc) = eval.get("exceptionDetails") {
+        let desc = exc["exception"]["description"]
+            .as_str()
+            .unwrap_or("unknown error");
+        return Err(AppError {
+            message: format!("CSS selector query failed: {desc}"),
+            code: ExitCode::ProtocolError,
+            custom_json: None,
+        });
+    }
+
+    // Check for null result (element not found)
+    let result_type = eval["result"]["type"].as_str().unwrap_or("undefined");
+    if result_type == "undefined"
+        || (result_type == "object" && eval["result"]["subtype"].as_str() == Some("null"))
+    {
+        return Err(AppError::css_selector_not_found(selector));
+    }
+
+    let object_id = eval["result"]["objectId"]
+        .as_str()
+        .ok_or_else(|| AppError::css_selector_not_found(selector))?;
+
+    // Ensure DOM agent is initialized before requestNode
+    let _ = session.send_command("DOM.getDocument", None).await;
+
+    // Get the DOM node for the resolved object
+    let node_result = session
+        .send_command(
+            "DOM.requestNode",
+            Some(serde_json::json!({ "objectId": object_id })),
+        )
+        .await
+        .map_err(|e| AppError {
+            message: format!("DOM.requestNode failed: {e}"),
+            code: ExitCode::ProtocolError,
+            custom_json: None,
+        })?;
+
+    let node_id = node_result["nodeId"]
+        .as_i64()
+        .filter(|&id| id > 0)
+        .ok_or_else(|| AppError::css_selector_not_found(selector))?;
+
+    let backend_node_id = get_backend_node_id(session, node_id)
+        .await
+        .unwrap_or(node_id);
+
+    Ok(ResolvedNode {
+        node_id,
+        backend_node_id,
+    })
+}
+
+/// Run `document.querySelectorAll(selector)` via `Runtime.evaluate` in a
+/// specific execution context and return all matched elements as nodeIds.
+async fn query_selector_all_in_context(
+    session: &ManagedSession,
+    selector: &str,
+    context_id: i64,
+) -> Result<Vec<i64>, AppError> {
+    let escaped = selector.replace('\\', "\\\\").replace('"', "\\\"");
+    let js = format!(r#"Array.from(document.querySelectorAll("{escaped}"))"#);
+
+    let eval = session
+        .send_command(
+            "Runtime.evaluate",
+            Some(serde_json::json!({
+                "expression": js,
+                "contextId": context_id,
+            })),
+        )
+        .await
+        .map_err(|e| AppError {
+            message: format!("CSS selector query failed: {e}"),
+            code: ExitCode::ProtocolError,
+            custom_json: None,
+        })?;
+
+    let array_obj_id = match eval["result"]["objectId"].as_str() {
+        Some(id) => id.to_string(),
+        None => return Ok(vec![]),
+    };
+
+    // Get properties (array elements)
+    let props = session
+        .send_command(
+            "Runtime.getProperties",
+            Some(serde_json::json!({
+                "objectId": array_obj_id,
+                "ownProperties": true,
+            })),
+        )
+        .await
+        .map_err(|e| AppError {
+            message: format!("Failed to get query results: {e}"),
+            code: ExitCode::ProtocolError,
+            custom_json: None,
+        })?;
+
+    let mut node_ids = Vec::new();
+    if let Some(results) = props["result"].as_array() {
+        for prop in results {
+            // Skip non-numeric properties (like "length")
+            if prop["name"]
+                .as_str()
+                .and_then(|n| n.parse::<u32>().ok())
+                .is_none()
+            {
+                continue;
+            }
+            let Some(obj_id) = prop["value"]["objectId"].as_str() else {
+                continue;
+            };
+
+            let node_result = session
+                .send_command(
+                    "DOM.requestNode",
+                    Some(serde_json::json!({ "objectId": obj_id })),
+                )
+                .await;
+            if let Ok(nr) = node_result {
+                if let Some(nid) = nr["nodeId"].as_i64().filter(|&id| id > 0) {
+                    node_ids.push(nid);
+                }
+            }
+        }
+    }
+
+    Ok(node_ids)
+}
 
 /// Resolved node with both session-scoped `nodeId` and stable `backendNodeId`.
 struct ResolvedNode {
@@ -132,7 +308,11 @@ struct ResolvedNode {
 /// Unified node resolution: integer (backendNodeId), UID, or CSS selector → CDP nodeId.
 ///
 /// Integer targets are treated as `backendNodeId` values (stable across sessions).
-async fn resolve_node(session: &ManagedSession, target: &str) -> Result<ResolvedNode, AppError> {
+async fn resolve_node(
+    session: &ManagedSession,
+    target: &str,
+    frame_ctx: Option<&agentchrome::frame::FrameContext>,
+) -> Result<ResolvedNode, AppError> {
     // Try integer (backendNodeId) first
     if let Ok(backend_node_id) = target.parse::<i64>() {
         let node_id = push_backend_node_to_frontend(session, backend_node_id, target).await?;
@@ -163,7 +343,14 @@ async fn resolve_node(session: &ManagedSession, target: &str) -> Result<Resolved
     // CSS selector resolution
     if snapshot::is_css_selector(target) {
         let selector = &target[4..];
-        let root_id = get_document_root(session).await?;
+
+        // For same-origin frames, use JS-based query (DOM.querySelector cannot
+        // reliably access the frame's document through the shared session)
+        if let Some(ctx_id) = frame_ctx.and_then(agentchrome::frame::execution_context_id) {
+            return query_selector_in_context(session, selector, ctx_id).await;
+        }
+
+        let root_id = get_document_root(session, frame_ctx).await?;
 
         let query = session
             .send_command(
@@ -208,7 +395,7 @@ async fn push_backend_node_to_frontend(
     label: &str,
 ) -> Result<i64, AppError> {
     // Ensure DOM domain is aware of the document tree
-    let _ = get_document_root(session).await?;
+    let _ = get_document_root(session, None).await?;
 
     // Resolve backendNodeId → Runtime.RemoteObject
     let resolve = session
@@ -451,7 +638,6 @@ pub async fn execute_dom(global: &GlobalOpts, args: &DomArgs) -> Result<(), AppE
     }
 }
 
-
 // =============================================================================
 // dom select
 // =============================================================================
@@ -468,7 +654,8 @@ async fn execute_select(
         let _dismiss = managed.spawn_auto_dismiss().await?;
     }
 
-    let mut frame_ctx = crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
+    let mut frame_ctx =
+        crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
 
     {
         let eff_mut = if let Some(ref mut ctx) = frame_ctx {
@@ -486,7 +673,12 @@ async fn execute_select(
         &managed
     };
 
-    let root_id = get_document_root(effective).await?;
+    // For same-origin frames with CSS selectors, use JS-based query
+    let same_origin_ctx_id = frame_ctx
+        .as_ref()
+        .and_then(agentchrome::frame::execution_context_id);
+
+    let root_id = get_document_root(effective, frame_ctx.as_ref()).await?;
 
     let mut node_ids = if args.xpath {
         // XPath via DOM.performSearch
@@ -538,6 +730,14 @@ async fn execute_select(
             .await;
 
         ids
+    } else if let Some(ctx_id) = same_origin_ctx_id {
+        // Same-origin frame: use JS-based query (strip css: prefix if present)
+        let css_selector = if snapshot::is_css_selector(&args.selector) {
+            &args.selector[4..]
+        } else {
+            &args.selector
+        };
+        query_selector_all_in_context(effective, css_selector, ctx_id).await?
     } else {
         // CSS via DOM.querySelectorAll
         let query = effective
@@ -615,7 +815,8 @@ async fn execute_get_attribute(
         let _dismiss = managed.spawn_auto_dismiss().await?;
     }
 
-    let mut frame_ctx = crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
+    let mut frame_ctx =
+        crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
 
     {
         let eff_mut = if let Some(ref mut ctx) = frame_ctx {
@@ -632,7 +833,7 @@ async fn execute_get_attribute(
         &managed
     };
 
-    let resolved = resolve_node(effective, &args.node_id).await?;
+    let resolved = resolve_node(effective, &args.node_id, frame_ctx.as_ref()).await?;
 
     let attrs = effective
         .send_command(
@@ -690,7 +891,8 @@ async fn execute_get_text(
         let _dismiss = managed.spawn_auto_dismiss().await?;
     }
 
-    let mut frame_ctx = crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
+    let mut frame_ctx =
+        crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
 
     {
         let eff_mut = if let Some(ref mut ctx) = frame_ctx {
@@ -708,7 +910,9 @@ async fn execute_get_text(
         &managed
     };
 
-    let node_id = resolve_node(effective, &args.node_id).await?.node_id;
+    let node_id = resolve_node(effective, &args.node_id, frame_ctx.as_ref())
+        .await?
+        .node_id;
     let text = get_text_content(effective, node_id).await?;
 
     if global.output.plain {
@@ -734,7 +938,8 @@ async fn execute_get_html(
         let _dismiss = managed.spawn_auto_dismiss().await?;
     }
 
-    let mut frame_ctx = crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
+    let mut frame_ctx =
+        crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
 
     {
         let eff_mut = if let Some(ref mut ctx) = frame_ctx {
@@ -751,7 +956,9 @@ async fn execute_get_html(
         &managed
     };
 
-    let node_id = resolve_node(effective, &args.node_id).await?.node_id;
+    let node_id = resolve_node(effective, &args.node_id, frame_ctx.as_ref())
+        .await?
+        .node_id;
 
     let html = effective
         .send_command(
@@ -790,7 +997,8 @@ async fn execute_set_attribute(
         let _dismiss = managed.spawn_auto_dismiss().await?;
     }
 
-    let mut frame_ctx = crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
+    let mut frame_ctx =
+        crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
 
     {
         let eff_mut = if let Some(ref mut ctx) = frame_ctx {
@@ -807,7 +1015,7 @@ async fn execute_set_attribute(
         &managed
     };
 
-    let resolved = resolve_node(effective, &args.node_id).await?;
+    let resolved = resolve_node(effective, &args.node_id, frame_ctx.as_ref()).await?;
 
     effective
         .send_command(
@@ -857,7 +1065,8 @@ async fn execute_set_text(
         let _dismiss = managed.spawn_auto_dismiss().await?;
     }
 
-    let mut frame_ctx = crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
+    let mut frame_ctx =
+        crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
 
     {
         let eff_mut = if let Some(ref mut ctx) = frame_ctx {
@@ -875,7 +1084,7 @@ async fn execute_set_text(
         &managed
     };
 
-    let resolved = resolve_node(effective, &args.node_id).await?;
+    let resolved = resolve_node(effective, &args.node_id, frame_ctx.as_ref()).await?;
 
     // Resolve to JS object and set textContent
     let resolve = effective
@@ -934,7 +1143,8 @@ async fn execute_remove(
         let _dismiss = managed.spawn_auto_dismiss().await?;
     }
 
-    let mut frame_ctx = crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
+    let mut frame_ctx =
+        crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
 
     {
         let eff_mut = if let Some(ref mut ctx) = frame_ctx {
@@ -951,7 +1161,7 @@ async fn execute_remove(
         &managed
     };
 
-    let resolved = resolve_node(effective, &args.node_id).await?;
+    let resolved = resolve_node(effective, &args.node_id, frame_ctx.as_ref()).await?;
 
     effective
         .send_command(
@@ -993,7 +1203,8 @@ async fn execute_get_style(
         let _dismiss = managed.spawn_auto_dismiss().await?;
     }
 
-    let mut frame_ctx = crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
+    let mut frame_ctx =
+        crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
 
     {
         let eff_mut = if let Some(ref mut ctx) = frame_ctx {
@@ -1011,7 +1222,9 @@ async fn execute_get_style(
         &managed
     };
 
-    let node_id = resolve_node(effective, &args.node_id).await?.node_id;
+    let node_id = resolve_node(effective, &args.node_id, frame_ctx.as_ref())
+        .await?
+        .node_id;
 
     let computed = effective
         .send_command(
@@ -1095,7 +1308,8 @@ async fn execute_set_style(
         let _dismiss = managed.spawn_auto_dismiss().await?;
     }
 
-    let mut frame_ctx = crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
+    let mut frame_ctx =
+        crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
 
     {
         let eff_mut = if let Some(ref mut ctx) = frame_ctx {
@@ -1112,7 +1326,7 @@ async fn execute_set_style(
         &managed
     };
 
-    let resolved = resolve_node(effective, &args.node_id).await?;
+    let resolved = resolve_node(effective, &args.node_id, frame_ctx.as_ref()).await?;
 
     effective
         .send_command(
@@ -1158,7 +1372,8 @@ async fn execute_parent(
         let _dismiss = managed.spawn_auto_dismiss().await?;
     }
 
-    let mut frame_ctx = crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
+    let mut frame_ctx =
+        crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
 
     {
         let eff_mut = if let Some(ref mut ctx) = frame_ctx {
@@ -1176,7 +1391,9 @@ async fn execute_parent(
         &managed
     };
 
-    let node_id = resolve_node(effective, &args.node_id).await?.node_id;
+    let node_id = resolve_node(effective, &args.node_id, frame_ctx.as_ref())
+        .await?
+        .node_id;
 
     // Use Runtime to get parentElement info since DOM.describeNode doesn't
     // always return parentId reliably for all node types
@@ -1265,7 +1482,8 @@ async fn execute_children(
         let _dismiss = managed.spawn_auto_dismiss().await?;
     }
 
-    let mut frame_ctx = crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
+    let mut frame_ctx =
+        crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
 
     {
         let eff_mut = if let Some(ref mut ctx) = frame_ctx {
@@ -1283,7 +1501,9 @@ async fn execute_children(
         &managed
     };
 
-    let node_id = resolve_node(effective, &args.node_id).await?.node_id;
+    let node_id = resolve_node(effective, &args.node_id, frame_ctx.as_ref())
+        .await?
+        .node_id;
 
     // Request child nodes
     effective
@@ -1350,7 +1570,8 @@ async fn execute_siblings(
         let _dismiss = managed.spawn_auto_dismiss().await?;
     }
 
-    let mut frame_ctx = crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
+    let mut frame_ctx =
+        crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
 
     {
         let eff_mut = if let Some(ref mut ctx) = frame_ctx {
@@ -1368,7 +1589,9 @@ async fn execute_siblings(
         &managed
     };
 
-    let node_id = resolve_node(effective, &args.node_id).await?.node_id;
+    let node_id = resolve_node(effective, &args.node_id, frame_ctx.as_ref())
+        .await?
+        .node_id;
 
     // Get parent nodeId via Runtime
     let resolve = effective
@@ -1476,7 +1699,7 @@ async fn execute_tree(global: &GlobalOpts, args: &DomTreeArgs) -> Result<(), App
 
     let root_node = if let Some(ref root_target) = args.root {
         // Resolve root target and get its subtree
-        let node_id = resolve_node(&managed, root_target).await?.node_id;
+        let node_id = resolve_node(&managed, root_target, None).await?.node_id;
         managed
             .send_command(
                 "DOM.describeNode",

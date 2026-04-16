@@ -68,7 +68,7 @@ CLI Input (args including --frame, --worker, --pierce-shadow)
 5. Command calls resolve_frame(&managed, frame_arg) → FrameContext
 6. FrameContext::resolve() calls Page.getFrameTree, builds ordered frame list
 7. Frame at index 2 is identified; its frame ID and origin checked
-8. If same-origin: FrameContext::SameOrigin { frame_id, execution_context_id }
+8. If same-origin: subscribe → Runtime.enable → match default context → FrameContext::SameOrigin { frame_id, execution_context_id }
 9. If OOPIF: Target.attachToTarget → new session → FrameContext::OutOfProcess { session }
 10. Command calls Accessibility.getFullAXTree with frameId parameter (same-origin)
     OR uses the OOPIF session to call Accessibility.getFullAXTree (cross-origin)
@@ -305,7 +305,9 @@ After getting the frame tree, `resolve_frame` determines the frame type:
 1. Call `Target.getTargets` to list all targets
 2. Check if any target's `targetId` matches a frame's target (identified by matching URL and frame ID)
 3. If a separate target exists → OOPIF → `Target.attachToTarget` with `flatten: true` → `FrameContext::OutOfProcess`
-4. If no separate target → same-origin → subscribe to `Runtime.executionContextCreated` events to find the frame's execution context → `FrameContext::SameOrigin`
+4. If no separate target → same-origin → subscribe to `Runtime.executionContextCreated` events, then enable `Runtime` domain (which replays existing contexts), then match the frame's default context by `frameId` + `isDefault: true` → `FrameContext::SameOrigin`
+
+**Design note**: The subscribe call MUST happen before `Runtime.enable`. Chrome replays execution contexts immediately upon enable, so subscribing after enable causes a race where events arrive before the subscriber is registered. If the default context is not found within 500ms (e.g., because `Runtime` was already enabled earlier in the session), the fallback creates an isolated world via `Page.createIsolatedWorld` with `grantUniversalAccess: true`. The isolated world shares the frame's DOM but has its own JS global scope, so page-script variables are not visible in the fallback path.
 
 ### Path Resolution
 
@@ -355,6 +357,29 @@ If Chrome's accessibility tree doesn't fully expose shadow DOM content in the AX
 1. `Runtime.evaluate` to find all shadow hosts: `document.querySelectorAll('*')` filtered by `element.shadowRoot !== null`
 2. For each shadow host, `Runtime.evaluate` to query `element.shadowRoot.querySelectorAll('*')` for interactive elements
 3. Merge supplemental nodes into the tree under their respective shadow host
+
+### Frame-Scoped DOM Queries (same-origin frames)
+
+For OOPIF (cross-origin) frames, `DOM.querySelector` works normally through the OOPIF session because `DOM.getDocument` returns the frame's own document root.
+
+For same-origin frames, `DOM.querySelector` and `DOM.querySelectorAll` **cannot** reliably access the iframe's document through the shared page session. `DOM.getDocument` always returns the main frame's document, and attempts to navigate the DOM tree to the iframe's `contentDocument` via `DOM.getFrameOwner` + `DOM.describeNode` produce node IDs that `DOM.querySelectorAll` cannot use.
+
+The solution uses **JavaScript-based queries** via `Runtime.evaluate` with the frame's `contextId` (from the isolated world):
+
+1. `query_selector_in_context(session, selector, context_id)` — single-element resolution for `resolve_node` (used by `dom get-text`, `dom get-html`, etc.):
+   - `Runtime.evaluate("document.querySelector(selector)", contextId)` → `RemoteObject`
+   - `DOM.getDocument` (initializes the DOM agent)
+   - `DOM.requestNode(objectId)` → session-scoped `nodeId`
+   - Standard DOM commands proceed with the resolved `nodeId`
+
+2. `query_selector_all_in_context(session, selector, context_id)` — multi-element query for `dom select`:
+   - `Runtime.evaluate("Array.from(document.querySelectorAll(selector))", contextId)` → array `RemoteObject`
+   - `Runtime.getProperties(objectId)` → per-element `RemoteObject`s
+   - `DOM.requestNode` on each → session-scoped `nodeId`s
+
+3. `page text --frame N` uses `Runtime.evaluate` with `contextId` directly (expression: `document.body?.innerText`), bypassing the DOM agent entirely.
+
+**Design note**: `DOM.requestNode` requires the DOM agent to be initialized. A preceding `DOM.getDocument` call (even without `pierce: true`) is sufficient. Without this, `DOM.requestNode` fails silently or returns `nodeId: 0`.
 
 ### DOM Commands (`dom select --pierce-shadow`, etc.)
 
@@ -445,6 +470,8 @@ For UID-based interactions (`interact click --frame 1 s5`), the element center i
 | **C: Separate frame subcommand** | `agentchrome frame 1 page snapshot` prefix syntax | Clear scoping | Breaks existing CLI grammar, complex parsing | Rejected — too disruptive |
 | **D: Always create OOPIF sessions** | Use `Target.attachToTarget` for all frames regardless of origin | Simpler code path — one approach for all frames | Same-origin frames may not have separate targets; unnecessary overhead | Rejected — would fail for same-origin frames in some Chrome configurations |
 | **E: `FrameContext` dual strategy** | Same-origin: use page session + frameId params. OOPIF: attach to target, new session | Handles all frame types correctly | More complex implementation | **Selected** — correct and robust |
+| **F: Enable-then-subscribe context detection** | Enable `Runtime` first, then subscribe to `Runtime.executionContextCreated` | Simple ordering | Race condition: replayed events arrive between `Runtime.enable` and `subscribe()`, causing non-deterministic fallback to isolated world | Rejected during verification — reordered to subscribe-then-enable (selected approach) |
+| **G: DOM.querySelector for frame-scoped queries** | Use `DOM.getDocument(pierce: true)` + `DOM.querySelectorAll` on iframe content document | Standard CDP approach | `DOM.getDocument` returns main frame's document for same-origin frames via shared session; content document nodeIds from `DOM.requestNode` are unreliable with `DOM.querySelectorAll` | Rejected during verification — replaced by JS-based `Runtime.evaluate` with `contextId` |
 
 ---
 
@@ -498,7 +525,8 @@ For UID-based interactions (`interact click --frame 1 s5`), the element center i
 | `src/page.rs` | Add `execute_frames()` and `execute_workers()` handlers. Integrate `--frame` into existing page commands. | New subcommands + frame scoping |
 | `src/snapshot.rs` | Extend `SnapshotState` with `frame_index` and `frame_id`. Add `--pierce-shadow` supplemental pass. Pass `frameId` to `Accessibility.getFullAXTree`. | Frame-scoped + shadow DOM snapshots |
 | `src/js.rs` | Integrate `--frame` for frame-scoped execution. Add `--worker` for worker-scoped execution via separate session. | Frame + worker JS execution |
-| `src/dom.rs` | Integrate `--frame` for frame-scoped DOM queries. Add `--pierce-shadow` shadow root traversal. | Frame + shadow DOM for DOM commands |
+| `src/dom.rs` | Integrate `--frame` for frame-scoped DOM queries via JS-based `query_selector_in_context`/`query_selector_all_in_context` (see design note below). Add `--pierce-shadow` shadow root traversal. | Frame + shadow DOM for DOM commands |
+| `src/output.rs` | Add `resolve_optional_frame()` shared helper for `--frame` resolution across command modules | Frame resolution DRY helper |
 | `src/interact.rs` | Integrate `--frame` with coordinate translation for `click-at`, `hover`, `drag`. Route UID-based commands through frame session. | Frame-scoped interactions |
 | `src/form.rs` | Integrate `--frame` for frame-scoped form operations. UID resolution through frame session. | Frame-scoped forms |
 | `src/network.rs` | Capture `frameId` in `NetworkRequestBuilder`. Add `--frame` filter to `network list`. Add frame-scoped interception logic. | Frame-scoped network monitoring |
@@ -533,6 +561,7 @@ For UID-based interactions (`interact click --frame 1 s5`), the element center i
 | Issue | Date | Summary |
 |-------|------|---------|
 | #189 | 2026-04-15 | Initial design |
+| #189 | 2026-04-15 | Verification sync: fixed context detection to subscribe-before-enable (default context with isolated world fallback); added JS-based DOM query approach for same-origin frames; added `contextId` scoping for `page text`; documented rejected alternatives F and G |
 
 ---
 

@@ -235,7 +235,6 @@ fn print_scroll_plain(result: &ScrollResult, mode: &str) {
     }
 }
 
-
 // =============================================================================
 // Target resolution helpers
 // =============================================================================
@@ -1388,7 +1387,8 @@ async fn execute_click(
     }
 
     let mut frame_ctx =
-        crate::output::resolve_optional_frame(&client, &mut managed, frame, Some(&args.target)).await?;
+        crate::output::resolve_optional_frame(&client, &mut managed, frame, Some(&args.target))
+            .await?;
 
     {
         let eff_mut = if let Some(ref mut ctx) = frame_ctx {
@@ -1499,7 +1499,8 @@ async fn execute_click_at(
     }
 
     // Resolve frame context for coordinate translation
-    let frame_ctx = crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
+    let frame_ctx =
+        crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
 
     // Translate frame-local coordinates to page-global coordinates
     let (offset_x, offset_y) = if let Some(ref ctx) = frame_ctx {
@@ -1606,7 +1607,8 @@ async fn execute_hover(
     }
 
     let mut frame_ctx =
-        crate::output::resolve_optional_frame(&client, &mut managed, frame, Some(&args.target)).await?;
+        crate::output::resolve_optional_frame(&client, &mut managed, frame, Some(&args.target))
+            .await?;
 
     {
         let eff_mut = if let Some(ref mut ctx) = frame_ctx {
@@ -1664,7 +1666,8 @@ async fn execute_drag(
     }
 
     let mut frame_ctx =
-        crate::output::resolve_optional_frame(&client, &mut managed, frame, Some(&args.from)).await?;
+        crate::output::resolve_optional_frame(&client, &mut managed, frame, Some(&args.from))
+            .await?;
 
     {
         let eff_mut = if let Some(ref mut ctx) = frame_ctx {

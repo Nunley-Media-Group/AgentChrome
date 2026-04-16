@@ -13,7 +13,6 @@ use crate::cli::{
 use crate::output::{print_output, setup_session};
 use crate::snapshot;
 
-
 // =============================================================================
 // Output types
 // =============================================================================
@@ -101,7 +100,6 @@ fn print_submit_plain(result: &SubmitResult) {
         println!("Submitted {}", result.submitted);
     }
 }
-
 
 // =============================================================================
 // Target resolution helpers
@@ -534,7 +532,8 @@ async fn execute_fill(
     }
 
     let mut frame_ctx =
-        crate::output::resolve_optional_frame(&client, &mut managed, frame, Some(&args.target)).await?;
+        crate::output::resolve_optional_frame(&client, &mut managed, frame, Some(&args.target))
+            .await?;
 
     {
         let eff_mut = if let Some(ref mut ctx) = frame_ctx {
@@ -607,7 +606,8 @@ async fn execute_fill_many(
         let _dismiss = managed.spawn_auto_dismiss().await?;
     }
 
-    let mut frame_ctx = crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
+    let mut frame_ctx =
+        crate::output::resolve_optional_frame(&client, &mut managed, frame, None).await?;
 
     {
         let eff_mut = if let Some(ref mut ctx) = frame_ctx {
@@ -674,7 +674,8 @@ async fn execute_clear(
     }
 
     let mut frame_ctx =
-        crate::output::resolve_optional_frame(&client, &mut managed, frame, Some(&args.target)).await?;
+        crate::output::resolve_optional_frame(&client, &mut managed, frame, Some(&args.target))
+            .await?;
 
     {
         let eff_mut = if let Some(ref mut ctx) = frame_ctx {
@@ -752,9 +753,8 @@ async fn execute_upload(
     let mut resolved_paths: Vec<String> = Vec::with_capacity(args.files.len());
 
     for path in &args.files {
-        let metadata = std::fs::metadata(path).map_err(|_| {
-            AppError::file_not_found(&path.display().to_string())
-        })?;
+        let metadata = std::fs::metadata(path)
+            .map_err(|_| AppError::file_not_found(&path.display().to_string()))?;
         if !metadata.is_file() {
             return Err(AppError::file_not_found(&path.display().to_string()));
         }
@@ -782,7 +782,8 @@ async fn execute_upload(
     }
 
     let mut frame_ctx =
-        crate::output::resolve_optional_frame(&client, &mut managed, frame, Some(&args.target)).await?;
+        crate::output::resolve_optional_frame(&client, &mut managed, frame, Some(&args.target))
+            .await?;
 
     {
         let eff_mut = if let Some(ref mut ctx) = frame_ctx {
@@ -893,7 +894,8 @@ async fn execute_submit(
     }
 
     let mut frame_ctx =
-        crate::output::resolve_optional_frame(&client, &mut managed, frame, Some(&args.target)).await?;
+        crate::output::resolve_optional_frame(&client, &mut managed, frame, Some(&args.target))
+            .await?;
 
     {
         let eff_mut = if let Some(ref mut ctx) = frame_ctx {

@@ -384,16 +384,11 @@ async fn find_execution_context(
     session: &mut ManagedSession,
     frame_id: &str,
 ) -> Result<i64, AppError> {
-    session
-        .ensure_domain("Runtime")
-        .await
-        .map_err(|e| AppError {
-            message: format!("Failed to enable Runtime domain: {e}"),
-            code: ExitCode::ProtocolError,
-            custom_json: None,
-        })?;
-
-    // Subscribe to context events. Enabling `Runtime` replays existing contexts.
+    // Subscribe to context events BEFORE enabling Runtime so that the replayed
+    // executionContextCreated events are captured (they arrive immediately
+    // after Runtime.enable completes). An earlier implementation enabled first
+    // and subscribed second, which caused a race: events arrived between the
+    // two calls and were lost.
     let mut rx = session
         .subscribe("Runtime.executionContextCreated")
         .await
@@ -403,7 +398,16 @@ async fn find_execution_context(
             custom_json: None,
         })?;
 
-    // Drain replayed events looking for one matching our frame.
+    session
+        .ensure_domain("Runtime")
+        .await
+        .map_err(|e| AppError {
+            message: format!("Failed to enable Runtime domain: {e}"),
+            code: ExitCode::ProtocolError,
+            custom_json: None,
+        })?;
+
+    // Drain replayed events looking for the frame's default execution context.
     let deadline = tokio::time::Instant::now() + std::time::Duration::from_millis(500);
     while let Ok(result) = tokio::time::timeout_at(deadline, rx.recv()).await {
         if let Some(event) = result {
@@ -418,13 +422,23 @@ async fn find_execution_context(
         }
     }
 
-    // Fallback: create an isolated world for the frame.
+    // Fallback: create an isolated world for the frame. This shares the
+    // frame's DOM but has its own JS global scope, so page-script variables
+    // won't be visible. This path is only taken if the Runtime domain was
+    // already enabled before this call (making ensure_domain a no-op and
+    // skipping the context replay).
+    session.ensure_domain("Page").await.map_err(|e| AppError {
+        message: format!("Failed to enable Page domain: {e}"),
+        code: ExitCode::ProtocolError,
+        custom_json: None,
+    })?;
+
     let result = session
         .send_command(
             "Page.createIsolatedWorld",
             Some(serde_json::json!({
                 "frameId": frame_id,
-                "grantUniveralAccess": true,
+                "grantUniversalAccess": true,
             })),
         )
         .await

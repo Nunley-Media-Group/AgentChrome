@@ -13,7 +13,6 @@ use agentchrome::error::{AppError, ExitCode};
 use crate::cli::{GlobalOpts, PageArgs, PageCommand, PageResizeArgs};
 use crate::output::{print_output, setup_session_with_interceptors as setup_session};
 
-
 // =============================================================================
 // Page info helper
 // =============================================================================
