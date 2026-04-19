@@ -153,7 +153,9 @@ async fn execute_text_deep(global: &GlobalOpts) -> Result<(), AppError> {
         let _dismiss = managed.spawn_auto_dismiss().await?;
     }
 
-    managed.ensure_domain("Runtime").await?;
+    // Subscribe BEFORE enabling Runtime so we capture the replay of all
+    // existing execution contexts (Chrome replays them immediately on enable).
+    let frame_ctx_map = collect_frame_execution_contexts(&mut managed).await;
 
     let frames = agentchrome::frame::list_frames(&mut managed).await?;
 
@@ -177,10 +179,10 @@ async fn execute_text_deep(global: &GlobalOpts) -> Result<(), AppError> {
 
     for frame_info in &frames {
         let body_expr = "document.body?.innerText ?? ''";
-        let ctx_id_opt = if frame_info.index == 0 {
+        let ctx_id_opt: Option<i64> = if frame_info.index == 0 {
             None
         } else {
-            find_execution_context_for(&mut managed, &frame_info.id).await.ok()
+            frame_ctx_map.get(&frame_info.id).copied()
         };
 
         // Body text.
@@ -191,14 +193,17 @@ async fn execute_text_deep(global: &GlobalOpts) -> Result<(), AppError> {
         if let Some(cid) = ctx_id_opt {
             body_params["contextId"] = serde_json::Value::from(cid);
         }
-        if let Ok(result) = managed.send_command("Runtime.evaluate", Some(body_params)).await {
+        if let Ok(result) = managed
+            .send_command("Runtime.evaluate", Some(body_params))
+            .await
+        {
             let s = result["result"]["value"].as_str().unwrap_or_default();
             if !s.is_empty() {
                 parts.push(s.to_string());
             }
         }
 
-        // Shadow DOM text.
+        // Shadow DOM text (only meaningful where shadow roots exist).
         let mut shadow_params = serde_json::json!({
             "expression": shadow_expr,
             "returnByValue": true,
@@ -235,39 +240,36 @@ async fn execute_text_deep(global: &GlobalOpts) -> Result<(), AppError> {
     })
 }
 
-/// Find the default execution context ID for a frame by subscribing to
-/// `Runtime.executionContextCreated` events (which replay on `Runtime.enable`).
-async fn find_execution_context_for(
+/// Subscribe to `Runtime.executionContextCreated` BEFORE enabling the Runtime
+/// domain, then enable it. Chrome replays all existing execution contexts
+/// immediately on enable, so subscribing first guarantees we receive them.
+///
+/// Returns a map of `frameId → default execution context ID` for all frames.
+async fn collect_frame_execution_contexts(
     managed: &mut agentchrome::connection::ManagedSession,
-    frame_id: &str,
-) -> Result<i64, AppError> {
-    let mut rx = managed
-        .subscribe("Runtime.executionContextCreated")
-        .await
-        .map_err(|e| AppError {
-            message: format!("subscribe failed: {e}"),
-            code: agentchrome::error::ExitCode::ProtocolError,
-            custom_json: None,
-        })?;
+) -> std::collections::HashMap<String, i64> {
+    let mut frame_ctx_map = std::collections::HashMap::new();
 
-    managed.ensure_domain("Runtime").await?;
+    let Ok(mut rx) = managed.subscribe("Runtime.executionContextCreated").await else {
+        // If subscribe fails, fall back gracefully (all frames will use default context).
+        let _ = managed.ensure_domain("Runtime").await;
+        return frame_ctx_map;
+    };
 
-    let deadline = tokio::time::Instant::now() + std::time::Duration::from_millis(500);
+    let _ = managed.ensure_domain("Runtime").await;
+
+    let deadline = tokio::time::Instant::now() + std::time::Duration::from_millis(300);
     while let Ok(Some(event)) = tokio::time::timeout_at(deadline, rx.recv()).await {
         let ctx = &event.params["context"];
         let aux = &ctx["auxData"];
-        if aux["frameId"].as_str() == Some(frame_id) && aux["isDefault"].as_bool() == Some(true) {
-            if let Some(id) = ctx["id"].as_i64() {
-                return Ok(id);
+        if aux["isDefault"].as_bool() == Some(true) {
+            if let (Some(fid), Some(cid)) = (aux["frameId"].as_str(), ctx["id"].as_i64()) {
+                frame_ctx_map.insert(fid.to_string(), cid);
             }
         }
     }
 
-    Err(AppError {
-        message: format!("execution context for frame {frame_id} not found"),
-        code: agentchrome::error::ExitCode::ProtocolError,
-        custom_json: None,
-    })
+    frame_ctx_map
 }
 
 // =============================================================================

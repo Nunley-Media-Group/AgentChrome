@@ -1986,4 +1986,121 @@ mod tests {
         assert_eq!(result.children[0].children[0].role, "generic");
         assert_eq!(result.children[0].children[0].children[0].role, "checkbox");
     }
+
+    fn agg_state(ranges: Vec<(u32, (u32, u32))>) -> SnapshotState {
+        SnapshotState {
+            url: String::new(),
+            timestamp: String::new(),
+            uid_map: HashMap::new(),
+            frame_index: None,
+            frame_id: None,
+            aggregate: true,
+            frame_uid_ranges: ranges,
+            frame_ids: vec![
+                (0, "MAIN".to_string()),
+                (1, "F1".to_string()),
+                (2, "F2".to_string()),
+            ],
+        }
+    }
+
+    #[test]
+    fn aggregate_frame_for_uid_non_aggregate_returns_none() {
+        let mut state = agg_state(vec![(0, (1, 5))]);
+        state.aggregate = false;
+        assert!(aggregate_frame_for_uid(&state, "s3").is_none());
+    }
+
+    #[test]
+    fn aggregate_frame_for_uid_inside_range() {
+        let state = agg_state(vec![(0, (1, 3)), (1, (4, 6)), (2, (7, 9))]);
+        assert_eq!(aggregate_frame_for_uid(&state, "s1"), Some(0));
+        assert_eq!(aggregate_frame_for_uid(&state, "s3"), Some(0));
+        assert_eq!(aggregate_frame_for_uid(&state, "s4"), Some(1));
+        assert_eq!(aggregate_frame_for_uid(&state, "s6"), Some(1));
+        assert_eq!(aggregate_frame_for_uid(&state, "s7"), Some(2));
+        assert_eq!(aggregate_frame_for_uid(&state, "s9"), Some(2));
+    }
+
+    #[test]
+    fn aggregate_frame_for_uid_outside_ranges() {
+        let state = agg_state(vec![(0, (1, 3)), (1, (4, 6))]);
+        assert!(aggregate_frame_for_uid(&state, "s7").is_none());
+        assert!(aggregate_frame_for_uid(&state, "s0").is_none());
+    }
+
+    #[test]
+    fn aggregate_frame_for_uid_malformed_uid() {
+        let state = agg_state(vec![(0, (1, 3))]);
+        assert!(aggregate_frame_for_uid(&state, "bogus").is_none());
+        assert!(aggregate_frame_for_uid(&state, "").is_none());
+    }
+
+    #[test]
+    fn aggregate_frame_id_lookup() {
+        let state = agg_state(vec![(0, (1, 3)), (1, (4, 6))]);
+        assert_eq!(aggregate_frame_id(&state, 0), Some("MAIN"));
+        assert_eq!(aggregate_frame_id(&state, 1), Some("F1"));
+        assert_eq!(aggregate_frame_id(&state, 99), None);
+    }
+
+    #[test]
+    fn build_tree_with_nonzero_uid_offset_starts_after_offset() {
+        let nodes = vec![
+            json!({
+                "nodeId": "1",
+                "ignored": false,
+                "role": {"type": "role", "value": "document"},
+                "name": {"type": "computedString", "value": "Doc"},
+                "properties": [],
+                "childIds": ["2"],
+                "backendDOMNodeId": 1
+            }),
+            json!({
+                "nodeId": "2",
+                "ignored": false,
+                "role": {"type": "role", "value": "button"},
+                "name": {"type": "computedString", "value": "Go"},
+                "properties": [],
+                "childIds": [],
+                "backendDOMNodeId": 99
+            }),
+        ];
+        let result = build_tree_with_uid_offset(&nodes, false, 10);
+        assert!(result.uid_map.contains_key("s11"));
+        assert_eq!(result.uid_map.get("s11"), Some(&99));
+    }
+
+    fn node_with(role: &str, backend_id: Option<i64>, children: Vec<SnapshotNode>) -> SnapshotNode {
+        SnapshotNode {
+            role: role.to_string(),
+            backend_dom_node_id: backend_id,
+            children,
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn splice_frame_subtree_attaches_under_matching_owner() {
+        let mut root = node_with(
+            "document",
+            Some(1),
+            vec![node_with("iframe", Some(42), vec![])],
+        );
+        let sub = node_with("RootWebArea", Some(100), vec![]);
+        let spliced = splice_frame_subtree(&mut root, 42, sub);
+        assert!(spliced);
+        assert_eq!(root.children[0].children.len(), 1);
+        assert_eq!(root.children[0].children[0].role, "RootWebArea");
+    }
+
+    #[test]
+    fn splice_frame_subtree_fallback_when_owner_missing() {
+        let mut root = node_with("document", Some(1), vec![]);
+        let sub = node_with("RootWebArea", Some(100), vec![]);
+        let spliced = splice_frame_subtree(&mut root, 999, sub);
+        assert!(!spliced);
+        assert_eq!(root.children.len(), 1);
+        assert_eq!(root.children[0].role, "RootWebArea");
+    }
 }

@@ -96,7 +96,8 @@ async fn shadow_dom_supplemental_pass(
         }
 
         // Query interactive elements within this shadow root.
-        let escaped_sel = serde_json::to_string(interactive_sel).unwrap_or_default();
+        let escaped_sel =
+            serde_json::to_string(interactive_sel).expect("serializing a &'static str cannot fail");
         let Ok(query_result) = session
             .send_command(
                 "Runtime.callFunctionOn",
@@ -432,7 +433,10 @@ async fn execute_aggregate_snapshot(
     let mut frame_ids: Vec<(u32, String)> = Vec::new();
     // Record main-frame range.
     if !merged_uid_map.is_empty() {
-        frame_uid_ranges.push((0, (1, merged_uid_map.len() as u32)));
+        frame_uid_ranges.push((
+            0,
+            (1, u32::try_from(merged_uid_map.len()).unwrap_or(u32::MAX)),
+        ));
     }
     if let Some(main_frame) = frames.first() {
         frame_ids.push((0, main_frame.id.clone()));
@@ -465,41 +469,40 @@ async fn execute_aggregate_snapshot(
         let (frame_nodes_value, frame_session_for_shadow): (
             serde_json::Value,
             Option<agentchrome::connection::ManagedSession>,
-        ) = match frame_ax {
-            Ok(v) => (v, None),
-            Err(_) => {
-                // OOPIF path.
-                let targets = client
-                    .send_command("Target.getTargets", None)
-                    .await
-                    .map_err(|e| AppError {
-                        message: format!("Target.getTargets failed: {e}"),
-                        code: ExitCode::ProtocolError,
-                        custom_json: None,
-                    })?;
-                let Some(target_id) = targets["targetInfos"].as_array().and_then(|arr| {
-                    arr.iter()
-                        .find(|t| {
-                            t["targetId"].as_str() == Some(frame_info.id.as_str())
-                                || (t["type"].as_str() == Some("iframe")
-                                    && t["url"].as_str() == Some(frame_info.url.as_str()))
-                        })
-                        .and_then(|t| t["targetId"].as_str().map(String::from))
-                }) else {
-                    continue;
-                };
-                let Ok(oopif_raw) = client.create_session(&target_id).await else {
-                    continue;
-                };
-                let oopif = agentchrome::connection::ManagedSession::new(oopif_raw);
-                let Ok(v) = oopif
-                    .send_command("Accessibility.getFullAXTree", None)
-                    .await
-                else {
-                    continue;
-                };
-                (v, Some(oopif))
-            }
+        ) = if let Ok(v) = frame_ax {
+            (v, None)
+        } else {
+            // OOPIF path.
+            let targets = client
+                .send_command("Target.getTargets", None)
+                .await
+                .map_err(|e| AppError {
+                    message: format!("Target.getTargets failed: {e}"),
+                    code: ExitCode::ProtocolError,
+                    custom_json: None,
+                })?;
+            let Some(target_id) = targets["targetInfos"].as_array().and_then(|arr| {
+                arr.iter()
+                    .find(|t| {
+                        t["targetId"].as_str() == Some(frame_info.id.as_str())
+                            || (t["type"].as_str() == Some("iframe")
+                                && t["url"].as_str() == Some(frame_info.url.as_str()))
+                    })
+                    .and_then(|t| t["targetId"].as_str().map(String::from))
+            }) else {
+                continue;
+            };
+            let Ok(oopif_raw) = client.create_session(&target_id).await else {
+                continue;
+            };
+            let oopif = agentchrome::connection::ManagedSession::new(oopif_raw);
+            let Ok(v) = oopif
+                .send_command("Accessibility.getFullAXTree", None)
+                .await
+            else {
+                continue;
+            };
+            (v, Some(oopif))
         };
 
         let Some(frame_nodes) = frame_nodes_value["nodes"].as_array() else {
@@ -516,14 +519,13 @@ async fn execute_aggregate_snapshot(
                 frame_build.uid_map.values().copied().collect();
             let next_uid = uid_offset + frame_build.uid_map.len();
             let shadow_session = frame_session_for_shadow.as_ref().unwrap_or(&managed);
-            let supplemental =
-                shadow_dom_supplemental_pass(shadow_session, &known, next_uid).await;
+            let supplemental = shadow_dom_supplemental_pass(shadow_session, &known, next_uid).await;
             frame_build.uid_map.extend(supplemental);
         }
 
         let uid_start = u32::try_from(uid_offset + 1).unwrap_or(u32::MAX);
-        let uid_end = u32::try_from(merged_uid_map.len() + frame_build.uid_map.len())
-            .unwrap_or(u32::MAX);
+        let uid_end =
+            u32::try_from(merged_uid_map.len() + frame_build.uid_map.len()).unwrap_or(u32::MAX);
         if !frame_build.uid_map.is_empty() {
             frame_uid_ranges.push((frame_info.index, (uid_start, uid_end)));
         }
@@ -551,7 +553,11 @@ async fn execute_aggregate_snapshot(
         frame_ids,
     };
     if let Err(e) = crate::snapshot::write_snapshot_state(&state) {
-        eprintln!("warning: could not save snapshot state: {e}");
+        let warning = serde_json::json!({
+            "warning": format!("could not save snapshot state: {e}"),
+            "command": "page snapshot",
+        });
+        eprintln!("{warning}");
     }
 
     let root = if args.compact {

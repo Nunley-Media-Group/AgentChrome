@@ -205,8 +205,7 @@ pub async fn resolve_optional_frame(
                             return Ok(None);
                         }
                         let arg = agentchrome::frame::FrameArg::Index(uid_frame_idx);
-                        let ctx =
-                            agentchrome::frame::resolve_frame(client, managed, &arg).await?;
+                        let ctx = agentchrome::frame::resolve_frame(client, managed, &arg).await?;
                         return Ok(Some(ctx));
                     }
                 }

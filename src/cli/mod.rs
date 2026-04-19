@@ -1233,6 +1233,7 @@ pub struct PageTextArgs {
 }
 
 /// Arguments for `page snapshot`.
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Args)]
 pub struct PageSnapshotArgs {
     /// Include additional element properties (checked, disabled, level, etc.)
