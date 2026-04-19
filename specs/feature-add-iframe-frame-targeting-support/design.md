@@ -1,7 +1,7 @@
 # Design: Iframe/Frame Targeting Support
 
-**Issues**: #189
-**Date**: 2026-04-15
+**Issues**: #189, #181
+**Date**: 2026-04-18
 **Status**: Draft
 **Author**: Rich Nunley
 
@@ -115,6 +115,8 @@ CLI Input (args including --frame, --worker, --pierce-shadow)
 | `--frame <value>` | page, dom, interact, form, js, network commands | `String` | Frame index (integer), path (`1/0`), or `auto` |
 | `--worker <index>` | `js exec` only | `u32` | Worker index from `page workers` |
 | `--pierce-shadow` | `page snapshot`, all `dom` subcommands | `bool` flag | Enable shadow DOM traversal |
+| `--include-iframes` | `page snapshot` only | `bool` flag | Aggregate every iframe's accessibility tree into a single tree. Mutually exclusive with `--frame`. |
+| `--deep` | `page text` only | `bool` flag | Aggregate visible text from main frame + all iframes + all shadow roots. Mutually exclusive with `--frame`. |
 
 ### New Subcommands
 
@@ -400,6 +402,62 @@ No `--pierce-shadow` flag needed. UIDs from a `--pierce-shadow` snapshot map to 
 
 ---
 
+## Aggregate Inspection Modes (`--include-iframes`, `--deep`)
+
+These flags address a distinct use case from `--frame <index>`: rather than targeting a single frame, they produce a single aggregated output across all frames (and, for snapshot, optionally across shadow DOM too). This is the primary enhancement scope from issue #181.
+
+### `page snapshot --include-iframes`
+
+**Flow**:
+1. Enumerate frames via `list_frames()` (same call used by `page frames`)
+2. Build the main frame's accessibility tree via `Accessibility.getFullAXTree` (no `frameId`)
+3. For each non-main frame in document order:
+   a. Resolve a `FrameContext` for the frame (reuses same-origin vs OOPIF detection from T005)
+   b. Build that frame's accessibility tree via `Accessibility.getFullAXTree` — scoped by `frameId` (same-origin) or via the OOPIF session
+   c. Locate the frame's owner `<iframe>` node in the main tree (or the ancestor tree, for nested frames) by `backendDOMNodeId` from `Page.getFrameOwner`
+   d. Splice the frame's tree under the owner node, annotating the inlined subtree's root with `"frame": <index>`
+4. Run UID assignment (`build_tree`) once over the composite tree so UIDs are unique across the aggregated result
+5. Persist `SnapshotState` with an additional `aggregate: true` marker and a map `frame_uid_ranges: Vec<(frame_index, uid_range)>` so subsequent `--frame N` commands can disambiguate UIDs that originated in frame N
+
+**Mutual exclusion**: clap enforces `--include-iframes` conflicts with `--frame`. Attempting both returns a validation error.
+
+**Composition with `--pierce-shadow`**: Before splicing each frame's tree, apply the `--pierce-shadow` supplemental pass within that frame's context. The passes compose cleanly because `--pierce-shadow` augments a single tree and `--include-iframes` aggregates multiple trees.
+
+### `page text --deep`
+
+**Flow**:
+1. Enumerate frames via `list_frames()`
+2. For the main frame, run `Runtime.evaluate("document.body?.innerText")`
+3. For the main frame, run a shadow-DOM-pierced text pass: `Runtime.evaluate` with a helper that walks all open shadow roots and concatenates their `textContent`
+4. For each non-main frame in document order, repeat steps 2–3 using the frame's execution context ID
+5. Concatenate all results with a single newline delimiter between frames (matches the "document order" contract in AC31)
+
+**Why the union contract**: The AC specifies the output is "the observable union of what `page text`, `page text --frame <index>` for every frame, and shadow-DOM-pierced text extraction would produce." This lets us reuse the existing per-frame `page text` implementation rather than defining a new aggregation operator.
+
+**Mutual exclusion**: Same as `--include-iframes` — clap enforces `--deep` conflicts with `--frame`.
+
+### UID Resolution After Aggregate Snapshot
+
+When `SnapshotState.aggregate == true` is set, `interact`, `form`, and `dom` commands resolve UIDs as follows:
+1. Look up the UID in the flat `uid_map`
+2. Consult `frame_uid_ranges` to determine which frame the UID belongs to
+3. Route the command's CDP operations through that frame's `FrameContext`
+4. Callers do not need to pass `--frame` — the aggregate snapshot records the originating frame per UID
+
+A caller may pass `--frame N` explicitly; if that frame does not match the UID's recorded frame, a warning is emitted but execution proceeds (consistent with the existing non-aggregate behavior).
+
+### Files Affected by Aggregate Modes
+
+| File | Additional change for #181 |
+|------|---------------------------|
+| `src/cli/mod.rs` | Add `--include-iframes` to `PageSnapshotArgs`, `--deep` to `PageTextArgs`. Both `conflicts_with = "frame"`. |
+| `src/snapshot.rs` | Add aggregate snapshot builder; extend `SnapshotState` with `aggregate: bool` and `frame_uid_ranges: Vec<(u32, (u32, u32))>`. |
+| `src/page.rs` | Add `--deep` branch to `execute_text()` that iterates frames and aggregates output. |
+| `src/examples.rs` | Add `page snapshot --include-iframes` and `page text --deep` examples. |
+| `src/interact.rs` / `src/form.rs` / `src/dom.rs` | Consult `frame_uid_ranges` in `SnapshotState` to auto-route aggregate-snapshot UIDs through the correct frame's session. |
+
+---
+
 ## Frame-Scoped Network Monitoring
 
 ### `network list --frame <index>`
@@ -472,6 +530,9 @@ For UID-based interactions (`interact click --frame 1 s5`), the element center i
 | **E: `FrameContext` dual strategy** | Same-origin: use page session + frameId params. OOPIF: attach to target, new session | Handles all frame types correctly | More complex implementation | **Selected** — correct and robust |
 | **F: Enable-then-subscribe context detection** | Enable `Runtime` first, then subscribe to `Runtime.executionContextCreated` | Simple ordering | Race condition: replayed events arrive between `Runtime.enable` and `subscribe()`, causing non-deterministic fallback to isolated world | Rejected during verification — reordered to subscribe-then-enable (selected approach) |
 | **G: DOM.querySelector for frame-scoped queries** | Use `DOM.getDocument(pierce: true)` + `DOM.querySelectorAll` on iframe content document | Standard CDP approach | `DOM.getDocument` returns main frame's document for same-origin frames via shared session; content document nodeIds from `DOM.requestNode` are unreliable with `DOM.querySelectorAll` | Rejected during verification — replaced by JS-based `Runtime.evaluate` with `contextId` |
+| **H: `page frame <id> <op>` subcommand syntax (from #181)** | Add a `page frame <id>` subcommand that branches to snapshot/text/screenshot — mirrors `page snapshot` etc. via a nested subcommand | Alternative ergonomic grouping | Duplicates existing `--frame <index>` CLI surface; creates two code paths for the same capability; breaks the uniform flag approach used by dom/interact/form/js/network; still needs a frame resolution step identical to `--frame` | Rejected — existing `--frame <index>` flag covers the same capability uniformly across all command groups |
+| **I: `--include-iframes` composes with `--frame`** | Treat `--include-iframes` as a modifier on `--frame` (e.g., include descendants of the targeted frame) | One unified aggregation mechanism | Conflates "target one frame" with "aggregate many" — users cannot express "aggregate starting from frame N" without ambiguity; users asking for `--include-iframes` without `--frame` already mean "aggregate all" | Rejected — making them mutually exclusive is clearer and matches #181's AC wording |
+| **J: `--deep` as a shortcut for `--include-iframes --pierce-shadow` on snapshot too** | Extend `--deep` semantics to cover `page snapshot` as well as `page text` | Single flag to learn for "give me everything" | `page snapshot` already has orthogonal flags that compose (`--include-iframes --pierce-shadow`); adding a shortcut creates two ways to express the same thing and a mental model of "is `--deep` on snapshot the same as `--include-iframes --pierce-shadow`?" | Rejected — `--deep` remains `page text`-only; snapshot uses explicit flags |
 
 ---
 
@@ -499,6 +560,9 @@ For UID-based interactions (`interact click --frame 1 s5`), the element center i
 | Layer | Type | Coverage |
 |-------|------|----------|
 | Frame parsing | Unit | `parse_frame_arg` for integers, paths, "auto", invalid values |
+| Aggregate snapshot splicing | Unit | Splice logic for frame subtrees under owner nodes; UID range tracking in `SnapshotState` |
+| Aggregate text concatenation | Unit | Document-order concatenation across main frame, iframes, shadow roots |
+| Aggregate UID routing | Integration | UID from `page snapshot --include-iframes` resolves to correct frame's session in subsequent interact/form commands without `--frame` |
 | Frame tree ordering | Unit | `list_frames` with mock CDP response, verify depth-first document order |
 | FrameContext resolution | Unit | Same-origin vs OOPIF detection logic |
 | Coordinate translation | Unit | Frame offset calculation for nested iframes |
@@ -547,6 +611,8 @@ For UID-based interactions (`interact click --frame 1 s5`), the element center i
 | Coordinate translation inaccuracies for deeply nested or transformed iframes | Low | Medium | Use `DOM.getBoxModel` on each nesting level. CSS transforms on iframes are rare in enterprise apps. |
 | `--frame auto` performance on pages with many frames | Low | Low | Cap auto-detection at 50 frames. Document the cap in help text. |
 | Worker session lifetime — worker may terminate between enumeration and execution | Low | Medium | Catch `Target.detachedFromTarget` event and return descriptive error. |
+| Aggregate snapshot size on pages with many iframes | Medium | Low | Output respects existing `--compact` snapshot mode. Document that `--include-iframes` multiplies token count roughly linearly in frame count. |
+| Aggregate UID collisions when a frame reloads between snapshot and interaction | Low | Medium | `SnapshotState` captures `frame_id` per UID range; if the frame's ID no longer matches at interaction time, return `frame_detached()` error. |
 
 ---
 
@@ -562,6 +628,7 @@ For UID-based interactions (`interact click --frame 1 s5`), the element center i
 |-------|------|---------|
 | #189 | 2026-04-15 | Initial design |
 | #189 | 2026-04-15 | Verification sync: fixed context detection to subscribe-before-enable (default context with isolated world fallback); added JS-based DOM query approach for same-origin frames; added `contextId` scoping for `page text`; documented rejected alternatives F and G |
+| #181 | 2026-04-18 | Added aggregate inspection modes: `--include-iframes` on `page snapshot` (splice every iframe's AX tree under its owner node, annotated with `"frame"` index) and `--deep` on `page text` (document-order union across frames + shadow roots). Extended `SnapshotState` with `aggregate` + `frame_uid_ranges` so aggregate-snapshot UIDs auto-route through the originating frame's session. Added rejected alternatives H (subcommand syntax), I (compose with `--frame`), and J (`--deep` on snapshot). |
 
 ---
 

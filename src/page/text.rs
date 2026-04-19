@@ -35,6 +35,18 @@ pub async fn execute_text(
     args: &PageTextArgs,
     frame: Option<&str>,
 ) -> Result<(), AppError> {
+    if args.deep && frame.is_some() {
+        return Err(AppError {
+            message: "--deep and --frame are mutually exclusive".to_string(),
+            code: agentchrome::error::ExitCode::GeneralError,
+            custom_json: None,
+        });
+    }
+
+    if args.deep {
+        return execute_text_deep(global).await;
+    }
+
     let (client, mut managed) = setup_session(global).await?;
     if global.auto_dismiss_dialogs {
         let _dismiss = managed.spawn_auto_dismiss().await?;
@@ -130,6 +142,131 @@ pub async fn execute_text(
             "character_count": r.text.len(),
             "line_count": r.text.lines().count(),
         })
+    })
+}
+
+/// Aggregate text: concatenate main-frame text, every iframe's text, and
+/// shadow-root text in document order.
+async fn execute_text_deep(global: &GlobalOpts) -> Result<(), AppError> {
+    let (_client, mut managed) = setup_session(global).await?;
+    if global.auto_dismiss_dialogs {
+        let _dismiss = managed.spawn_auto_dismiss().await?;
+    }
+
+    managed.ensure_domain("Runtime").await?;
+
+    let frames = agentchrome::frame::list_frames(&mut managed).await?;
+
+    let shadow_expr = r"(function(){
+        function walk(root, out){
+            var hosts = root.querySelectorAll('*');
+            for (var i = 0; i < hosts.length; i++){
+                if (hosts[i].shadowRoot){
+                    var t = hosts[i].shadowRoot.textContent;
+                    if (t && t.trim()) out.push(t);
+                    walk(hosts[i].shadowRoot, out);
+                }
+            }
+        }
+        var out = [];
+        walk(document, out);
+        return out.join('\n');
+    })()";
+
+    let mut parts: Vec<String> = Vec::new();
+
+    for frame_info in &frames {
+        let body_expr = "document.body?.innerText ?? ''";
+        let ctx_id_opt = if frame_info.index == 0 {
+            None
+        } else {
+            find_execution_context_for(&mut managed, &frame_info.id).await.ok()
+        };
+
+        // Body text.
+        let mut body_params = serde_json::json!({
+            "expression": body_expr,
+            "returnByValue": true,
+        });
+        if let Some(cid) = ctx_id_opt {
+            body_params["contextId"] = serde_json::Value::from(cid);
+        }
+        if let Ok(result) = managed.send_command("Runtime.evaluate", Some(body_params)).await {
+            let s = result["result"]["value"].as_str().unwrap_or_default();
+            if !s.is_empty() {
+                parts.push(s.to_string());
+            }
+        }
+
+        // Shadow DOM text.
+        let mut shadow_params = serde_json::json!({
+            "expression": shadow_expr,
+            "returnByValue": true,
+        });
+        if let Some(cid) = ctx_id_opt {
+            shadow_params["contextId"] = serde_json::Value::from(cid);
+        }
+        if let Ok(result) = managed
+            .send_command("Runtime.evaluate", Some(shadow_params))
+            .await
+        {
+            let s = result["result"]["value"].as_str().unwrap_or_default();
+            if !s.is_empty() {
+                parts.push(s.to_string());
+            }
+        }
+    }
+
+    let text = parts.join("\n");
+    let (url, title) = get_page_info(&managed).await?;
+
+    if global.output.plain {
+        crate::output::emit_plain(&text, &global.output)?;
+        return Ok(());
+    }
+
+    let output = PageTextResult { text, url, title };
+
+    crate::output::emit(&output, &global.output, "page text", |r| {
+        serde_json::json!({
+            "character_count": r.text.len(),
+            "line_count": r.text.lines().count(),
+        })
+    })
+}
+
+/// Find the default execution context ID for a frame by subscribing to
+/// `Runtime.executionContextCreated` events (which replay on `Runtime.enable`).
+async fn find_execution_context_for(
+    managed: &mut agentchrome::connection::ManagedSession,
+    frame_id: &str,
+) -> Result<i64, AppError> {
+    let mut rx = managed
+        .subscribe("Runtime.executionContextCreated")
+        .await
+        .map_err(|e| AppError {
+            message: format!("subscribe failed: {e}"),
+            code: agentchrome::error::ExitCode::ProtocolError,
+            custom_json: None,
+        })?;
+
+    managed.ensure_domain("Runtime").await?;
+
+    let deadline = tokio::time::Instant::now() + std::time::Duration::from_millis(500);
+    while let Ok(Some(event)) = tokio::time::timeout_at(deadline, rx.recv()).await {
+        let ctx = &event.params["context"];
+        let aux = &ctx["auxData"];
+        if aux["frameId"].as_str() == Some(frame_id) && aux["isDefault"].as_bool() == Some(true) {
+            if let Some(id) = ctx["id"].as_i64() {
+                return Ok(id);
+            }
+        }
+    }
+
+    Err(AppError {
+        message: format!("execution context for frame {frame_id} not found"),
+        code: agentchrome::error::ExitCode::ProtocolError,
+        custom_json: None,
     })
 }
 

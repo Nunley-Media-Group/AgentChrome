@@ -1,7 +1,7 @@
 # Requirements: Iframe/Frame Targeting Support
 
-**Issues**: #189
-**Date**: 2026-04-15
+**Issues**: #189, #181
+**Date**: 2026-04-18
 **Status**: Draft
 **Author**: Rich Nunley
 
@@ -240,6 +240,47 @@ Frame ID tracking already exists in `src/navigate.rs` for `Page.frameNavigated` 
 **Then** the snapshot includes shadow DOM content within the targeted iframe
 **And** UIDs assigned to shadow DOM elements inside the iframe work with subsequent `--frame 1` commands
 
+### AC29: Aggregate snapshot inlines iframe content
+
+**Given** a page with one or more iframes containing visible content
+**When** `page snapshot --include-iframes` is run
+**Then** the accessibility tree output is a single aggregated tree containing the main frame content plus the content of every enumerable iframe
+**And** each iframe's subtree appears under its parent `<iframe>` element node
+**And** each inlined iframe subtree is annotated with a `"frame"` field on its root node indicating the frame index from `page frames`
+**And** UIDs assigned to elements within inlined iframes are resolvable by subsequent commands using `--frame <index>` matching that iframe's index
+
+**Example**:
+- Given: Main page at `https://example.com` with an iframe at index 1 containing a button labeled "Embedded Submit"
+- When: `agentchrome page snapshot --include-iframes`
+- Then: The accessibility tree contains both "Main Page Heading" and "Embedded Submit"
+- And: The "Embedded Submit" button's subtree is nested under the `<iframe>` owner node with a `"frame": 1` annotation
+
+### AC30: Aggregate snapshot combined with shadow DOM piercing
+
+**Given** a page containing iframes and web components with shadow DOM roots
+**When** `page snapshot --include-iframes --pierce-shadow` is run
+**Then** the output is a single tree aggregating main-frame content, iframe content, and shadow DOM content across both contexts
+**And** all discovered interactive elements receive UIDs that remain resolvable by subsequent commands
+
+### AC31: Aggregate text extraction with --deep
+
+**Given** a page with text content in the main frame, inside iframes, and inside open shadow DOM roots
+**When** `page text --deep` is run
+**Then** the output contains the visible text of the main frame, followed by visible text from each iframe and each shadow DOM root in document order
+**And** the output is the observable union of what `page text`, `page text --frame <index>` for every frame, and shadow-DOM-pierced text extraction would produce
+
+**Example**:
+- Given: Main page has heading "Parent"; iframe at index 1 contains paragraph "Child iframe text"; a web component on the main page has a shadow root containing "Shadow text"
+- When: `agentchrome page text --deep`
+- Then: The output contains all three strings: "Parent", "Child iframe text", and "Shadow text"
+
+### AC32: --deep and --include-iframes are idempotent with empty nesting
+
+**Given** a page with no iframes and no shadow DOM roots
+**When** `page snapshot --include-iframes` or `page text --deep` is run
+**Then** the output is identical to running the same command without the flag
+**And** no regression is introduced for pages without nested content
+
 ### Generated Gherkin Preview
 
 ```gherkin
@@ -389,6 +430,27 @@ Feature: Iframe/Frame Targeting Support
     Given an iframe containing a web component with shadow DOM
     When "page snapshot --frame 1 --pierce-shadow" is run
     Then shadow DOM content within the iframe is included in the snapshot
+
+  Scenario: Aggregate snapshot inlines iframe content
+    Given a page with iframes containing visible content
+    When "page snapshot --include-iframes" is run
+    Then the tree contains main-frame content plus every iframe's content
+    And each inlined iframe subtree has a "frame" index annotation
+
+  Scenario: Aggregate snapshot with shadow DOM piercing
+    Given a page with iframes and shadow DOM roots
+    When "page snapshot --include-iframes --pierce-shadow" is run
+    Then the tree aggregates main-frame, iframe, and shadow DOM content
+
+  Scenario: Aggregate text extraction with --deep
+    Given a page with text in main frame, iframes, and shadow roots
+    When "page text --deep" is run
+    Then the output contains text from all three contexts in document order
+
+  Scenario: --deep on a page with no nested content
+    Given a page with no iframes and no shadow DOM roots
+    When "page text --deep" is run
+    Then the output is identical to "page text" without the flag
 ```
 
 ---
@@ -420,6 +482,10 @@ Feature: Iframe/Frame Targeting Support
 | FR21 | `--pierce-shadow` flag on all dom subcommands to pierce shadow DOM boundaries for CSS selector resolution | Must | Selectors match elements inside open shadow roots |
 | FR22 | Interact and form commands operate on shadow DOM elements via UID without requiring `--pierce-shadow` (the UID from a pierce-shadow snapshot is sufficient) | Must | UID resolution uses backendDOMNodeId which is shadow-DOM-agnostic |
 | FR23 | `--frame` and `--pierce-shadow` flags can be combined to target shadow DOM content within an iframe | Must | Flags are orthogonal and composable |
+| FR24 | `--include-iframes` flag on `page snapshot` produces a single aggregated accessibility tree that inlines the content of every enumerable iframe under its parent `<iframe>` owner node | Must | Each inlined subtree is annotated with `"frame": <index>` so callers can disambiguate UIDs across frames |
+| FR25 | `--deep` flag on `page text` extracts visible text from the main frame, all iframes, and all open shadow DOM roots in document order | Must | Semantic equivalent of running `page text` across every frame returned by `page frames` plus shadow-pierced text extraction, concatenated in document order |
+| FR26 | `--include-iframes` / `--deep` on a page with no nested content behave identically to the base command (no regression) | Must | Zero-cost when the page has no iframes or shadow roots |
+| FR27 | `--include-iframes` and `--pierce-shadow` are composable on `page snapshot` — together they produce a single aggregated tree covering frames AND shadow DOM | Must | Flags are orthogonal |
 
 ---
 
@@ -454,6 +520,8 @@ Feature: Iframe/Frame Targeting Support
 | `--frame` | String | Non-negative integer, slash-separated path (e.g., `1/0`), or literal `auto`. Must resolve to a valid frame. | No (defaults to main frame) |
 | `--worker` | Non-negative integer (u32) | Must be a valid index from `page workers` output. Only valid on `js exec`. | No |
 | `--pierce-shadow` | Boolean flag | No value required. Valid on `page snapshot` and all `dom` subcommands. | No (defaults to false) |
+| `--include-iframes` | Boolean flag | No value required. Valid on `page snapshot` only. Mutually exclusive with `--frame` (use `--frame` to target one frame or `--include-iframes` to aggregate all). | No (defaults to false) |
+| `--deep` | Boolean flag | No value required. Valid on `page text` only. Mutually exclusive with `--frame` (same rationale as above). | No (defaults to false) |
 
 ### Output Data — `page frames`
 
@@ -502,6 +570,9 @@ Feature: Iframe/Frame Targeting Support
 - Frame-level cookie isolation (cookies are managed at the browser/profile level, not per-frame)
 - Closed shadow DOM piercing (only open shadow roots are accessible via CDP)
 - Worker-level DOM access (workers have no DOM; only JS execution is supported via `--worker`)
+- Shadow DOM mutation observation or live-update subscriptions (static snapshot only)
+- `page frame <id> <op>` subcommand syntax proposed in #181 — superseded by the existing `--frame <index>` flag approach for a single, uniform CLI surface
+- Aggregate `page screenshot --include-iframes` — single-image composite of all frames (frame-targeted screenshot via `--frame <index>` remains supported)
 
 ---
 
@@ -515,6 +586,8 @@ Feature: Iframe/Frame Targeting Support
 | `page workers` latency | < 200ms | Benchmark on a page with 3 workers |
 | Command coverage — `--frame` | 100% of page/dom/interact/form/js/network commands support `--frame` | Verify via `--help` output audit |
 | Command coverage — `--pierce-shadow` | 100% of page snapshot and dom commands support `--pierce-shadow` | Verify via `--help` output audit |
+| Aggregate snapshot latency (`--include-iframes`) | < 500ms on a page with 10 iframes | Benchmark against `page snapshot --include-iframes` on fixture |
+| Aggregate text latency (`--deep`) | < 300ms on a page with 10 iframes + 5 shadow roots | Benchmark against `page text --deep` on fixture |
 
 ---
 
@@ -529,6 +602,7 @@ Feature: Iframe/Frame Targeting Support
 | Issue | Date | Summary |
 |-------|------|---------|
 | #189 | 2026-04-15 | Initial feature spec |
+| #181 | 2026-04-18 | Added aggregate inspection modes: AC29–AC32 (`--include-iframes` on `page snapshot`, `--deep` on `page text`, combined with `--pierce-shadow`), FR24–FR27. Noted that #181's proposed `page frame <id> <op>` subcommand syntax is superseded by the existing `--frame <index>` flag. Added aggregate screenshot to Out of Scope. |
 
 ---
 

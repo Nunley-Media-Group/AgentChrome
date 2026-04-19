@@ -1,7 +1,7 @@
 # Tasks: Iframe/Frame Targeting Support
 
-**Issues**: #189
-**Date**: 2026-04-15
+**Issues**: #189, #181
+**Date**: 2026-04-18
 **Status**: Planning
 **Author**: Rich Nunley
 
@@ -16,7 +16,8 @@
 | Frontend | N/A (CLI tool) | N/A |
 | Integration | 4 (T016–T019) | [ ] |
 | Testing | 5 (T020–T024) | [ ] |
-| **Total** | **24 tasks** | |
+| Phase 6: Aggregate modes (#181) | 5 (T025–T029) | [ ] |
+| **Total** | **29 tasks** | |
 
 ---
 
@@ -352,6 +353,73 @@
 
 ---
 
+## Phase 6: Aggregate Modes (Issue #181)
+
+### T025: Add --include-iframes and --deep CLI arguments
+
+**File(s)**: `src/cli/mod.rs`
+**Type**: Modify
+**Depends**: T002
+**Acceptance**:
+- [ ] `--include-iframes` boolean flag added to `PageSnapshotArgs` with `conflicts_with = "frame"`
+- [ ] `--deep` boolean flag added to `PageTextArgs` with `conflicts_with = "frame"`
+- [ ] `cargo build` succeeds
+- [ ] `cargo clippy --all-targets` passes
+- [ ] Manual test: `agentchrome page snapshot --include-iframes --frame 1` returns a clap validation error
+
+### T026: Extend SnapshotState for aggregate UID routing
+
+**File(s)**: `src/snapshot.rs`
+**Type**: Modify
+**Depends**: T010
+**Acceptance**:
+- [ ] `SnapshotState` extended with `aggregate: bool` (defaults to `false`) and `frame_uid_ranges: Vec<(u32, (u32, u32))>` — maps frame index to the inclusive UID numeric range assigned to that frame's elements
+- [ ] `write_snapshot_state()` persists new fields when `aggregate == true`
+- [ ] `read_snapshot_state()` deserializes both fields with backwards-compatible defaults (old files produce `aggregate: false`, empty `frame_uid_ranges`)
+- [ ] Unit test round-trips a sample aggregate `SnapshotState` through write/read and verifies structural equality
+
+### T027: Implement aggregate snapshot builder (--include-iframes)
+
+**File(s)**: `src/snapshot.rs`, `src/page.rs`
+**Type**: Modify
+**Depends**: T009, T019, T026
+**Acceptance**:
+- [ ] `page snapshot --include-iframes` enumerates frames via `list_frames()` and builds main-frame AX tree
+- [ ] For each non-main frame, builds its AX tree via `Accessibility.getFullAXTree` scoped by `FrameContext` (same-origin uses `frameId`; OOPIF uses attached session)
+- [ ] Each frame's subtree is spliced under its `<iframe>` owner node (located via `Page.getFrameOwner` + `backendDOMNodeId` match)
+- [ ] Spliced subtree root is annotated with `"frame": <index>` in the output JSON
+- [ ] UID assignment runs once over the composite tree; `frame_uid_ranges` is populated with each frame's UID range
+- [ ] `SnapshotState.aggregate` is set to `true` when persisted
+- [ ] Combined with `--pierce-shadow`, the supplemental shadow pass runs within each frame before splicing (AC30)
+- [ ] Page with no iframes produces output identical to base `page snapshot` (AC32)
+
+### T028: Implement --deep text extraction (page text --deep)
+
+**File(s)**: `src/page.rs`
+**Type**: Modify
+**Depends**: T009
+**Acceptance**:
+- [ ] `page text --deep` enumerates frames via `list_frames()`
+- [ ] For the main frame and each iframe, collects `document.body?.innerText` via `Runtime.evaluate` scoped to the frame's execution context
+- [ ] For each frame, additionally collects text from open shadow roots via a helper `Runtime.evaluate` expression that walks `element.shadowRoot` recursively and concatenates `textContent`
+- [ ] Outputs are concatenated in document order (main frame first, then iframes in `list_frames` order), separated by single newlines
+- [ ] Page with no iframes and no shadow roots produces output identical to base `page text` (AC32)
+- [ ] Output respects `--json` / `--plain` format flags consistently with base `page text`
+
+### T029: Route aggregate-snapshot UIDs through originating frame
+
+**File(s)**: `src/interact.rs`, `src/form.rs`, `src/dom.rs`
+**Type**: Modify
+**Depends**: T012, T013, T014, T026, T027
+**Acceptance**:
+- [ ] When `SnapshotState.aggregate == true` and a UID-based command is invoked without `--frame`, the command consults `frame_uid_ranges` to locate the frame that owns the UID
+- [ ] The command then resolves a `FrameContext` for that frame and executes the CDP operations through the frame's session (same path as `--frame <index>`)
+- [ ] If the user passes `--frame N` explicitly and N does not match the UID's recorded frame, a warning is emitted on stderr but execution proceeds with the explicit frame
+- [ ] If the originating frame's `frame_id` no longer matches at resolution time (frame reloaded/detached), return `AppError::frame_detached()`
+- [ ] Non-aggregate snapshots (`aggregate == false`) retain current behavior — no regression
+
+---
+
 ## Dependency Graph
 
 ```
@@ -392,6 +460,17 @@ T003 ──┘              │      ├──▶ T007 ──┐
                              │
                              ▼
                             T024
+
+Phase 6 (Issue #181 — aggregate modes):
+
+  T002 ─▶ T025
+  T010 ─▶ T026 ─┐
+                │
+  T009, T019 ──▶ T027 ─┐
+                       │
+  T009 ───▶ T028       │
+                       │
+  T012, T013, T014 ──▶ T029 ◀── T026, T027
 ```
 
 ---
@@ -401,6 +480,7 @@ T003 ──┘              │      ├──▶ T007 ──┐
 | Issue | Date | Summary |
 |-------|------|---------|
 | #189 | 2026-04-15 | Initial task breakdown |
+| #181 | 2026-04-18 | Added Phase 6 (T025–T029) covering aggregate inspection modes: `--include-iframes` CLI arg, `SnapshotState` extension for aggregate UID routing, aggregate snapshot builder, `--deep` text extraction, and UID auto-routing through originating frame. |
 
 ---
 

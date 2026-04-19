@@ -1226,6 +1226,10 @@ pub struct PageTextArgs {
     /// CSS selector to extract text from a specific element
     #[arg(long)]
     pub selector: Option<String>,
+
+    /// Extract text from main frame, all iframes, and all open shadow DOM roots (mutually exclusive with --frame)
+    #[arg(long)]
+    pub deep: bool,
 }
 
 /// Arguments for `page snapshot`.
@@ -1246,6 +1250,10 @@ pub struct PageSnapshotArgs {
     /// Include shadow DOM content in the accessibility tree
     #[arg(long)]
     pub pierce_shadow: bool,
+
+    /// Aggregate every iframe's accessibility tree into a single tree (mutually exclusive with --frame)
+    #[arg(long)]
+    pub include_iframes: bool,
 }
 
 /// Arguments for `page find`.

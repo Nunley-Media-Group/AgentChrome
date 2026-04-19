@@ -199,6 +199,18 @@ pub async fn execute_snapshot(
     args: &PageSnapshotArgs,
     frame: Option<&str>,
 ) -> Result<(), AppError> {
+    if args.include_iframes && frame.is_some() {
+        return Err(AppError {
+            message: "--include-iframes and --frame are mutually exclusive".to_string(),
+            code: ExitCode::GeneralError,
+            custom_json: None,
+        });
+    }
+
+    if args.include_iframes {
+        return execute_aggregate_snapshot(global, args).await;
+    }
+
     let (client, mut managed) = setup_session(global).await?;
     if global.auto_dismiss_dialogs {
         let _dismiss = managed.spawn_auto_dismiss().await?;
@@ -296,6 +308,9 @@ pub async fn execute_snapshot(
         uid_map: build.uid_map,
         frame_index: snap_frame_index,
         frame_id: snap_frame_id,
+        aggregate: false,
+        frame_uid_ranges: Vec::new(),
+        frame_ids: Vec::new(),
     };
     if let Err(e) = crate::snapshot::write_snapshot_state(&state) {
         eprintln!("warning: could not save snapshot state: {e}");
@@ -364,6 +379,223 @@ pub async fn execute_snapshot(
     }
 
     // Emit through the large-response gate
+    crate::output::emit(&json_value, &global.output, "page snapshot", |v| {
+        let total_nodes = crate::snapshot::count_nodes(v);
+        let roles = crate::snapshot::top_roles(v, 5);
+        serde_json::json!({
+            "total_nodes": total_nodes,
+            "top_roles": roles,
+        })
+    })
+}
+
+/// Aggregate snapshot: build main-frame tree and splice every enumerable
+/// iframe's accessibility tree under its owner node.
+#[allow(clippy::too_many_lines)]
+async fn execute_aggregate_snapshot(
+    global: &GlobalOpts,
+    args: &PageSnapshotArgs,
+) -> Result<(), AppError> {
+    let (client, mut managed) = setup_session(global).await?;
+    if global.auto_dismiss_dialogs {
+        let _dismiss = managed.spawn_auto_dismiss().await?;
+    }
+
+    managed.ensure_domain("Accessibility").await?;
+    managed.ensure_domain("Runtime").await?;
+    managed.ensure_domain("DOM").await?;
+
+    // Enumerate all frames in document order.
+    let frames = agentchrome::frame::list_frames(&mut managed).await?;
+
+    // Build main-frame tree.
+    let main_ax = managed
+        .send_command("Accessibility.getFullAXTree", None)
+        .await
+        .map_err(|e| AppError::snapshot_failed(&e.to_string()))?;
+    let main_nodes = main_ax["nodes"]
+        .as_array()
+        .ok_or_else(|| AppError::snapshot_failed("response missing 'nodes' array"))?;
+    let mut main_build = crate::snapshot::build_tree(main_nodes, args.verbose);
+
+    // Optional shadow-DOM pass on the main frame.
+    if args.pierce_shadow {
+        let known: std::collections::HashSet<i64> = main_build.uid_map.values().copied().collect();
+        let next_uid = main_build.uid_map.len();
+        let supplemental = shadow_dom_supplemental_pass(&managed, &known, next_uid).await;
+        main_build.uid_map.extend(supplemental);
+    }
+
+    let mut merged_root = main_build.root;
+    let mut merged_uid_map = main_build.uid_map;
+    let mut frame_uid_ranges: Vec<(u32, (u32, u32))> = Vec::new();
+    let mut frame_ids: Vec<(u32, String)> = Vec::new();
+    // Record main-frame range.
+    if !merged_uid_map.is_empty() {
+        frame_uid_ranges.push((0, (1, merged_uid_map.len() as u32)));
+    }
+    if let Some(main_frame) = frames.first() {
+        frame_ids.push((0, main_frame.id.clone()));
+    }
+
+    // Splice each non-main frame.
+    for frame_info in frames.iter().skip(1) {
+        let Ok(owner) = managed
+            .send_command(
+                "DOM.getFrameOwner",
+                Some(serde_json::json!({ "frameId": frame_info.id })),
+            )
+            .await
+        else {
+            continue;
+        };
+        let Some(owner_backend_id) = owner["backendNodeId"].as_i64() else {
+            continue;
+        };
+
+        // Build that frame's AX tree. Try same-origin (frameId on the page session)
+        // first; if that fails, attempt an OOPIF attach.
+        let frame_ax = managed
+            .send_command(
+                "Accessibility.getFullAXTree",
+                Some(serde_json::json!({ "frameId": frame_info.id })),
+            )
+            .await;
+
+        let (frame_nodes_value, frame_session_for_shadow): (
+            serde_json::Value,
+            Option<agentchrome::connection::ManagedSession>,
+        ) = match frame_ax {
+            Ok(v) => (v, None),
+            Err(_) => {
+                // OOPIF path.
+                let targets = client
+                    .send_command("Target.getTargets", None)
+                    .await
+                    .map_err(|e| AppError {
+                        message: format!("Target.getTargets failed: {e}"),
+                        code: ExitCode::ProtocolError,
+                        custom_json: None,
+                    })?;
+                let Some(target_id) = targets["targetInfos"].as_array().and_then(|arr| {
+                    arr.iter()
+                        .find(|t| {
+                            t["targetId"].as_str() == Some(frame_info.id.as_str())
+                                || (t["type"].as_str() == Some("iframe")
+                                    && t["url"].as_str() == Some(frame_info.url.as_str()))
+                        })
+                        .and_then(|t| t["targetId"].as_str().map(String::from))
+                }) else {
+                    continue;
+                };
+                let Ok(oopif_raw) = client.create_session(&target_id).await else {
+                    continue;
+                };
+                let oopif = agentchrome::connection::ManagedSession::new(oopif_raw);
+                let Ok(v) = oopif
+                    .send_command("Accessibility.getFullAXTree", None)
+                    .await
+                else {
+                    continue;
+                };
+                (v, Some(oopif))
+            }
+        };
+
+        let Some(frame_nodes) = frame_nodes_value["nodes"].as_array() else {
+            continue;
+        };
+
+        let uid_offset = merged_uid_map.len();
+        let mut frame_build =
+            crate::snapshot::build_tree_with_uid_offset(frame_nodes, args.verbose, uid_offset);
+
+        // Optional shadow-DOM pass within this frame.
+        if args.pierce_shadow {
+            let known: std::collections::HashSet<i64> =
+                frame_build.uid_map.values().copied().collect();
+            let next_uid = uid_offset + frame_build.uid_map.len();
+            let shadow_session = frame_session_for_shadow.as_ref().unwrap_or(&managed);
+            let supplemental =
+                shadow_dom_supplemental_pass(shadow_session, &known, next_uid).await;
+            frame_build.uid_map.extend(supplemental);
+        }
+
+        let uid_start = u32::try_from(uid_offset + 1).unwrap_or(u32::MAX);
+        let uid_end = u32::try_from(merged_uid_map.len() + frame_build.uid_map.len())
+            .unwrap_or(u32::MAX);
+        if !frame_build.uid_map.is_empty() {
+            frame_uid_ranges.push((frame_info.index, (uid_start, uid_end)));
+        }
+        frame_ids.push((frame_info.index, frame_info.id.clone()));
+
+        merged_uid_map.extend(frame_build.uid_map);
+
+        // Annotate the spliced subtree's root with the frame index.
+        let mut frame_root = frame_build.root;
+        frame_root.frame = Some(frame_info.index);
+
+        crate::snapshot::splice_frame_subtree(&mut merged_root, owner_backend_id, frame_root);
+    }
+
+    // Persist aggregate SnapshotState.
+    let (url, _title) = get_page_info(&managed).await?;
+    let state = crate::snapshot::SnapshotState {
+        url,
+        timestamp: agentchrome::session::now_iso8601(),
+        uid_map: merged_uid_map,
+        frame_index: None,
+        frame_id: None,
+        aggregate: true,
+        frame_uid_ranges,
+        frame_ids,
+    };
+    if let Err(e) = crate::snapshot::write_snapshot_state(&state) {
+        eprintln!("warning: could not save snapshot state: {e}");
+    }
+
+    let root = if args.compact {
+        crate::snapshot::compact_tree(&merged_root)
+    } else {
+        merged_root
+    };
+
+    // Plain/text output path
+    if !global.output.json && !global.output.pretty {
+        let text = crate::snapshot::format_text(&root, args.verbose);
+        if let Some(ref file_path) = args.file {
+            std::fs::write(file_path, &text).map_err(|e| {
+                AppError::file_write_failed(&file_path.display().to_string(), &e.to_string())
+            })?;
+        } else {
+            crate::output::emit_plain(&text, &global.output)?;
+        }
+        return Ok(());
+    }
+
+    let json_value = serde_json::to_value(&root).map_err(|e| AppError {
+        message: format!("serialization error: {e}"),
+        code: ExitCode::GeneralError,
+        custom_json: None,
+    })?;
+
+    if let Some(ref file_path) = args.file {
+        let serializer = if global.output.pretty {
+            serde_json::to_string_pretty(&json_value)
+        } else {
+            serde_json::to_string(&json_value)
+        };
+        let formatted = serializer.map_err(|e| AppError {
+            message: format!("serialization error: {e}"),
+            code: ExitCode::GeneralError,
+            custom_json: None,
+        })?;
+        std::fs::write(file_path, &formatted).map_err(|e| {
+            AppError::file_write_failed(&file_path.display().to_string(), &e.to_string())
+        })?;
+        return Ok(());
+    }
+
     crate::output::emit(&json_value, &global.output, "page snapshot", |v| {
         let total_nodes = crate::snapshot::count_nodes(v);
         let roles = crate::snapshot::top_roles(v, 5);
