@@ -259,15 +259,39 @@ pub async fn resolve_connection_with_reconnect(
         };
     };
 
-    if health_check(host, session_data.port).await.is_ok() {
-        return Ok(ResolvedConnection {
-            ws_url: session_data.ws_url,
-            host: host.to_string(),
-            port: session_data.port,
-        });
-    }
+    // Fast path: port responds and the returned browser ws_url matches what we
+    // have on disk. A bare `/json/version` ping is not enough — the port can be
+    // reachable while the browser-level WebSocket has rotated to a new id, so
+    // we compare endpoints and rewrite the session file when they diverge.
+    let rediscover_err = match query_version(host, session_data.port).await {
+        Ok(version) => {
+            if version.ws_debugger_url == session_data.ws_url {
+                return Ok(ResolvedConnection {
+                    ws_url: session_data.ws_url,
+                    host: host.to_string(),
+                    port: session_data.port,
+                });
+            }
+            // Stored ws_url is stale but port is live: rewrite and retry in-band.
+            let updated =
+                session::rewrite_preserving(&session_data, version.ws_debugger_url.clone())
+                    .unwrap_or_else(|e| {
+                        eprintln!("warning: could not persist reconnect to session file: {e}");
+                        SessionData {
+                            ws_url: version.ws_debugger_url.clone(),
+                            ..session_data.clone()
+                        }
+                    });
+            return Ok(ResolvedConnection {
+                ws_url: updated.ws_url,
+                host: host.to_string(),
+                port: session_data.port,
+            });
+        }
+        Err(e) => e.to_string(),
+    };
 
-    // Stale ws_url: rediscover on the stored port.
+    // Port unreachable: retry on the stored port with the policy's backoff.
     let rediscover_err = match rediscover_on_stored_port(host, session_data.port, policy).await {
         Ok(new_ws_url) => {
             let updated = session::rewrite_preserving(&session_data, new_ws_url.clone())
@@ -285,7 +309,7 @@ pub async fn resolve_connection_with_reconnect(
                 port: session_data.port,
             });
         }
-        Err(e) => e.to_string(),
+        Err(e) => format!("{rediscover_err}; {e}"),
     };
 
     // Stored port unreachable: try auto-discovery on the default port.
