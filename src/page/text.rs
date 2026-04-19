@@ -35,6 +35,18 @@ pub async fn execute_text(
     args: &PageTextArgs,
     frame: Option<&str>,
 ) -> Result<(), AppError> {
+    if args.deep && frame.is_some() {
+        return Err(AppError {
+            message: "--deep and --frame are mutually exclusive".to_string(),
+            code: agentchrome::error::ExitCode::GeneralError,
+            custom_json: None,
+        });
+    }
+
+    if args.deep {
+        return execute_text_deep(global).await;
+    }
+
     let (client, mut managed) = setup_session(global).await?;
     if global.auto_dismiss_dialogs {
         let _dismiss = managed.spawn_auto_dismiss().await?;
@@ -131,6 +143,133 @@ pub async fn execute_text(
             "line_count": r.text.lines().count(),
         })
     })
+}
+
+/// Aggregate text: concatenate main-frame text, every iframe's text, and
+/// shadow-root text in document order.
+async fn execute_text_deep(global: &GlobalOpts) -> Result<(), AppError> {
+    let (_client, mut managed) = setup_session(global).await?;
+    if global.auto_dismiss_dialogs {
+        let _dismiss = managed.spawn_auto_dismiss().await?;
+    }
+
+    // Subscribe BEFORE enabling Runtime so we capture the replay of all
+    // existing execution contexts (Chrome replays them immediately on enable).
+    let frame_ctx_map = collect_frame_execution_contexts(&mut managed).await;
+
+    let frames = agentchrome::frame::list_frames(&mut managed).await?;
+
+    let shadow_expr = r"(function(){
+        function walk(root, out){
+            var hosts = root.querySelectorAll('*');
+            for (var i = 0; i < hosts.length; i++){
+                if (hosts[i].shadowRoot){
+                    var t = hosts[i].shadowRoot.textContent;
+                    if (t && t.trim()) out.push(t);
+                    walk(hosts[i].shadowRoot, out);
+                }
+            }
+        }
+        var out = [];
+        walk(document, out);
+        return out.join('\n');
+    })()";
+
+    let mut parts: Vec<String> = Vec::new();
+
+    for frame_info in &frames {
+        let body_expr = "document.body?.innerText ?? ''";
+        let ctx_id_opt: Option<i64> = if frame_info.index == 0 {
+            None
+        } else {
+            frame_ctx_map.get(&frame_info.id).copied()
+        };
+
+        // Body text.
+        let mut body_params = serde_json::json!({
+            "expression": body_expr,
+            "returnByValue": true,
+        });
+        if let Some(cid) = ctx_id_opt {
+            body_params["contextId"] = serde_json::Value::from(cid);
+        }
+        if let Ok(result) = managed
+            .send_command("Runtime.evaluate", Some(body_params))
+            .await
+        {
+            let s = result["result"]["value"].as_str().unwrap_or_default();
+            if !s.is_empty() {
+                parts.push(s.to_string());
+            }
+        }
+
+        // Shadow DOM text (only meaningful where shadow roots exist).
+        let mut shadow_params = serde_json::json!({
+            "expression": shadow_expr,
+            "returnByValue": true,
+        });
+        if let Some(cid) = ctx_id_opt {
+            shadow_params["contextId"] = serde_json::Value::from(cid);
+        }
+        if let Ok(result) = managed
+            .send_command("Runtime.evaluate", Some(shadow_params))
+            .await
+        {
+            let s = result["result"]["value"].as_str().unwrap_or_default();
+            if !s.is_empty() {
+                parts.push(s.to_string());
+            }
+        }
+    }
+
+    let text = parts.join("\n");
+    let (url, title) = get_page_info(&managed).await?;
+
+    if global.output.plain {
+        crate::output::emit_plain(&text, &global.output)?;
+        return Ok(());
+    }
+
+    let output = PageTextResult { text, url, title };
+
+    crate::output::emit(&output, &global.output, "page text", |r| {
+        serde_json::json!({
+            "character_count": r.text.len(),
+            "line_count": r.text.lines().count(),
+        })
+    })
+}
+
+/// Subscribe to `Runtime.executionContextCreated` BEFORE enabling the Runtime
+/// domain, then enable it. Chrome replays all existing execution contexts
+/// immediately on enable, so subscribing first guarantees we receive them.
+///
+/// Returns a map of `frameId → default execution context ID` for all frames.
+async fn collect_frame_execution_contexts(
+    managed: &mut agentchrome::connection::ManagedSession,
+) -> std::collections::HashMap<String, i64> {
+    let mut frame_ctx_map = std::collections::HashMap::new();
+
+    let Ok(mut rx) = managed.subscribe("Runtime.executionContextCreated").await else {
+        // If subscribe fails, fall back gracefully (all frames will use default context).
+        let _ = managed.ensure_domain("Runtime").await;
+        return frame_ctx_map;
+    };
+
+    let _ = managed.ensure_domain("Runtime").await;
+
+    let deadline = tokio::time::Instant::now() + std::time::Duration::from_millis(300);
+    while let Ok(Some(event)) = tokio::time::timeout_at(deadline, rx.recv()).await {
+        let ctx = &event.params["context"];
+        let aux = &ctx["auxData"];
+        if aux["isDefault"].as_bool() == Some(true) {
+            if let (Some(fid), Some(cid)) = (aux["frameId"].as_str(), ctx["id"].as_i64()) {
+                frame_ctx_map.insert(fid.to_string(), cid);
+            }
+        }
+    }
+
+    frame_ctx_map
 }
 
 // =============================================================================

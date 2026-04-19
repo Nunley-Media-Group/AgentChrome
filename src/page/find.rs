@@ -214,6 +214,9 @@ async fn capture_snapshot(
         uid_map: build.uid_map.clone(),
         frame_index: None,
         frame_id: None,
+        aggregate: false,
+        frame_uid_ranges: Vec::new(),
+        frame_ids: Vec::new(),
     };
     if let Err(e) = crate::snapshot::write_snapshot_state(&state) {
         eprintln!("warning: could not save snapshot state: {e}");
@@ -507,6 +510,7 @@ mod tests {
             uid: uid.map(String::from),
             properties: None,
             backend_dom_node_id: None,
+            frame: None,
             children,
         }
     }

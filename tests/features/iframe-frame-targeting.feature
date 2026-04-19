@@ -1,7 +1,7 @@
 # File: tests/features/iframe-frame-targeting.feature
 #
-# Generated from: .claude/specs/feature-add-iframe-frame-targeting-support/requirements.md
-# Issue: #189
+# Generated from: specs/feature-add-iframe-frame-targeting-support/requirements.md
+# Issues: #189 (AC1-AC28), #181 (AC29-AC32 aggregate inspection modes)
 
 Feature: Iframe/Frame Targeting Support
   As a browser automation engineer working with enterprise web applications
@@ -247,3 +247,65 @@ Feature: Iframe/Frame Targeting Support
     When "page snapshot --frame 1 --pierce-shadow" is run
     Then the accessibility tree includes shadow DOM content from within the iframe
     And UIDs assigned to shadow elements work with subsequent "--frame 1" commands
+
+  # --- Aggregate Inspection Modes (Added by issue #181) ---
+
+  # Added by issue #181
+  Scenario: AC29 - Aggregate snapshot inlines iframe content
+    Given the page has a main frame containing "Main Page Heading"
+    And an iframe at index 1 contains a button labeled "IFrame Submit"
+    When "page snapshot --include-iframes" is run
+    Then the accessibility tree contains "Main Page Heading"
+    And the accessibility tree contains "IFrame Submit"
+    And the "IFrame Submit" subtree is annotated with "frame" equal to 1
+    And the exit code is 0
+
+  # Added by issue #181
+  Scenario: AC29 - --include-iframes conflicts with --frame
+    When "page --frame 1 snapshot --include-iframes" is run
+    Then the command fails with a mutual-exclusion error
+    And the exit code is non-zero
+
+  # Added by issue #181
+  Scenario: AC29 - Aggregate snapshot UIDs resolve via recorded frame
+    Given "page snapshot --include-iframes" assigned UID "s4" to a button inside the iframe at index 1
+    When "interact click s4" is run without --frame
+    Then the command routes through the iframe at index 1
+    And the exit code is 0
+
+  # Added by issue #181
+  Scenario: AC30 - Aggregate snapshot with shadow DOM piercing
+    Given the page has an iframe at index 1 containing a web component with a shadow root
+    And the shadow root contains a button labeled "Shadow Button"
+    When "page snapshot --include-iframes --pierce-shadow" is run
+    Then the accessibility tree contains "Shadow Button"
+    And the exit code is 0
+
+  # Added by issue #181
+  Scenario: AC31 - Aggregate text extraction with --deep
+    Given the main page contains the text "main-page-only-content"
+    And an iframe at index 1 contains the text "iframe-only-content"
+    And a web component on the main page has a shadow root containing "shadow-only-content"
+    When "page text --deep" is run
+    Then the output contains "main-page-only-content"
+    And the output contains "iframe-only-content"
+    And the output contains "shadow-only-content"
+    And the exit code is 0
+
+  # Added by issue #181
+  Scenario: AC31 - --deep conflicts with --frame
+    When "page --frame 1 text --deep" is run
+    Then the command fails with a mutual-exclusion error
+    And the exit code is non-zero
+
+  # Added by issue #181
+  Scenario: AC32 - --include-iframes is idempotent on pages with no iframes
+    Given a page with no iframes and no shadow DOM roots
+    When "page snapshot --include-iframes" is run
+    Then the output is identical to running "page snapshot" without the flag
+
+  # Added by issue #181
+  Scenario: AC32 - --deep is idempotent on pages with no nested content
+    Given a page with no iframes and no shadow DOM roots
+    When "page text --deep" is run
+    Then the output is identical to running "page text" without the flag

@@ -182,6 +182,9 @@ async fn take_snapshot(
         uid_map: build_result.uid_map,
         frame_index: None,
         frame_id: None,
+        aggregate: false,
+        frame_uid_ranges: Vec::new(),
+        frame_ids: Vec::new(),
     };
     snapshot::write_snapshot_state(&state)?;
 

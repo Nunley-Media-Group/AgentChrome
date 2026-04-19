@@ -129,7 +129,7 @@ fn parse_ax_nodes(nodes: &[serde_json::Value]) -> Vec<AxNode> {
 // Output tree node
 // =============================================================================
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone, Default, Serialize)]
 pub struct SnapshotNode {
     pub role: String,
     pub name: String,
@@ -139,6 +139,10 @@ pub struct SnapshotNode {
     pub properties: Option<HashMap<String, serde_json::Value>>,
     #[serde(skip)]
     pub backend_dom_node_id: Option<i64>,
+    /// Frame index annotation for aggregate snapshots (`page snapshot --include-iframes`).
+    /// Set on the root node of a spliced iframe subtree.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub frame: Option<u32>,
     pub children: Vec<SnapshotNode>,
 }
 
@@ -159,6 +163,19 @@ pub struct BuildResult {
 /// Assigns sequential UIDs (`s1`, `s2`, ...) to interactive elements in depth-first order.
 /// Returns the root node and the uid-to-`backendDOMNodeId` mapping.
 pub fn build_tree(nodes: &[serde_json::Value], verbose: bool) -> BuildResult {
+    build_tree_with_uid_offset(nodes, verbose, 0)
+}
+
+/// Build a snapshot tree, starting UID assignment at `s{uid_offset+1}`.
+///
+/// Used by aggregate snapshots (`page snapshot --include-iframes`) so that UIDs
+/// from different frames do not collide. Returns a `BuildResult` whose
+/// `uid_map` contains only the UIDs assigned in this call.
+pub fn build_tree_with_uid_offset(
+    nodes: &[serde_json::Value],
+    verbose: bool,
+    uid_offset: usize,
+) -> BuildResult {
     let mut ax_nodes = parse_ax_nodes(nodes);
     let total_nodes = ax_nodes.len();
 
@@ -203,7 +220,7 @@ pub fn build_tree(nodes: &[serde_json::Value], verbose: bool) -> BuildResult {
         lookup.insert(&node.node_id, node);
     }
 
-    let mut uid_counter: usize = 0;
+    let mut uid_counter: usize = uid_offset;
     let mut uid_map: HashMap<String, i64> = HashMap::new();
     let mut node_count: usize = 0;
     let truncated = total_nodes > MAX_NODES;
@@ -226,6 +243,7 @@ pub fn build_tree(nodes: &[serde_json::Value], verbose: bool) -> BuildResult {
             uid: None,
             properties: None,
             backend_dom_node_id: None,
+            frame: None,
             children: vec![],
         }
     };
@@ -321,6 +339,7 @@ fn build_subtree(
         uid,
         properties,
         backend_dom_node_id: ax.backend_dom_node_id,
+        frame: None,
         children,
     }]
 }
@@ -520,6 +539,7 @@ pub fn compact_tree(root: &SnapshotNode) -> SnapshotNode {
         uid: root.uid.clone(),
         properties: root.properties.clone(),
         backend_dom_node_id: root.backend_dom_node_id,
+        frame: root.frame,
         children: vec![],
     })
 }
@@ -556,6 +576,7 @@ fn compact_node(node: &SnapshotNode) -> Option<SnapshotNode> {
             uid: node.uid.clone(),
             properties: node.properties.clone(),
             backend_dom_node_id: node.backend_dom_node_id,
+            frame: node.frame,
             children: vec![],
         });
     }
@@ -569,6 +590,7 @@ fn compact_node(node: &SnapshotNode) -> Option<SnapshotNode> {
         uid: node.uid.clone(),
         properties: node.properties.clone(),
         backend_dom_node_id: node.backend_dom_node_id,
+        frame: node.frame,
         children,
     })
 }
@@ -602,6 +624,57 @@ pub struct SnapshotState {
     /// CDP frame ID for the frame this snapshot was taken from (None = main frame).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub frame_id: Option<String>,
+    /// Whether this snapshot aggregates content from multiple frames (`--include-iframes`).
+    #[serde(default, skip_serializing_if = "is_false")]
+    pub aggregate: bool,
+    /// Frame index → (inclusive) UID numeric range assigned to that frame's elements.
+    /// Only populated when `aggregate == true`. Each entry is `(frame_index, (min_uid, max_uid))`.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub frame_uid_ranges: Vec<(u32, (u32, u32))>,
+    /// Frame index → CDP frame ID mapping, parallel to `frame_uid_ranges`.
+    /// Captured at aggregate-snapshot time so subsequent commands can detect when a frame
+    /// has been detached or navigated away before executing.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub frame_ids: Vec<(u32, String)>,
+}
+
+#[allow(clippy::trivially_copy_pass_by_ref)]
+fn is_false(b: &bool) -> bool {
+    !*b
+}
+
+/// Parse the numeric portion of a UID (`s42` → `42`). Returns `None` if the
+/// input is not a valid UID.
+fn parse_uid_number(uid: &str) -> Option<u32> {
+    if !is_uid(uid) {
+        return None;
+    }
+    uid[1..].parse::<u32>().ok()
+}
+
+/// Given an aggregate snapshot state and a UID, return the index of the frame
+/// whose UID range contains this UID. Returns `None` if the state is not
+/// aggregate or the UID does not fall in any recorded range.
+pub fn aggregate_frame_for_uid(state: &SnapshotState, uid: &str) -> Option<u32> {
+    if !state.aggregate {
+        return None;
+    }
+    let n = parse_uid_number(uid)?;
+    state
+        .frame_uid_ranges
+        .iter()
+        .find(|(_, (lo, hi))| n >= *lo && n <= *hi)
+        .map(|(idx, _)| *idx)
+}
+
+/// Look up the CDP frame id recorded at aggregate-snapshot time for the given
+/// frame index.
+pub fn aggregate_frame_id(state: &SnapshotState, frame_index: u32) -> Option<&str> {
+    state
+        .frame_ids
+        .iter()
+        .find(|(idx, _)| *idx == frame_index)
+        .map(|(_, id)| id.as_str())
 }
 
 /// Errors from snapshot state file operations.
@@ -722,6 +795,40 @@ pub fn read_snapshot_state_from(
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
         Err(e) => Err(SnapshotStateError::Io(e)),
     }
+}
+
+// =============================================================================
+// Aggregate snapshot helpers
+// =============================================================================
+
+/// Splice `subtree` as an additional child of the node in `root` whose
+/// `backend_dom_node_id` matches `owner_backend_id`. Returns `true` on success.
+///
+/// If no matching owner is found, the subtree is appended to `root`'s children
+/// as a fallback (so iframe content is never dropped).
+pub fn splice_frame_subtree(
+    root: &mut SnapshotNode,
+    owner_backend_id: i64,
+    subtree: SnapshotNode,
+) -> bool {
+    if find_and_append(root, owner_backend_id, &subtree) {
+        return true;
+    }
+    root.children.push(subtree);
+    false
+}
+
+fn find_and_append(node: &mut SnapshotNode, owner_backend_id: i64, subtree: &SnapshotNode) -> bool {
+    if node.backend_dom_node_id == Some(owner_backend_id) {
+        node.children.push(subtree.clone());
+        return true;
+    }
+    for child in &mut node.children {
+        if find_and_append(child, owner_backend_id, subtree) {
+            return true;
+        }
+    }
+    false
 }
 
 // =============================================================================
@@ -1114,6 +1221,7 @@ mod tests {
             uid: Some("s1".to_string()),
             properties: None,
             backend_dom_node_id: Some(10),
+            frame: None,
             children: vec![],
         };
         let json = serde_json::to_value(&node).unwrap();
@@ -1134,6 +1242,7 @@ mod tests {
             uid: None,
             properties: None,
             backend_dom_node_id: Some(20),
+            frame: None,
             children: vec![],
         };
         let json = serde_json::to_value(&node).unwrap();
@@ -1153,6 +1262,9 @@ mod tests {
             uid_map: HashMap::from([("s1".to_string(), 42), ("s2".to_string(), 87)]),
             frame_index: None,
             frame_id: None,
+            aggregate: false,
+            frame_uid_ranges: Vec::new(),
+            frame_ids: Vec::new(),
         };
 
         write_snapshot_state_to(&path, &state).unwrap();
@@ -1161,6 +1273,33 @@ mod tests {
         assert_eq!(read.url, state.url);
         assert_eq!(read.timestamp, state.timestamp);
         assert_eq!(read.uid_map, state.uid_map);
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn aggregate_snapshot_state_round_trip() {
+        let dir = std::env::temp_dir().join("agentchrome-test-snapshot-aggregate-rt");
+        let _ = std::fs::remove_dir_all(&dir);
+        let path = dir.join("snapshot.json");
+
+        let state = SnapshotState {
+            url: "https://example.com/".to_string(),
+            timestamp: "2026-04-18T10:00:00Z".to_string(),
+            uid_map: HashMap::from([("s1".to_string(), 10), ("s2".to_string(), 20)]),
+            frame_index: None,
+            frame_id: None,
+            aggregate: true,
+            frame_uid_ranges: vec![(0, (1, 1)), (1, (2, 2))],
+            frame_ids: vec![(0, "MAIN".to_string()), (1, "F1".to_string())],
+        };
+
+        write_snapshot_state_to(&path, &state).unwrap();
+        let read = read_snapshot_state_from(&path).unwrap().unwrap();
+
+        assert!(read.aggregate);
+        assert_eq!(read.frame_uid_ranges, state.frame_uid_ranges);
+        assert_eq!(read.frame_ids, state.frame_ids);
 
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -1601,6 +1740,7 @@ mod tests {
             uid: uid.map(String::from),
             properties: None,
             backend_dom_node_id: None,
+            frame: None,
             children,
         }
     }
@@ -1845,5 +1985,122 @@ mod tests {
         assert_eq!(result.children[0].role, "generic");
         assert_eq!(result.children[0].children[0].role, "generic");
         assert_eq!(result.children[0].children[0].children[0].role, "checkbox");
+    }
+
+    fn agg_state(ranges: Vec<(u32, (u32, u32))>) -> SnapshotState {
+        SnapshotState {
+            url: String::new(),
+            timestamp: String::new(),
+            uid_map: HashMap::new(),
+            frame_index: None,
+            frame_id: None,
+            aggregate: true,
+            frame_uid_ranges: ranges,
+            frame_ids: vec![
+                (0, "MAIN".to_string()),
+                (1, "F1".to_string()),
+                (2, "F2".to_string()),
+            ],
+        }
+    }
+
+    #[test]
+    fn aggregate_frame_for_uid_non_aggregate_returns_none() {
+        let mut state = agg_state(vec![(0, (1, 5))]);
+        state.aggregate = false;
+        assert!(aggregate_frame_for_uid(&state, "s3").is_none());
+    }
+
+    #[test]
+    fn aggregate_frame_for_uid_inside_range() {
+        let state = agg_state(vec![(0, (1, 3)), (1, (4, 6)), (2, (7, 9))]);
+        assert_eq!(aggregate_frame_for_uid(&state, "s1"), Some(0));
+        assert_eq!(aggregate_frame_for_uid(&state, "s3"), Some(0));
+        assert_eq!(aggregate_frame_for_uid(&state, "s4"), Some(1));
+        assert_eq!(aggregate_frame_for_uid(&state, "s6"), Some(1));
+        assert_eq!(aggregate_frame_for_uid(&state, "s7"), Some(2));
+        assert_eq!(aggregate_frame_for_uid(&state, "s9"), Some(2));
+    }
+
+    #[test]
+    fn aggregate_frame_for_uid_outside_ranges() {
+        let state = agg_state(vec![(0, (1, 3)), (1, (4, 6))]);
+        assert!(aggregate_frame_for_uid(&state, "s7").is_none());
+        assert!(aggregate_frame_for_uid(&state, "s0").is_none());
+    }
+
+    #[test]
+    fn aggregate_frame_for_uid_malformed_uid() {
+        let state = agg_state(vec![(0, (1, 3))]);
+        assert!(aggregate_frame_for_uid(&state, "bogus").is_none());
+        assert!(aggregate_frame_for_uid(&state, "").is_none());
+    }
+
+    #[test]
+    fn aggregate_frame_id_lookup() {
+        let state = agg_state(vec![(0, (1, 3)), (1, (4, 6))]);
+        assert_eq!(aggregate_frame_id(&state, 0), Some("MAIN"));
+        assert_eq!(aggregate_frame_id(&state, 1), Some("F1"));
+        assert_eq!(aggregate_frame_id(&state, 99), None);
+    }
+
+    #[test]
+    fn build_tree_with_nonzero_uid_offset_starts_after_offset() {
+        let nodes = vec![
+            json!({
+                "nodeId": "1",
+                "ignored": false,
+                "role": {"type": "role", "value": "document"},
+                "name": {"type": "computedString", "value": "Doc"},
+                "properties": [],
+                "childIds": ["2"],
+                "backendDOMNodeId": 1
+            }),
+            json!({
+                "nodeId": "2",
+                "ignored": false,
+                "role": {"type": "role", "value": "button"},
+                "name": {"type": "computedString", "value": "Go"},
+                "properties": [],
+                "childIds": [],
+                "backendDOMNodeId": 99
+            }),
+        ];
+        let result = build_tree_with_uid_offset(&nodes, false, 10);
+        assert!(result.uid_map.contains_key("s11"));
+        assert_eq!(result.uid_map.get("s11"), Some(&99));
+    }
+
+    fn node_with(role: &str, backend_id: Option<i64>, children: Vec<SnapshotNode>) -> SnapshotNode {
+        SnapshotNode {
+            role: role.to_string(),
+            backend_dom_node_id: backend_id,
+            children,
+            ..Default::default()
+        }
+    }
+
+    #[test]
+    fn splice_frame_subtree_attaches_under_matching_owner() {
+        let mut root = node_with(
+            "document",
+            Some(1),
+            vec![node_with("iframe", Some(42), vec![])],
+        );
+        let sub = node_with("RootWebArea", Some(100), vec![]);
+        let spliced = splice_frame_subtree(&mut root, 42, sub);
+        assert!(spliced);
+        assert_eq!(root.children[0].children.len(), 1);
+        assert_eq!(root.children[0].children[0].role, "RootWebArea");
+    }
+
+    #[test]
+    fn splice_frame_subtree_fallback_when_owner_missing() {
+        let mut root = node_with("document", Some(1), vec![]);
+        let sub = node_with("RootWebArea", Some(100), vec![]);
+        let spliced = splice_frame_subtree(&mut root, 999, sub);
+        assert!(!spliced);
+        assert_eq!(root.children.len(), 1);
+        assert_eq!(root.children[0].role, "RootWebArea");
     }
 }

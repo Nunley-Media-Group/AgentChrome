@@ -169,6 +169,50 @@ pub async fn resolve_optional_frame(
     frame: Option<&str>,
     uid: Option<&str>,
 ) -> Result<Option<agentchrome::frame::FrameContext>, AppError> {
+    // Aggregate-snapshot UID auto-routing (T029). When a UID-based command is
+    // invoked against a snapshot produced by `page snapshot --include-iframes`,
+    // UIDs can point into any frame. Consult the aggregate UID ranges to pick
+    // the right frame automatically, and verify the recorded frame_id is still
+    // attached to the live frame tree.
+    if let Some(uid_str) = uid {
+        if snapshot::is_uid(uid_str) {
+            if let Some(state) = snapshot::read_snapshot_state().ok().flatten() {
+                if let Some(uid_frame_idx) = snapshot::aggregate_frame_for_uid(&state, uid_str) {
+                    let recorded_frame_id =
+                        snapshot::aggregate_frame_id(&state, uid_frame_idx).map(str::to_string);
+
+                    // Explicit --frame that names a specific index: warn on mismatch.
+                    if let Some(frame_str) = frame {
+                        if let Ok(agentchrome::frame::FrameArg::Index(n)) =
+                            agentchrome::frame::parse_frame_arg(frame_str)
+                        {
+                            if n != uid_frame_idx {
+                                eprintln!(
+                                    "warning: UID {uid_str} was recorded in frame {uid_frame_idx} but --frame {n} was supplied; proceeding with explicit frame"
+                                );
+                            }
+                        }
+                        // Fall through to the standard resolution path below.
+                    } else {
+                        // No --frame given: route to the UID's originating frame.
+                        verify_frame_still_attached(
+                            managed,
+                            uid_frame_idx,
+                            recorded_frame_id.as_deref(),
+                        )
+                        .await?;
+                        if uid_frame_idx == 0 {
+                            return Ok(None);
+                        }
+                        let arg = agentchrome::frame::FrameArg::Index(uid_frame_idx);
+                        let ctx = agentchrome::frame::resolve_frame(client, managed, &arg).await?;
+                        return Ok(Some(ctx));
+                    }
+                }
+            }
+        }
+    }
+
     if let Some(frame_str) = frame {
         let arg = agentchrome::frame::parse_frame_arg(frame_str)?;
         if matches!(arg, agentchrome::frame::FrameArg::Auto) {
@@ -187,6 +231,26 @@ pub async fn resolve_optional_frame(
     } else {
         Ok(None)
     }
+}
+
+/// Confirm that a frame previously recorded in an aggregate snapshot is still
+/// present at the same index with the same CDP frame id.
+async fn verify_frame_still_attached(
+    managed: &mut ManagedSession,
+    frame_index: u32,
+    recorded_frame_id: Option<&str>,
+) -> Result<(), AppError> {
+    let Some(expected_id) = recorded_frame_id else {
+        return Ok(());
+    };
+    let frames = agentchrome::frame::list_frames(managed).await?;
+    let Some(current) = frames.iter().find(|f| f.index == frame_index) else {
+        return Err(AppError::frame_detached());
+    };
+    if current.id != expected_id {
+        return Err(AppError::frame_detached());
+    }
+    Ok(())
 }
 
 // =============================================================================
