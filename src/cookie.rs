@@ -129,21 +129,22 @@ async fn execute_list(global: &GlobalOpts, args: &CookieListArgs) -> Result<(), 
 // Set: create/update a cookie
 // =============================================================================
 
+const DOMAIN_HINT: &str = "Use --domain <D> to set the cookie domain directly.";
+
 fn extract_host(url_str: &str) -> Result<String, AppError> {
     let parsed = url::Url::parse(url_str).map_err(|e| AppError {
-        message: format!(
-            "--url value '{url_str}' is not a valid URL: {e}. Use --domain <D> to set the cookie domain directly."
-        ),
+        message: format!("--url value '{url_str}' is not a valid URL: {e}. {DOMAIN_HINT}"),
         code: ExitCode::GeneralError,
         custom_json: None,
     })?;
-    parsed.host_str().map(str::to_string).ok_or_else(|| AppError {
-        message: format!(
-            "--url '{url_str}' has no host component. Use --domain <D> to set the cookie domain directly."
-        ),
-        code: ExitCode::GeneralError,
-        custom_json: None,
-    })
+    parsed
+        .host_str()
+        .map(str::to_string)
+        .ok_or_else(|| AppError {
+            message: format!("--url '{url_str}' has no host component. {DOMAIN_HINT}"),
+            code: ExitCode::GeneralError,
+            custom_json: None,
+        })
 }
 
 fn resolve_domain(args: &CookieSetArgs) -> Result<Option<String>, AppError> {
