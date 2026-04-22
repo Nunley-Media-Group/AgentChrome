@@ -1081,8 +1081,8 @@ async fn dispatch_key_press(
         "modifiers": modifiers,
         "windowsVirtualKeyCode": vk,
     });
-    if let Some(t) = text.as_ref() {
-        down_params["text"] = serde_json::Value::String(t.clone());
+    if let Some(t) = text {
+        down_params["text"] = serde_json::Value::String(t);
     }
     session
         .send_command("Input.dispatchKeyEvent", Some(down_params))
