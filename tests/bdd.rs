@@ -4285,6 +4285,16 @@ async fn run_dialog_features() {
             |_feature, _rule, _scenario| false, // All scenarios require Chrome with open dialog
         )
         .await;
+
+    // Cross-invocation dialog handling (issue #225) — scenarios require two agentchrome processes
+    // sharing a CDP port against a real Chrome instance, so none can run in CI without Chrome.
+    // The feature file documents the regression scenarios for manual / integration testing.
+    DialogWorld::cucumber()
+        .filter_run_and_exit(
+            "tests/features/bug-fix-dialog-handling-across-separate-agentchrome-invocations.feature",
+            |_feature, _rule, _scenario| false, // Require two processes + real Chrome
+        )
+        .await;
 }
 
 // =============================================================================

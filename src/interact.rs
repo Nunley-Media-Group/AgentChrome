@@ -12,7 +12,7 @@ use crate::cli::{
 };
 use crate::coord_helpers::{frame_viewport_offset, resolve_element_box};
 use crate::navigate::{DEFAULT_NAVIGATE_TIMEOUT_MS, wait_for_event, wait_for_network_idle};
-use crate::output::{print_output, setup_session};
+use crate::output::{print_output, setup_session_with_interceptors};
 use crate::snapshot;
 use agentchrome::coords::{CoordValue, resolve_relative_coords};
 
@@ -1398,7 +1398,7 @@ async fn execute_scroll(
     args: &ScrollArgs,
     frame: Option<&str>,
 ) -> Result<(), AppError> {
-    let (client, mut managed) = setup_session(global).await?;
+    let (client, mut managed) = setup_session_with_interceptors(global).await?;
     if global.auto_dismiss_dialogs {
         let _dismiss = managed.spawn_auto_dismiss().await?;
     }
@@ -1546,10 +1546,13 @@ async fn execute_click(
     args: &ClickArgs,
     frame: Option<&str>,
 ) -> Result<(), AppError> {
-    let (client, mut managed) = setup_session(global).await?;
-    if global.auto_dismiss_dialogs {
-        let _dismiss = managed.spawn_auto_dismiss().await?;
-    }
+    let (client, mut managed) = setup_session_with_interceptors(global).await?;
+    let (_dismiss, dialog_settle_rx) = if global.auto_dismiss_dialogs {
+        let (handle, rx) = managed.spawn_auto_dismiss_with_settle().await?;
+        (Some(handle), Some(rx))
+    } else {
+        (None, None)
+    };
 
     let mut frame_ctx =
         crate::output::resolve_optional_frame(&client, &mut managed, frame, Some(&args.target))
@@ -1624,6 +1627,10 @@ async fn execute_click(
         }
     }
 
+    if let Some(mut rx) = dialog_settle_rx {
+        agentchrome::connection::ManagedSession::await_dialog_settle(&mut rx).await;
+    }
+
     // Get current URL
     let url = get_current_url(&managed).await?;
 
@@ -1679,10 +1686,13 @@ async fn execute_click_at(
         extract_pixels_no_relative_to(args.y, "y")?;
     }
 
-    let (client, mut managed) = setup_session(global).await?;
-    if global.auto_dismiss_dialogs {
-        let _dismiss = managed.spawn_auto_dismiss().await?;
-    }
+    let (client, mut managed) = setup_session_with_interceptors(global).await?;
+    let (_dismiss, dialog_settle_rx) = if global.auto_dismiss_dialogs {
+        let (handle, rx) = managed.spawn_auto_dismiss_with_settle().await?;
+        (Some(handle), Some(rx))
+    } else {
+        (None, None)
+    };
 
     // Resolve frame context for coordinate translation
     let mut frame_ctx =
@@ -1770,6 +1780,10 @@ async fn execute_click_at(
         }
     };
 
+    if let Some(mut rx) = dialog_settle_rx {
+        agentchrome::connection::ManagedSession::await_dialog_settle(&mut rx).await;
+    }
+
     // Take snapshot if requested
     let snapshot = if args.include_snapshot {
         let snap_url = if let Some(ref u) = url {
@@ -1810,7 +1824,7 @@ async fn execute_hover(
     args: &HoverArgs,
     frame: Option<&str>,
 ) -> Result<(), AppError> {
-    let (client, mut managed) = setup_session(global).await?;
+    let (client, mut managed) = setup_session_with_interceptors(global).await?;
     if global.auto_dismiss_dialogs {
         let _dismiss = managed.spawn_auto_dismiss().await?;
     }
@@ -1869,7 +1883,7 @@ async fn execute_drag(
     args: &DragArgs,
     frame: Option<&str>,
 ) -> Result<(), AppError> {
-    let (client, mut managed) = setup_session(global).await?;
+    let (client, mut managed) = setup_session_with_interceptors(global).await?;
     if global.auto_dismiss_dialogs {
         let _dismiss = managed.spawn_auto_dismiss().await?;
     }
@@ -1963,7 +1977,7 @@ async fn execute_drag_at(
         extract_pixels_no_relative_to(args.to_y, "to_y")?;
     }
 
-    let (client, mut managed) = setup_session(global).await?;
+    let (client, mut managed) = setup_session_with_interceptors(global).await?;
     if global.auto_dismiss_dialogs {
         let _dismiss = managed.spawn_auto_dismiss().await?;
     }
@@ -2063,7 +2077,7 @@ async fn execute_mousedown_at(
         extract_pixels_no_relative_to(args.y, "y")?;
     }
 
-    let (client, mut managed) = setup_session(global).await?;
+    let (client, mut managed) = setup_session_with_interceptors(global).await?;
     if global.auto_dismiss_dialogs {
         let _dismiss = managed.spawn_auto_dismiss().await?;
     }
@@ -2138,7 +2152,7 @@ async fn execute_mouseup_at(
         extract_pixels_no_relative_to(args.y, "y")?;
     }
 
-    let (client, mut managed) = setup_session(global).await?;
+    let (client, mut managed) = setup_session_with_interceptors(global).await?;
     if global.auto_dismiss_dialogs {
         let _dismiss = managed.spawn_auto_dismiss().await?;
     }
@@ -2207,7 +2221,7 @@ async fn execute_type(
     args: &TypeArgs,
     _frame: Option<&str>,
 ) -> Result<(), AppError> {
-    let (_client, mut managed) = setup_session(global).await?;
+    let (_client, mut managed) = setup_session_with_interceptors(global).await?;
     if global.auto_dismiss_dialogs {
         let _dismiss = managed.spawn_auto_dismiss().await?;
     }
@@ -2257,7 +2271,7 @@ async fn execute_key(
     // Validate the key combination before connecting to Chrome
     let parsed = parse_key_combination(&args.keys)?;
 
-    let (_client, mut managed) = setup_session(global).await?;
+    let (_client, mut managed) = setup_session_with_interceptors(global).await?;
     if global.auto_dismiss_dialogs {
         let _dismiss = managed.spawn_auto_dismiss().await?;
     }

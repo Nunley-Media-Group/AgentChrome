@@ -472,6 +472,11 @@ pub async fn resolve_target(
 /// is already open. We use a short timeout so auto-dismiss can proceed.
 const PAGE_ENABLE_TIMEOUT_MS: u64 = 300;
 
+/// Bounded wait applied after a dispatched click when `--auto-dismiss-dialogs`
+/// is active, so the background dismissal task can observe and handle a
+/// `Page.javascriptDialogOpening` event before the session is dropped.
+const DIALOG_SETTLE_TIMEOUT_MS: u64 = 300;
+
 /// A CDP session wrapper that tracks which domains have been enabled,
 /// ensuring each domain is only enabled once (lazy domain enabling).
 ///
@@ -628,6 +633,41 @@ window.prompt=function(m,d){s('prompt',m,d);return oP.apply(this,arguments);};
                     .await;
             }
         }))
+    }
+
+    /// Spawn the auto-dismiss background task and subscribe to
+    /// `Page.javascriptDialogClosed` so callers can later await a bounded
+    /// settle with [`await_dialog_settle`]. Pairing the two prevents the
+    /// session from being dropped before a synchronously-triggered dialog
+    /// has been dismissed.
+    ///
+    /// # Errors
+    ///
+    /// Returns `CdpError` if either subscription fails.
+    pub async fn spawn_auto_dismiss_with_settle(
+        &mut self,
+    ) -> Result<
+        (
+            tokio::task::JoinHandle<()>,
+            tokio::sync::mpsc::Receiver<CdpEvent>,
+        ),
+        CdpError,
+    > {
+        let handle = self.spawn_auto_dismiss().await?;
+        let rx = self
+            .session
+            .subscribe("Page.javascriptDialogClosed")
+            .await?;
+        Ok((handle, rx))
+    }
+
+    /// Wait up to [`DIALOG_SETTLE_TIMEOUT_MS`] for a dialog-closed event on
+    /// the receiver returned by [`spawn_auto_dismiss_with_settle`]. A timeout
+    /// is an expected outcome (no dialog was triggered) and is silently
+    /// ignored.
+    pub async fn await_dialog_settle(rx: &mut tokio::sync::mpsc::Receiver<CdpEvent>) {
+        let _ =
+            tokio::time::timeout(Duration::from_millis(DIALOG_SETTLE_TIMEOUT_MS), rx.recv()).await;
     }
 }
 
