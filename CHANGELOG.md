@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.42.0] - 2026-04-22
+
+### Changed
+
+- Enrich generated man pages with the structured `capabilities` and `examples` content so `agentchrome man <cmd>` is self-sufficient — the EXAMPLES section now reflects every entry from `agentchrome examples <cmd>`, and a capabilities-manifest entry (purpose, inputs, outputs, exit codes) is rendered in man-page format. Enrichment happens at `cargo xtask man` build time so runtime stays within the <50ms startup target and man output remains deterministic in CI. Examples and capabilities data now live in shared modules (`src/examples_data.rs`, `src/capabilities_cli.rs`) so the `examples`/`capabilities` subcommands and the man pipeline share a single source of truth. (#232)
+
 ## [1.41.0] - 2026-04-22
 
 ### Added
