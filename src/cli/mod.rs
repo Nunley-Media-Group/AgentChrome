@@ -1005,8 +1005,10 @@ pub struct TabsCreateArgs {
 #[derive(Args)]
 pub struct TabsCloseArgs {
     /// Tab ID(s) or index(es) to close
-    #[arg(required = true)]
     pub targets: Vec<String>,
+
+    #[arg(long, hide = true, action = ArgAction::Append, value_name = "ID")]
+    pub tab: Vec<String>,
 }
 
 /// Arguments for `tabs activate`.
@@ -1764,6 +1766,9 @@ pub struct CookieSetArgs {
     /// Expiry as Unix timestamp (seconds since epoch)
     #[arg(long)]
     pub expires: Option<f64>,
+
+    #[arg(long, hide = true, conflicts_with = "domain", value_name = "URL")]
+    pub url: Option<String>,
 }
 
 /// Arguments for `cookie delete`.
@@ -3235,6 +3240,7 @@ pub struct DomArgs {
 pub enum DomCommand {
     /// Select elements by CSS selector or XPath
     #[command(
+        alias = "query",
         long_about = "Query elements in the DOM by CSS selector (default) or XPath expression \
             (with --xpath). Returns a JSON array of matching elements with their node IDs, \
             tag names, attributes, and text content. Node IDs can be used with other dom \
@@ -3964,6 +3970,137 @@ mod tests {
         assert!(
             after_str.contains("--json"),
             "capabilities after_long_help must contain a --json example\ngot: {after_str}"
+        );
+    }
+
+    // Issue #230: hidden flag-shape aliases
+
+    #[test]
+    fn cookie_set_accepts_url_alias() {
+        let cli = try_parse("cookie set n v --url https://example.com/path")
+            .expect("cookie set --url should parse");
+        let super::Command::Cookie(args) = cli.command else {
+            panic!("expected Cookie command");
+        };
+        let super::CookieCommand::Set(set) = args.command else {
+            panic!("expected CookieCommand::Set");
+        };
+        assert_eq!(set.url.as_deref(), Some("https://example.com/path"));
+        assert!(set.domain.is_none());
+    }
+
+    #[test]
+    fn cookie_set_rejects_url_and_domain_together() {
+        assert!(
+            Cli::try_parse_from([
+                "agentchrome",
+                "cookie",
+                "set",
+                "n",
+                "v",
+                "--url",
+                "https://example.com/",
+                "--domain",
+                "other.com",
+            ])
+            .is_err(),
+            "clap conflicts_with should reject --url + --domain"
+        );
+    }
+
+    #[test]
+    fn tabs_close_accepts_repeated_tab_flags() {
+        let cli = try_parse("tabs close --tab A --tab B").expect("--tab repeats should parse");
+        let super::Command::Tabs(args) = cli.command else {
+            panic!("expected Tabs command");
+        };
+        let super::TabsCommand::Close(close) = args.command else {
+            panic!("expected TabsCommand::Close");
+        };
+        assert!(close.targets.is_empty());
+        assert_eq!(close.tab, vec!["A".to_string(), "B".to_string()]);
+    }
+
+    #[test]
+    fn tabs_close_no_args_still_parses() {
+        let cli = try_parse("tabs close").expect("tabs close with no args should parse");
+        let super::Command::Tabs(args) = cli.command else {
+            panic!("expected Tabs command");
+        };
+        let super::TabsCommand::Close(close) = args.command else {
+            panic!("expected TabsCommand::Close");
+        };
+        assert!(close.targets.is_empty());
+        assert!(close.tab.is_empty());
+    }
+
+    #[test]
+    fn dom_query_is_alias_for_select() {
+        let cli = try_parse("dom query h1").expect("dom query should parse as dom select");
+        let super::Command::Dom(args) = cli.command else {
+            panic!("expected Dom command");
+        };
+        let super::DomCommand::Select(sel) = args.command else {
+            panic!("expected DomCommand::Select via alias");
+        };
+        assert_eq!(sel.selector, "h1");
+        assert!(!sel.xpath);
+    }
+
+    #[test]
+    fn dom_query_supports_xpath_flag() {
+        let cli =
+            try_parse("dom query //a[@href] --xpath").expect("dom query should support --xpath");
+        let super::Command::Dom(args) = cli.command else {
+            panic!("expected Dom command");
+        };
+        let super::DomCommand::Select(sel) = args.command else {
+            panic!("expected DomCommand::Select via alias");
+        };
+        assert_eq!(sel.selector, "//a[@href]");
+        assert!(sel.xpath);
+    }
+
+    #[test]
+    fn cookie_set_help_does_not_mention_url_alias() {
+        use clap::CommandFactory;
+        let cmd = Cli::command();
+        let cookie = cmd
+            .get_subcommands()
+            .find(|s| s.get_name() == "cookie")
+            .expect("cookie subcommand exists");
+        let set = cookie
+            .get_subcommands()
+            .find(|s| s.get_name() == "set")
+            .expect("cookie set subcommand exists");
+        let url_arg = set
+            .get_arguments()
+            .find(|a| a.get_id() == "url")
+            .expect("url arg exists on cookie set");
+        assert!(url_arg.is_hide_set(), "--url must be hidden from help");
+    }
+
+    #[test]
+    fn dom_query_alias_is_hidden() {
+        use clap::CommandFactory;
+        let cmd = Cli::command();
+        let dom = cmd
+            .get_subcommands()
+            .find(|s| s.get_name() == "dom")
+            .expect("dom subcommand exists");
+        let select = dom
+            .get_subcommands()
+            .find(|s| s.get_name() == "select")
+            .expect("dom select subcommand exists");
+        let aliases: Vec<&str> = select.get_all_aliases().collect();
+        assert!(
+            aliases.contains(&"query"),
+            "dom select must alias 'query', got {aliases:?}"
+        );
+        let visible: Vec<&str> = select.get_visible_aliases().collect();
+        assert!(
+            !visible.contains(&"query"),
+            "dom select 'query' alias must be hidden, not visible"
         );
     }
 }
