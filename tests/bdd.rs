@@ -4037,7 +4037,6 @@ const AUDIT_TESTABLE_SCENARIOS: &[&str] = &[
     "Audit lighthouse accepts --only flag",
     "Audit without subcommand exits with error",
     "Error when no Chrome session is connected",
-    // Issue #231
     "Audit lighthouse help text states the lighthouse prerequisite above examples",
     "Audit group help references the lighthouse CLI prerequisite",
     "Top-level help references the lighthouse CLI prerequisite",

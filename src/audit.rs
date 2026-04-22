@@ -112,33 +112,31 @@ async fn execute_lighthouse(
     Ok(())
 }
 
+/// Surfaces both the direct `npm install` hint and the `--install-prereqs`
+/// self-service path in a single error so one invocation emits exactly one
+/// JSON error object on stderr.
+const LIGHTHOUSE_NOT_FOUND_MESSAGE: &str = "lighthouse binary not found. Install it with: npm install -g lighthouse\nOr run: agentchrome audit lighthouse --install-prereqs";
+
+fn general_error(message: impl Into<String>) -> AppError {
+    AppError {
+        message: message.into(),
+        code: ExitCode::GeneralError,
+        custom_json: None,
+    }
+}
+
 /// Check that the `lighthouse` binary is available on PATH.
 fn find_lighthouse_binary() -> Result<(), AppError> {
     if probe_version("lighthouse").is_some() {
         return Ok(());
     }
-    Err(AppError {
-        message: LIGHTHOUSE_NOT_FOUND_MESSAGE.to_string(),
-        code: ExitCode::GeneralError,
-        custom_json: None,
-    })
+    Err(general_error(LIGHTHOUSE_NOT_FOUND_MESSAGE))
 }
 
-/// The `lighthouse binary not found` error message.
-///
-/// Surfaces both the direct `npm install` hint and the `--install-prereqs`
-/// self-service path. Kept as a single `AppError` so one invocation emits
-/// exactly one JSON error object on stderr.
-const LIGHTHOUSE_NOT_FOUND_MESSAGE: &str = "lighthouse binary not found. Install it with: npm install -g lighthouse\nOr run: agentchrome audit lighthouse --install-prereqs";
-
-/// Probe a binary by running `<bin> --version`. Returns the trimmed stdout
-/// on success, or `None` if the binary is not on PATH / exits non-zero.
 fn probe_version(bin: &str) -> Option<String> {
     probe_version_with(&|| Command::new(bin))
 }
 
-/// Testable variant of `probe_version` — runs the `Command` produced by
-/// the factory and returns the trimmed stdout on success.
 fn probe_version_with(factory: &dyn Fn() -> Command) -> Option<String> {
     let mut cmd = factory();
     cmd.arg("--version");
@@ -149,7 +147,6 @@ fn probe_version_with(factory: &dyn Fn() -> Command) -> Option<String> {
     Some(String::from_utf8_lossy(&output.stdout).trim().to_string())
 }
 
-/// Result payload emitted on stdout after a successful `--install-prereqs` run.
 #[derive(Serialize)]
 struct InstallPrereqsResult {
     installed: &'static str,
@@ -160,10 +157,8 @@ fn install_lighthouse_prereqs() -> Result<(), AppError> {
     install_lighthouse_prereqs_with(&npm_factory)
 }
 
-/// Return a `Command` for invoking `npm`.
-///
 /// On Windows, `npm` ships as `npm.cmd` and `CreateProcess` does not honor
-/// `PATHEXT`, so we probe the bare name once and fall back to `npm.cmd`.
+/// `PATHEXT`, so we probe the bare name and fall back to `npm.cmd`.
 fn npm_factory() -> Command {
     if cfg!(windows) && Command::new("npm").arg("--version").output().is_err() {
         return Command::new("npm.cmd");
@@ -173,21 +168,15 @@ fn npm_factory() -> Command {
 
 fn install_lighthouse_prereqs_with(npm_factory: &dyn Fn() -> Command) -> Result<(), AppError> {
     if probe_version_with(npm_factory).is_none() {
-        return Err(AppError {
-            message: "npm not found on PATH — install Node.js first".to_string(),
-            code: ExitCode::GeneralError,
-            custom_json: None,
-        });
+        return Err(general_error(
+            "npm not found on PATH — install Node.js first",
+        ));
     }
 
     let output = npm_factory()
         .args(["install", "-g", "lighthouse"])
         .output()
-        .map_err(|e| AppError {
-            message: format!("Failed to invoke npm: {e}"),
-            code: ExitCode::GeneralError,
-            custom_json: None,
-        })?;
+        .map_err(|e| general_error(format!("Failed to invoke npm: {e}")))?;
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
@@ -196,28 +185,21 @@ fn install_lighthouse_prereqs_with(npm_factory: &dyn Fn() -> Command) -> Result<
         } else {
             stderr
         };
-        return Err(AppError {
-            message: format!("Failed to install lighthouse: {detail}"),
-            code: ExitCode::GeneralError,
-            custom_json: None,
-        });
+        return Err(general_error(format!(
+            "Failed to install lighthouse: {detail}"
+        )));
     }
 
-    let version = probe_version("lighthouse").ok_or_else(|| AppError {
-        message: "lighthouse installed but not on PATH — open a new shell and retry".to_string(),
-        code: ExitCode::GeneralError,
-        custom_json: None,
+    let version = probe_version("lighthouse").ok_or_else(|| {
+        general_error("lighthouse installed but not on PATH — open a new shell and retry")
     })?;
 
     let payload = InstallPrereqsResult {
         installed: "lighthouse",
         version,
     };
-    let json = serde_json::to_string(&payload).map_err(|e| AppError {
-        message: format!("serialization error: {e}"),
-        code: ExitCode::GeneralError,
-        custom_json: None,
-    })?;
+    let json = serde_json::to_string(&payload)
+        .map_err(|e| general_error(format!("serialization error: {e}")))?;
     println!("{json}");
 
     Ok(())
