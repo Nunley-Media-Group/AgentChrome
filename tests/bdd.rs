@@ -5252,6 +5252,12 @@ async fn main() {
     // is the live regression gate for the documentation change.
     CliWorld::run("tests/features/228-console-follow-default-exit-code.feature").await;
 
+    // Normalize flag shapes (issue #230) — CLI-only scenarios for hidden alias
+    // parsing, help/capabilities/examples non-leakage, and error shape. Chrome-
+    // dependent behavior is covered by unit tests in src/cli/mod.rs and
+    // src/cookie.rs.
+    CliWorld::run("tests/features/230-normalize-flag-shapes.feature").await;
+
     // Emulate — only CLI-testable scenarios (argument validation, help text, conflicts).
     // Scenarios requiring a running Chrome instance are commented out in the feature file.
     CliWorld::cucumber()

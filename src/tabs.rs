@@ -6,7 +6,7 @@ use serde::Serialize;
 use agentchrome::cdp::CdpClient;
 use agentchrome::chrome::{TargetInfo, activate_target, query_targets};
 use agentchrome::connection::select_target;
-use agentchrome::error::AppError;
+use agentchrome::error::{AppError, ExitCode};
 use agentchrome::session;
 
 use crate::cli::{GlobalOpts, TabsArgs, TabsCommand};
@@ -23,7 +23,20 @@ pub async fn execute_tabs(global: &GlobalOpts, args: &TabsArgs) -> Result<(), Ap
         TabsCommand::Create(create_args) => {
             execute_create(global, create_args.url.as_deref(), create_args.background).await
         }
-        TabsCommand::Close(close_args) => execute_close(global, &close_args.targets).await,
+        TabsCommand::Close(close_args) => {
+            let mut merged: Vec<String> = close_args.targets.clone();
+            merged.extend(close_args.tab.iter().cloned());
+            if merged.is_empty() {
+                return Err(AppError {
+                    message:
+                        "tabs close requires at least one target (positional ID or --tab <ID>)"
+                            .to_string(),
+                    code: ExitCode::GeneralError,
+                    custom_json: None,
+                });
+            }
+            execute_close(global, &merged).await
+        }
         TabsCommand::Activate(act_args) => {
             execute_activate(global, &act_args.target, act_args.quiet).await
         }

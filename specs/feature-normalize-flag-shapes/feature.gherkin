@@ -1,0 +1,120 @@
+# File: tests/features/230-normalize-flag-shapes.feature
+#
+# Generated from: specs/feature-normalize-flag-shapes/requirements.md
+# Issue: #230
+
+Feature: Normalize flag shapes across subcommands
+  As a first-time user or AI agent extrapolating flag shapes from one agentchrome subcommand to another
+  I want consistent flag/argument naming across related subcommands, or hidden aliases that accept the natural guesses
+  So that I don't fail three times before discovering the canonical form
+
+  # --- AC1: cookie set --url is accepted as a hidden alias for --domain ---
+
+  Scenario: cookie set accepts --url as a hidden alias for --domain
+    Given agentchrome is connected to a Chrome instance
+    When the user runs "cookie set session_id abc123 --url https://example.com/path"
+    Then the command exits with code 0
+    And the resulting cookie has domain "example.com"
+    And the JSON output matches the shape produced by "cookie set session_id abc123 --domain example.com"
+
+  # --- AC2: tabs close --tab <ID> is accepted as a hidden alias for the positional ---
+
+  Scenario: tabs close accepts a single --tab as a hidden alias for the positional
+    Given agentchrome is connected to a Chrome instance with a known tab "TAB_A"
+    When the user runs "tabs close --tab TAB_A"
+    Then the command exits with code 0
+    And tab "TAB_A" is no longer present in "tabs list"
+
+  # --- AC3: --tab may be repeated to close multiple tabs ---
+
+  Scenario: tabs close accepts repeated --tab flags
+    Given agentchrome is connected to a Chrome instance with known tabs "TAB_A" and "TAB_B"
+    When the user runs "tabs close --tab TAB_A --tab TAB_B"
+    Then the command exits with code 0
+    And neither "TAB_A" nor "TAB_B" is present in "tabs list"
+
+  # --- AC4: dom query is accepted as a hidden alias for dom select ---
+
+  Scenario: dom query is accepted as a hidden alias for dom select
+    Given agentchrome is connected to a page containing "<table><tbody><tr></tr></tbody></table>"
+    When the user runs "dom query \"table tbody tr\""
+    Then the command exits with code 0
+    And the output is identical to the output of "dom select \"table tbody tr\""
+
+  Scenario: dom query supports the same flags as dom select
+    Given agentchrome is connected to a page containing "<a href=\"#\">link</a>"
+    When the user runs "dom query \"//a[@href]\" --xpath"
+    Then the command exits with code 0
+    And the output is identical to the output of "dom select \"//a[@href]\" --xpath"
+
+  # --- AC5: Canonical forms still work unchanged ---
+
+  Scenario Outline: canonical forms behave identically to the current release
+    Given agentchrome is connected to a Chrome instance
+    When the user runs "<canonical_invocation>"
+    Then the command exits with code 0
+    And the output, stderr, and exit code are byte-identical to the current release
+
+    Examples:
+      | canonical_invocation                                    |
+      | cookie set session_id abc123 --domain example.com       |
+      | tabs close TAB_A TAB_B                                  |
+      | dom select "h1"                                         |
+
+  # --- AC6: Aliases are hidden from help, capabilities, and examples ---
+
+  Scenario: cookie set --help does not mention the --url alias
+    When the user runs "cookie set --help"
+    Then the help output does not contain "--url"
+    And the help output contains "--domain"
+
+  Scenario: tabs close --help does not mention the --tab alias
+    When the user runs "tabs close --help"
+    Then the help output does not contain "--tab"
+
+  Scenario: dom --help does not mention the query alias
+    When the user runs "dom --help"
+    Then the help output does not contain a "query" subcommand entry
+    And the help output contains a "select" subcommand entry
+
+  Scenario: capabilities manifest does not list the aliases
+    When the user runs "capabilities --json"
+    Then the JSON output for "cookie set" does not include a "--url" flag
+    And the JSON output for "tabs close" does not include a "--tab" flag
+    And the JSON output for "dom" does not include a "query" subcommand
+
+  Scenario: examples continue to show only canonical forms
+    When the user runs "examples cookie"
+    Then the output does not contain "--url"
+    When the user runs "examples tabs"
+    Then the output does not contain "--tab"
+    When the user runs "examples dom"
+    Then the output does not contain " query "
+
+  # --- AC7: Conflict between canonical and alias is rejected clearly ---
+
+  Scenario: cookie set rejects --url and --domain together
+    When the user runs "cookie set session_id abc123 --url https://example.com/ --domain other.com"
+    Then the command exits with code 1
+    And stderr contains a structured JSON error
+    And the error message identifies "--url" and "--domain" as aliases for the same value
+
+  Scenario: tabs close merges positional IDs with --tab values without conflict
+    Given agentchrome is connected to a Chrome instance with known tabs "TAB_A" and "TAB_B"
+    When the user runs "tabs close TAB_A --tab TAB_B"
+    Then the command exits with code 0
+    And neither "TAB_A" nor "TAB_B" is present in "tabs list"
+
+  # --- AC8: Unrelated wrong shapes still get canonical-pointing errors ---
+
+  Scenario: cookie set --host produces an error pointing at --domain
+    When the user runs "cookie set n v --host example.com"
+    Then the command exits with code 1
+    And stderr contains a structured JSON error
+    And the error message explicitly names the canonical flag "--domain"
+
+  Scenario: tabs close with neither positional nor --tab errors clearly
+    When the user runs "tabs close"
+    Then the command exits with code 1
+    And stderr contains a structured JSON error
+    And the error message states that at least one target (positional or "--tab") is required

@@ -129,7 +129,38 @@ async fn execute_list(global: &GlobalOpts, args: &CookieListArgs) -> Result<(), 
 // Set: create/update a cookie
 // =============================================================================
 
+fn extract_host(url_str: &str) -> Result<String, AppError> {
+    let parsed = url::Url::parse(url_str).map_err(|e| AppError {
+        message: format!(
+            "--url value '{url_str}' is not a valid URL: {e}. Use --domain <D> to set the cookie domain directly."
+        ),
+        code: ExitCode::GeneralError,
+        custom_json: None,
+    })?;
+    parsed.host_str().map(str::to_string).ok_or_else(|| AppError {
+        message: format!(
+            "--url '{url_str}' has no host component. Use --domain <D> to set the cookie domain directly."
+        ),
+        code: ExitCode::GeneralError,
+        custom_json: None,
+    })
+}
+
+fn resolve_domain(args: &CookieSetArgs) -> Result<Option<String>, AppError> {
+    match (&args.url, &args.domain) {
+        (Some(_), Some(_)) => Err(AppError {
+            message: "--url and --domain are aliases for the same value; pass only one".to_string(),
+            code: ExitCode::GeneralError,
+            custom_json: None,
+        }),
+        (Some(url_str), None) => Ok(Some(extract_host(url_str)?)),
+        (None, maybe_domain) => Ok(maybe_domain.clone()),
+    }
+}
+
 async fn execute_set(global: &GlobalOpts, args: &CookieSetArgs) -> Result<(), AppError> {
+    let domain = resolve_domain(args)?;
+
     let (_client, mut managed) = setup_session(global).await?;
     managed.ensure_domain("Network").await?;
 
@@ -139,7 +170,7 @@ async fn execute_set(global: &GlobalOpts, args: &CookieSetArgs) -> Result<(), Ap
         "path": args.path,
     });
 
-    if let Some(ref domain) = args.domain {
+    if let Some(ref domain) = domain {
         params["domain"] = serde_json::Value::String(domain.clone());
     }
     if args.secure {
@@ -176,7 +207,7 @@ async fn execute_set(global: &GlobalOpts, args: &CookieSetArgs) -> Result<(), Ap
     let result = SetResult {
         success: true,
         name: args.name.clone(),
-        domain: args.domain.clone().unwrap_or_default(),
+        domain: domain.unwrap_or_default(),
     };
 
     if global.output.plain {
@@ -466,5 +497,78 @@ mod tests {
         let result = DeleteResult { deleted: 5 };
         // Just verify it doesn't panic
         print_clear_plain(&result);
+    }
+
+    #[test]
+    fn extract_host_from_https_url() {
+        assert_eq!(
+            extract_host("https://example.com/path?x=1").unwrap(),
+            "example.com"
+        );
+    }
+
+    #[test]
+    fn extract_host_from_http_url() {
+        assert_eq!(extract_host("http://foo.bar.baz/").unwrap(), "foo.bar.baz");
+    }
+
+    #[test]
+    fn extract_host_rejects_malformed_url() {
+        let err = extract_host("not a url").expect_err("malformed URL must error");
+        assert!(
+            err.message.contains("--domain"),
+            "error must name --domain: {}",
+            err.message
+        );
+    }
+
+    #[test]
+    fn extract_host_rejects_url_without_host() {
+        let err = extract_host("file:///foo").expect_err("host-less URL must error");
+        assert!(
+            err.message.contains("--domain"),
+            "error must name --domain: {}",
+            err.message
+        );
+    }
+
+    #[test]
+    fn resolve_domain_prefers_url_over_none() {
+        let args = CookieSetArgs {
+            name: "n".into(),
+            value: "v".into(),
+            domain: None,
+            path: "/".into(),
+            secure: false,
+            http_only: false,
+            same_site: None,
+            expires: None,
+            url: Some("https://example.com/".into()),
+        };
+        assert_eq!(
+            resolve_domain(&args).unwrap().as_deref(),
+            Some("example.com")
+        );
+    }
+
+    #[test]
+    fn resolve_domain_rejects_url_and_domain_together() {
+        let args = CookieSetArgs {
+            name: "n".into(),
+            value: "v".into(),
+            domain: Some("other.com".into()),
+            path: "/".into(),
+            secure: false,
+            http_only: false,
+            same_site: None,
+            expires: None,
+            url: Some("https://example.com/".into()),
+        };
+        let err = resolve_domain(&args).expect_err("both --url and --domain must error");
+        assert!(
+            err.message.contains("--url") && err.message.contains("--domain"),
+            "error must name both flags: {}",
+            err.message
+        );
     }
 }
