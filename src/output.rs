@@ -374,6 +374,98 @@ where
     Ok(())
 }
 
+/// Emit a compound result that carries a small interaction-confirmation payload
+/// plus a potentially large `snapshot` field.
+///
+/// If the serialized form of the whole value fits under the threshold, the full
+/// inline JSON is printed (identical to `emit`).
+///
+/// Otherwise, the `snapshot_field` key is extracted from the serialized value,
+/// written to a UUID-named temp file, and replaced with a `TempFileOutput`
+/// whose `summary` is produced by `snapshot_summary_fn`.  The
+/// interaction-confirmation fields (everything other than `snapshot_field`)
+/// remain inline.
+///
+/// If the `snapshot_field` key is absent after serialization, this falls back
+/// to `emit` transparently (never panics).
+///
+/// # Errors
+///
+/// Propagates `AppError` from serialization and temp-file writes.
+pub fn emit_with_snapshot<T, F>(
+    value: &T,
+    output: &OutputFormat,
+    command_name: &str,
+    snapshot_field: &'static str,
+    snapshot_summary_fn: F,
+) -> Result<(), AppError>
+where
+    T: Serialize,
+    F: FnOnce(&serde_json::Value) -> serde_json::Value,
+{
+    // 1. Serialize `value` to a serde_json::Value (no string yet).
+    let mut outer: serde_json::Value = serde_json::to_value(value).map_err(serialization_error)?;
+
+    // 2. Compute total size by serializing to a string.
+    let full_json = if output.pretty {
+        serde_json::to_string_pretty(&outer)
+    } else {
+        serde_json::to_string(&outer)
+    }
+    .map_err(serialization_error)?;
+
+    let threshold = output.large_response_threshold.unwrap_or(DEFAULT_THRESHOLD);
+
+    // 3. Under threshold → print inline (identical to emit's small-path).
+    if full_json.len() <= threshold {
+        println!("{full_json}");
+        return Ok(());
+    }
+
+    // 4. Extract the snapshot field.  If absent, fall back to emit.
+    let Some(map) = outer.as_object_mut() else {
+        // Value is not an object; fall back to regular emit.
+        println!("{full_json}");
+        return Ok(());
+    };
+
+    let Some(snapshot_value) = map.remove(snapshot_field) else {
+        // Snapshot field absent — fall back to regular emit.
+        println!("{full_json}");
+        return Ok(());
+    };
+
+    // 5. Serialize the snapshot alone and write it to a temp file.
+    let snapshot_json = serde_json::to_string(&snapshot_value).map_err(serialization_error)?;
+    let path = write_temp_file(&snapshot_json, "json")?;
+
+    // 6. Build a TempFileOutput for the snapshot.
+    let summary = snapshot_summary_fn(&snapshot_value);
+    #[allow(clippy::cast_possible_truncation)]
+    let size_bytes = snapshot_json.len() as u64;
+
+    let temp_output = TempFileOutput {
+        output_file: path,
+        size_bytes,
+        command: command_name.to_string(),
+        summary,
+    };
+
+    // 7. Replace the snapshot field in the outer object with the TempFileOutput.
+    let temp_value = serde_json::to_value(&temp_output).map_err(serialization_error)?;
+    map.insert(snapshot_field.to_string(), temp_value);
+
+    // 8. Print the modified outer object.
+    let result_json = if output.pretty {
+        serde_json::to_string_pretty(&outer)
+    } else {
+        serde_json::to_string(&outer)
+    }
+    .map_err(serialization_error)?;
+    println!("{result_json}");
+    Ok(())
+}
+
 // =============================================================================
 // Tests
 // =============================================================================
@@ -526,6 +618,97 @@ mod tests {
             large_response_threshold: Some(5), // Very low
         };
         let result = emit_plain("this text is longer than 5 bytes", &output);
+        assert!(result.is_ok());
+    }
+
+    // -------------------------------------------------------------------------
+    // emit_with_snapshot tests (T003)
+    // -------------------------------------------------------------------------
+
+    /// Helper: `OutputFormat` with a very large threshold so nothing is offloaded.
+    fn unlimited_output() -> OutputFormat {
+        OutputFormat {
+            json: true,
+            pretty: false,
+            plain: false,
+            large_response_threshold: Some(10_000_000),
+        }
+    }
+
+    /// Helper: `OutputFormat` with threshold = 1 so everything is offloaded.
+    fn tiny_threshold_output() -> OutputFormat {
+        OutputFormat {
+            json: true,
+            pretty: false,
+            plain: false,
+            large_response_threshold: Some(1),
+        }
+    }
+
+    #[test]
+    fn emit_with_snapshot_below_threshold_is_inline() {
+        let value = serde_json::json!({
+            "success": true,
+            "uid": "s1",
+            "snapshot": {"total_nodes": 10, "nodes": []}
+        });
+        let result = emit_with_snapshot(
+            &value,
+            &unlimited_output(),
+            "interact click",
+            "snapshot",
+            |_| serde_json::json!({"total_nodes": 10}),
+        );
+        // Should succeed (prints inline JSON to stdout — no temp file).
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn emit_with_snapshot_above_threshold_offloads_snapshot_only() {
+        let large_snapshot: Vec<serde_json::Value> = (0..500)
+            .map(|i| serde_json::json!({"id": i, "role": "generic", "name": format!("node-{i}")}))
+            .collect();
+        let value = serde_json::json!({
+            "success": true,
+            "uid": "s12",
+            "navigation": {"url": "https://example.com", "committed": true},
+            "snapshot": {"total_nodes": 500, "nodes": large_snapshot}
+        });
+        let result = emit_with_snapshot(
+            &value,
+            &tiny_threshold_output(),
+            "interact click",
+            "snapshot",
+            |v| {
+                let count = v["total_nodes"].as_u64().unwrap_or(0);
+                serde_json::json!({"total_nodes": count, "top_roles": ["generic"]})
+            },
+        );
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn emit_with_snapshot_missing_field_falls_back_to_emit() {
+        // Value has no "snapshot" key — should fall back without panicking.
+        let value = serde_json::json!({"success": true, "uid": "s5"});
+        let result = emit_with_snapshot(
+            &value,
+            &tiny_threshold_output(),
+            "interact click",
+            "snapshot",
+            |_| serde_json::json!({}),
+        );
+        assert!(result.is_ok());
+    }
+
+    #[test]
+    fn emit_with_snapshot_non_object_falls_back() {
+        // A plain array — not an object.
+        let value = serde_json::json!([1, 2, 3]);
+        let result =
+            emit_with_snapshot(&value, &tiny_threshold_output(), "test", "snapshot", |_| {
+                serde_json::json!({})
+            });
         assert!(result.is_ok());
     }
 }

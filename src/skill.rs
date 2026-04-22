@@ -117,37 +117,62 @@ static TOOLS: &[ToolInfo] = &[
 // =============================================================================
 
 const SKILL_TEMPLATE: &str = "\
+---
+name: agentchrome
+description: Use agentchrome when you need to automate a browser, fill a form, test a login, scrape a page, take a screenshot, or inspect console / network.
+version: \"{version}\"
+---
+
 # agentchrome — Browser Automation CLI
 
-agentchrome gives you browser superpowers via the Chrome DevTools Protocol.
+agentchrome gives you browser superpowers via the Chrome DevTools Protocol. It is the right tool whenever the task involves driving a real Chromium instance non-interactively.
 
 ## When to Use
 
-Use agentchrome when you need to:
+Reach for agentchrome when you need to:
 - Navigate to URLs, inspect pages, fill forms, click elements
 - Take screenshots or capture accessibility trees
 - Monitor console output or network requests
-- Automate browser workflows (testing, scraping, verification)
+- Automate browser workflows (testing, scraping, verification, auditing)
 
 ## How to Discover Commands
 
-agentchrome is self-documenting. Use these commands to learn what it can do:
+agentchrome is self-documenting. Start here before guessing:
 
 - `agentchrome --help` — overview of all commands
 - `agentchrome <command> --help` — detailed help for any command
 - `agentchrome capabilities` — machine-readable JSON manifest of all commands
+- `agentchrome capabilities <command>` — detail for one command (large; may return a temp-file object — see below)
 - `agentchrome examples` — practical usage examples for every command
+- `agentchrome examples strategies` — scenario-based guides (iframes, shadow DOM, SPA waits, ...)
+- `agentchrome examples strategies <name>` — the full guide for one scenario
 - `agentchrome man <command>` — full man page for any command
+
+## Before You Automate
+
+- `agentchrome diagnose <url>` — scan a page for iframes, dialogs, overlays, and framework quirks *before* trying to automate it.
+- `agentchrome diagnose --current` — run the same scan against whatever tab is already attached.
+
+If `diagnose` flags an iframe, SPA, or shadow DOM, run `agentchrome examples strategies <topic>` for the matching playbook.
+
+## After You Act
+
+Interaction commands (`interact click`, `interact hover`, `form fill`, `form fill-many`, `navigate`, ...) accept `--include-snapshot`. Pass it to get the post-action accessibility snapshot back in the same invocation — one round trip instead of two.
+
+## Large Responses
+
+Any response larger than ~16 KB returns a `{output_file, size_bytes, command, summary}` object on stdout and writes the full payload to a temp file. Read the `summary` first; only open the file if the summary does not answer your question. Streaming commands (`network follow`, `console follow`) are exempt — they stream directly.
+
+For compound results (interaction + `--include-snapshot` above the threshold), the interaction confirmation stays inline and only the `snapshot` field is offloaded to a file.
 
 ## Quick Start
 
 ```sh
 agentchrome connect --launch --headless
 agentchrome navigate <url>
+agentchrome diagnose --current
 agentchrome page snapshot
 ```
-
-Version: {version}
 ";
 
 fn skill_content() -> String {
@@ -463,7 +488,13 @@ fn write_file(path: &std::path::Path, content: &str) -> Result<(), AppError> {
 }
 
 fn write_section(path: &std::path::Path, content: &str) -> Result<(), AppError> {
-    let section = format!("{SECTION_START}\n{content}{SECTION_END}\n");
+    // Embed a machine-parseable version marker immediately after SECTION_START.
+    // The staleness check in src/skill_check.rs reads this HTML comment.
+    let version_marker = format!(
+        "<!-- agentchrome-version: {} -->\n\n",
+        env!("CARGO_PKG_VERSION")
+    );
+    let section = format!("{SECTION_START}\n{version_marker}{content}{SECTION_END}\n");
 
     if let Some(parent) = path.parent() {
         std::fs::create_dir_all(parent).map_err(|e| AppError {
@@ -743,6 +774,65 @@ mod tests {
         assert!(content.contains("## How to Discover Commands"));
         assert!(content.contains("agentchrome capabilities"));
         assert!(content.contains("agentchrome examples"));
+        // AC2 — high-leverage paths
+        assert!(content.contains("agentchrome diagnose <url>"));
+        assert!(content.contains("agentchrome diagnose --current"));
+        assert!(content.contains("agentchrome examples strategies"));
+        assert!(content.contains("--include-snapshot"));
+        assert!(content.contains("output_file"));
+        assert!(content.contains("console follow"));
+    }
+
+    #[test]
+    fn skill_content_starts_with_yaml_frontmatter() {
+        let content = skill_content();
+        assert!(
+            content.starts_with("---\n"),
+            "skill content must start with YAML frontmatter delimiter"
+        );
+        assert!(
+            content.contains("name: agentchrome"),
+            "frontmatter must contain name key"
+        );
+        assert!(
+            content.contains("description:"),
+            "frontmatter must contain description key"
+        );
+        // version key should be present with the actual version number (not placeholder)
+        let version_line = format!("version: \"{}\"", env!("CARGO_PKG_VERSION"));
+        assert!(
+            content.contains(&version_line),
+            "frontmatter must contain quoted version value"
+        );
+    }
+
+    #[test]
+    fn skill_content_has_six_trigger_phrases() {
+        let content = skill_content();
+        assert!(
+            content.contains("automate a browser"),
+            "missing trigger: automate a browser"
+        );
+        assert!(
+            content.contains("fill a form"),
+            "missing trigger: fill a form"
+        );
+        assert!(
+            content.contains("test a login"),
+            "missing trigger: test a login"
+        );
+        assert!(
+            content.contains("scrape a page"),
+            "missing trigger: scrape a page"
+        );
+        assert!(
+            content.contains("take a screenshot"),
+            "missing trigger: take a screenshot"
+        );
+        assert!(
+            content.contains("inspect console / network"),
+            "missing trigger: inspect console / network"
+        );
     }
 
     #[test]
@@ -800,6 +890,49 @@ mod tests {
         assert!(content.contains(SECTION_START));
         assert!(content.contains(SECTION_END));
         assert!(content.contains("skill content"));
+    }
+
+    #[test]
+    fn write_section_embeds_version_marker() {
+        let dir = tempfile::tempdir().unwrap();
+        let file_path = dir.path().join("rules.md");
+        write_section(&file_path, "skill content\n").unwrap();
+        let content = std::fs::read_to_string(&file_path).unwrap();
+        let expected_marker = format!(
+            "<!-- agentchrome-version: {} -->",
+            env!("CARGO_PKG_VERSION")
+        );
+        assert!(
+            content.contains(&expected_marker),
+            "version marker must be embedded inside section markers"
+        );
+        // Marker must be inside the section (between SECTION_START and SECTION_END)
+        let start_pos = content.find(SECTION_START).unwrap();
+        let end_pos = content.find(SECTION_END).unwrap();
+        let marker_pos = content.find(&expected_marker).unwrap();
+        assert!(
+            marker_pos > start_pos && marker_pos < end_pos,
+            "version marker must be between section start and end markers"
+        );
+    }
+
+    #[test]
+    fn write_section_no_duplicate_version_markers_on_reinstall() {
+        let dir = tempfile::tempdir().unwrap();
+        let file_path = dir.path().join("rules.md");
+        // Install twice
+        write_section(&file_path, "skill content\n").unwrap();
+        write_section(&file_path, "skill content\n").unwrap();
+        let content = std::fs::read_to_string(&file_path).unwrap();
+        let marker = format!(
+            "<!-- agentchrome-version: {} -->",
+            env!("CARGO_PKG_VERSION")
+        );
+        let count = content.matches(&marker).count();
+        assert_eq!(
+            count, 1,
+            "version marker must not be duplicated on reinstall"
+        );
     }
 
     #[test]
