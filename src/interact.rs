@@ -1548,8 +1548,7 @@ async fn execute_click(
 ) -> Result<(), AppError> {
     let (client, mut managed) = setup_session_with_interceptors(global).await?;
     let (_dismiss, dialog_settle_rx) = if global.auto_dismiss_dialogs {
-        let handle = managed.spawn_auto_dismiss().await?;
-        let rx = managed.subscribe("Page.javascriptDialogClosed").await?;
+        let (handle, rx) = managed.spawn_auto_dismiss_with_settle().await?;
         (Some(handle), Some(rx))
     } else {
         (None, None)
@@ -1629,11 +1628,7 @@ async fn execute_click(
     }
 
     if let Some(mut rx) = dialog_settle_rx {
-        let _ = tokio::time::timeout(
-            Duration::from_millis(agentchrome::connection::PAGE_ENABLE_TIMEOUT_MS),
-            rx.recv(),
-        )
-        .await;
+        agentchrome::connection::ManagedSession::await_dialog_settle(&mut rx).await;
     }
 
     // Get current URL
@@ -1693,8 +1688,7 @@ async fn execute_click_at(
 
     let (client, mut managed) = setup_session_with_interceptors(global).await?;
     let (_dismiss, dialog_settle_rx) = if global.auto_dismiss_dialogs {
-        let handle = managed.spawn_auto_dismiss().await?;
-        let rx = managed.subscribe("Page.javascriptDialogClosed").await?;
+        let (handle, rx) = managed.spawn_auto_dismiss_with_settle().await?;
         (Some(handle), Some(rx))
     } else {
         (None, None)
@@ -1787,11 +1781,7 @@ async fn execute_click_at(
     };
 
     if let Some(mut rx) = dialog_settle_rx {
-        let _ = tokio::time::timeout(
-            Duration::from_millis(agentchrome::connection::PAGE_ENABLE_TIMEOUT_MS),
-            rx.recv(),
-        )
-        .await;
+        agentchrome::connection::ManagedSession::await_dialog_settle(&mut rx).await;
     }
 
     // Take snapshot if requested
