@@ -104,8 +104,8 @@ fn execute_step<'a>(
                 *index += 1;
                 let step_start = Instant::now();
 
-                let substituted = crate::script::context::substitute(&cmd_step.cmd, ctx)
-                    .map_err(AppError::from);
+                let substituted =
+                    crate::script::context::substitute(&cmd_step.cmd, ctx).map_err(AppError::from);
 
                 let (status, output, error_msg) = match substituted {
                     Err(sub_err) => (StepStatus::Error, None, Some(sub_err.message)),
@@ -192,64 +192,61 @@ fn execute_step<'a>(
                 }
             }
 
-            Step::Loop(loop_step) => {
-                match &loop_step.r#loop {
-                    LoopKind::Count(count_loop) => {
-                        for i in 0..count_loop.count {
-                            for sub_step in &loop_step.body {
-                                execute_step(
-                                    sub_step,
-                                    client,
-                                    managed,
-                                    global,
-                                    opts,
-                                    ctx,
-                                    results,
-                                    index,
-                                    Some(i),
-                                )
-                                .await?;
-                            }
-                        }
-                    }
-                    LoopKind::While(while_loop) => {
-                        let mut iterations = 0u64;
-                        loop {
-                            if iterations >= while_loop.max {
-                                let warn = serde_json::json!({
-                                    "warning": "loop max iterations reached",
-                                    "max": while_loop.max
-                                });
-                                let warn_str = serde_json::to_string(&warn).unwrap_or_default();
-                                eprintln!("{warn_str}");
-                                break;
-                            }
-
-                            let cond =
-                                eval_bool(managed, &while_loop.r#while, ctx, iterations).await?;
-                            if !cond {
-                                break;
-                            }
-
-                            for sub_step in &loop_step.body {
-                                execute_step(
-                                    sub_step,
-                                    client,
-                                    managed,
-                                    global,
-                                    opts,
-                                    ctx,
-                                    results,
-                                    index,
-                                    Some(iterations),
-                                )
-                                .await?;
-                            }
-                            iterations += 1;
+            Step::Loop(loop_step) => match &loop_step.r#loop {
+                LoopKind::Count(count_loop) => {
+                    for i in 0..count_loop.count {
+                        for sub_step in &loop_step.body {
+                            execute_step(
+                                sub_step,
+                                client,
+                                managed,
+                                global,
+                                opts,
+                                ctx,
+                                results,
+                                index,
+                                Some(i),
+                            )
+                            .await?;
                         }
                     }
                 }
-            }
+                LoopKind::While(while_loop) => {
+                    let mut iterations = 0u64;
+                    loop {
+                        if iterations >= while_loop.max {
+                            let warn = serde_json::json!({
+                                "warning": "loop max iterations reached",
+                                "max": while_loop.max
+                            });
+                            let warn_str = serde_json::to_string(&warn).unwrap_or_default();
+                            eprintln!("{warn_str}");
+                            break;
+                        }
+
+                        let cond = eval_bool(managed, &while_loop.r#while, ctx, iterations).await?;
+                        if !cond {
+                            break;
+                        }
+
+                        for sub_step in &loop_step.body {
+                            execute_step(
+                                sub_step,
+                                client,
+                                managed,
+                                global,
+                                opts,
+                                ctx,
+                                results,
+                                index,
+                                Some(iterations),
+                            )
+                            .await?;
+                        }
+                        iterations += 1;
+                    }
+                }
+            },
         }
 
         Ok(())
