@@ -187,6 +187,25 @@ fn write_report(path: &Path, data: &[u8]) -> Result<(), AppError> {
     })
 }
 
+// =============================================================================
+// Script runner adapter
+// =============================================================================
+
+/// Run an `audit` command against an existing session and return a JSON value.
+///
+/// # Errors
+///
+/// Propagates `AppError` from the underlying audit logic.
+#[allow(dead_code)]
+pub async fn run_from_session(
+    _managed: &mut agentchrome::connection::ManagedSession,
+    global: &GlobalOpts,
+    args: &AuditArgs,
+) -> Result<serde_json::Value, AppError> {
+    execute_audit(global, args).await?;
+    Ok(serde_json::json!({"executed": true}))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

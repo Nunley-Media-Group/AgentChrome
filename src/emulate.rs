@@ -1034,6 +1034,24 @@ pub async fn execute_resize(global: &GlobalOpts, size: &str) -> Result<(), AppEr
 }
 
 // =============================================================================
+// Script runner adapter
+// =============================================================================
+
+/// Run an `emulate` command against an existing session and return a JSON value.
+///
+/// # Errors
+///
+/// Propagates `AppError` from the underlying emulate logic.
+pub async fn run_from_session(
+    _managed: &mut ManagedSession,
+    global: &GlobalOpts,
+    args: &EmulateArgs,
+) -> Result<serde_json::Value, AppError> {
+    execute_emulate(global, args).await?;
+    Ok(serde_json::json!({"executed": true}))
+}
+
+// =============================================================================
 // Tests
 // =============================================================================
 

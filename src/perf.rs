@@ -896,6 +896,24 @@ fn format_analyze_plain(result: &PerfAnalyzeResult) -> String {
 }
 
 // =============================================================================
+// Script runner adapter
+// =============================================================================
+
+/// Run a `perf` command against an existing session and return a JSON value.
+///
+/// # Errors
+///
+/// Propagates `AppError` from the underlying perf logic.
+pub async fn run_from_session(
+    _managed: &mut ManagedSession,
+    global: &GlobalOpts,
+    args: &PerfArgs,
+) -> Result<serde_json::Value, AppError> {
+    execute_perf(global, args).await?;
+    Ok(serde_json::json!({"executed": true}))
+}
+
+// =============================================================================
 // Tests
 // =============================================================================
 

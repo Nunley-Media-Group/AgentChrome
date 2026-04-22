@@ -623,6 +623,146 @@ fn extract_http_status(
 }
 
 // =============================================================================
+// Script runner adapter
+// =============================================================================
+
+/// Run a `navigate` command against an existing session and return its JSON output.
+///
+/// This adapter is used by the batch script runner to invoke navigate without
+/// establishing a new CDP connection.
+///
+/// # Errors
+///
+/// Propagates `AppError` from the underlying navigate logic.
+pub async fn run_from_session(
+    managed: &mut ManagedSession,
+    global: &GlobalOpts,
+    args: &NavigateArgs,
+) -> Result<serde_json::Value, agentchrome::error::AppError> {
+    let result: serde_json::Value = match &args.command {
+        Some(NavigateCommand::Back) => {
+            managed.ensure_domain("Page").await?;
+            let history = managed
+                .send_command("Page.getNavigationHistory", None)
+                .await?;
+            #[allow(clippy::cast_possible_truncation)]
+            let current_index = history["currentIndex"].as_u64().unwrap_or(0) as usize;
+            if current_index == 0 {
+                return Err(agentchrome::error::AppError {
+                    message: "Cannot go back: already at the beginning of history.".into(),
+                    code: agentchrome::error::ExitCode::GeneralError,
+                    custom_json: None,
+                });
+            }
+            let entries =
+                history["entries"]
+                    .as_array()
+                    .ok_or_else(|| agentchrome::error::AppError {
+                        message: "Invalid navigation history response".into(),
+                        code: agentchrome::error::ExitCode::GeneralError,
+                        custom_json: None,
+                    })?;
+            let target_entry = &entries[current_index - 1];
+            let entry_id = target_entry["id"].as_i64().unwrap_or(0);
+            let nav_rx = managed.subscribe("Page.frameNavigated").await?;
+            let within_doc_rx = managed.subscribe("Page.navigatedWithinDocument").await?;
+            managed
+                .send_command(
+                    "Page.navigateToHistoryEntry",
+                    Some(serde_json::json!({ "entryId": entry_id })),
+                )
+                .await?;
+            wait_for_history_navigation(
+                nav_rx,
+                within_doc_rx,
+                global.timeout.unwrap_or(DEFAULT_NAVIGATE_TIMEOUT_MS),
+            )
+            .await?;
+            let (url, title) = get_page_info(managed).await?;
+            serde_json::json!({ "url": url, "title": title })
+        }
+        Some(NavigateCommand::Forward) => {
+            managed.ensure_domain("Page").await?;
+            let history = managed
+                .send_command("Page.getNavigationHistory", None)
+                .await?;
+            #[allow(clippy::cast_possible_truncation)]
+            let current_index = history["currentIndex"].as_u64().unwrap_or(0) as usize;
+            let entries =
+                history["entries"]
+                    .as_array()
+                    .ok_or_else(|| agentchrome::error::AppError {
+                        message: "Invalid navigation history response".into(),
+                        code: agentchrome::error::ExitCode::GeneralError,
+                        custom_json: None,
+                    })?;
+            let next_index = current_index + 1;
+            if next_index >= entries.len() {
+                return Err(agentchrome::error::AppError {
+                    message: "Cannot go forward: already at the end of history.".into(),
+                    code: agentchrome::error::ExitCode::GeneralError,
+                    custom_json: None,
+                });
+            }
+            let target_entry = &entries[next_index];
+            let entry_id = target_entry["id"].as_i64().unwrap_or(0);
+            let nav_rx = managed.subscribe("Page.frameNavigated").await?;
+            let within_doc_rx = managed.subscribe("Page.navigatedWithinDocument").await?;
+            managed
+                .send_command(
+                    "Page.navigateToHistoryEntry",
+                    Some(serde_json::json!({ "entryId": entry_id })),
+                )
+                .await?;
+            wait_for_history_navigation(
+                nav_rx,
+                within_doc_rx,
+                global.timeout.unwrap_or(DEFAULT_NAVIGATE_TIMEOUT_MS),
+            )
+            .await?;
+            let (url, title) = get_page_info(managed).await?;
+            serde_json::json!({ "url": url, "title": title })
+        }
+        Some(NavigateCommand::Reload(reload_args)) => {
+            managed.ensure_domain("Page").await?;
+            let load_rx = managed.subscribe("Page.loadEventFired").await?;
+            let params = serde_json::json!({ "ignoreCache": reload_args.ignore_cache });
+            managed.send_command("Page.reload", Some(params)).await?;
+            wait_for_event(
+                load_rx,
+                global.timeout.unwrap_or(DEFAULT_NAVIGATE_TIMEOUT_MS),
+                "load",
+            )
+            .await?;
+            let (url, title) = get_page_info(managed).await?;
+            serde_json::json!({ "url": url, "title": title })
+        }
+        None => {
+            // URL navigation
+            let url_args = &args.url_args;
+            let url = url_args
+                .url
+                .as_deref()
+                .ok_or_else(|| agentchrome::error::AppError {
+                    message: "URL is required. Usage: agentchrome navigate <URL>".into(),
+                    code: agentchrome::error::ExitCode::GeneralError,
+                    custom_json: None,
+                })?;
+            let timeout_ms = url_args.timeout.unwrap_or(DEFAULT_NAVIGATE_TIMEOUT_MS);
+            let nav_result =
+                navigate_and_wait(managed, url, url_args.wait_until, timeout_ms).await?;
+            serde_json::json!({
+                "url": nav_result.url,
+                "title": nav_result.title,
+                "status": nav_result.status
+            })
+        }
+    };
+
+    Ok(result)
+}
+
+// =============================================================================
 // Tests
 // =============================================================================
 
