@@ -1,15 +1,8 @@
 use std::fmt::Write;
 
-// Re-export the canonical types and data from the library.
-// The library owns the single source of truth; this module only adds
-// binary-specific plain-text formatters that depend on super::write_em_dash_line.
 pub use agentchrome::examples_data::{
     CommandGroupListing, CommandGroupSummary, ExampleEntry, all_examples,
 };
-
-// =============================================================================
-// Output formatting (binary-only — depends on super::write_em_dash_line)
-// =============================================================================
 
 pub(super) fn format_plain_summary(groups: &[CommandGroupSummary]) -> String {
     let mut out = String::new();

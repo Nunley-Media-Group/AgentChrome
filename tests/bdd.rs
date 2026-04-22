@@ -753,16 +753,6 @@ fn man_exit_code_should_be(world: &mut ManWorld, expected: i32) {
     );
 }
 
-#[then("the exit code should be 0")]
-fn man_exit_code_zero(world: &mut ManWorld) {
-    let actual = world.exit_code.expect("No exit code captured");
-    assert_eq!(
-        actual, 0,
-        "Expected exit code 0, got {actual}\nstdout: {}",
-        world.stdout
-    );
-}
-
 // =============================================================================
 // CdpWorld — CDP WebSocket client BDD tests
 // =============================================================================

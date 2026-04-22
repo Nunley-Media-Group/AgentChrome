@@ -8,6 +8,10 @@ use crate::examples_data::CommandGroupSummary;
 /// Centralises the render-then-enrich sequence used by both `cargo xtask man`
 /// (file generation) and `agentchrome man` (runtime stdout) so the two paths
 /// cannot drift — notably, both use `Man::date("")` for byte-determinism.
+///
+/// # Errors
+///
+/// Returns an error if `clap_mangen::Man::render` fails to write to the buffer.
 pub fn render_enriched(
     cmd: clap::Command,
     short_name: &str,
@@ -27,7 +31,6 @@ pub fn render_enriched(
 ///
 /// Returns an empty string when `cmd_name` matches nothing in either source,
 /// so top-level and leaf subcommands without enrichment data pass through cleanly.
-/// Iterates source `Vec`s in declared order — no hash-map walks.
 #[must_use]
 pub fn enrich_for(
     cmd_name: &str,
@@ -44,36 +47,17 @@ pub fn enrich_for(
 
         if let Some(subs) = &descriptor.subcommands {
             for sub in subs {
-                out.push_str(".TP\n");
-                out.push_str(".B ");
-                out.push_str(&escape_roff(&sub.name));
-                out.push('\n');
-                out.push_str(&escape_roff(&sub.description));
-                out.push('\n');
+                push_tp_item(&mut out, &sub.name, &sub.description, false);
 
                 if let Some(args) = &sub.args {
                     for arg in args {
-                        out.push_str(".TP\n");
-                        out.push_str(".B ");
-                        out.push_str(&escape_roff(&arg.name));
-                        out.push('\n');
-                        if !arg.description.is_empty() {
-                            out.push_str(&escape_roff(&arg.description));
-                            out.push('\n');
-                        }
+                        push_tp_item(&mut out, &arg.name, &arg.description, true);
                     }
                 }
 
                 if let Some(flags) = &sub.flags {
                     for flag in flags {
-                        out.push_str(".TP\n");
-                        out.push_str(".B ");
-                        out.push_str(&escape_roff(&flag.name));
-                        out.push('\n');
-                        if !flag.description.is_empty() {
-                            out.push_str(&escape_roff(&flag.description));
-                            out.push('\n');
-                        }
+                        push_tp_item(&mut out, &flag.name, &flag.description, true);
                     }
                 }
             }
@@ -95,6 +79,17 @@ pub fn enrich_for(
     }
 
     out
+}
+
+fn push_tp_item(out: &mut String, name: &str, description: &str, skip_empty_description: bool) {
+    out.push_str(".TP\n");
+    out.push_str(".B ");
+    out.push_str(&escape_roff(name));
+    out.push('\n');
+    if !description.is_empty() || !skip_empty_description {
+        out.push_str(&escape_roff(description));
+        out.push('\n');
+    }
 }
 
 /// Escape roff special characters that appear at the start of a line.

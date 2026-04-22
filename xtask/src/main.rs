@@ -72,9 +72,13 @@ fn render_man_page(
     examples: &[CommandGroupSummary],
 ) {
     let path = out_dir.join(format!("{name}.1"));
-    let buf =
-        agentchrome::man_enrichment::render_enriched(cmd.clone(), enrichment_key(name), manifest, examples)
-            .unwrap_or_else(|e| panic!("failed to render man page for {name}: {e}"));
+    let buf = agentchrome::man_enrichment::render_enriched(
+        cmd.clone(),
+        enrichment_key(name),
+        manifest,
+        examples,
+    )
+    .unwrap_or_else(|e| panic!("failed to render man page for {name}: {e}"));
     fs::write(&path, buf).unwrap_or_else(|e| panic!("failed to write {}: {e}", path.display()));
     println!("  {}", path.display());
 }
