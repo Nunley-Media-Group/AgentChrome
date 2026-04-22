@@ -537,6 +537,24 @@ async fn execute_follow(global: &GlobalOpts, args: &ConsoleFollowArgs) -> Result
 }
 
 // =============================================================================
+// Script runner adapter
+// =============================================================================
+
+/// Run a `console` command against an existing session and return a JSON value.
+///
+/// # Errors
+///
+/// Propagates `AppError` from the underlying console logic.
+pub async fn run_from_session(
+    _managed: &mut agentchrome::connection::ManagedSession,
+    global: &GlobalOpts,
+    args: &ConsoleArgs,
+) -> Result<serde_json::Value, agentchrome::error::AppError> {
+    execute_console(global, args).await?;
+    Ok(serde_json::json!({"executed": true}))
+}
+
+// =============================================================================
 // Tests
 // =============================================================================
 

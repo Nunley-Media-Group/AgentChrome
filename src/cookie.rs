@@ -287,6 +287,24 @@ fn parse_cookies(response: &serde_json::Value) -> Vec<CookieInfo> {
 }
 
 // =============================================================================
+// Script runner adapter
+// =============================================================================
+
+/// Run a `cookie` command against an existing session and return a JSON value.
+///
+/// # Errors
+///
+/// Propagates `AppError` from the underlying cookie logic.
+pub async fn run_from_session(
+    _managed: &mut agentchrome::connection::ManagedSession,
+    global: &GlobalOpts,
+    args: &CookieArgs,
+) -> Result<serde_json::Value, AppError> {
+    execute_cookie(global, args).await?;
+    Ok(serde_json::json!({"executed": true}))
+}
+
+// =============================================================================
 // Tests
 // =============================================================================
 

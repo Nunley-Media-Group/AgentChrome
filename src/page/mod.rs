@@ -184,3 +184,32 @@ fn worker_status(target: &serde_json::Value) -> String {
 async fn execute_page_resize(global: &GlobalOpts, args: &PageResizeArgs) -> Result<(), AppError> {
     crate::emulate::execute_resize(global, &args.size).await
 }
+
+// =============================================================================
+// Script runner adapter
+// =============================================================================
+
+/// Run a `page` command against an existing session and return its JSON output.
+///
+/// Supports a subset of page subcommands commonly used in scripts.
+///
+/// # Errors
+///
+/// Propagates `AppError` from the underlying page logic.
+pub async fn run_from_session(
+    managed: &mut agentchrome::connection::ManagedSession,
+    _global: &GlobalOpts,
+    args: &PageArgs,
+) -> Result<serde_json::Value, AppError> {
+    match &args.command {
+        PageCommand::Snapshot(snap_args) => snapshot::compute_snapshot(managed, snap_args).await,
+        PageCommand::Text(text_args) => text::compute_text(managed, text_args).await,
+        _ => Err(AppError {
+            message: "this page subcommand is not yet supported in scripts; \
+                 use snapshot or text"
+                .into(),
+            code: ExitCode::GeneralError,
+            custom_json: None,
+        }),
+    }
+}

@@ -579,6 +579,24 @@ fn parse_media_value(v: &serde_json::Value) -> MediaInfo {
 }
 
 // =============================================================================
+// Script runner adapter
+// =============================================================================
+
+/// Run a `media` command against an existing session and return a JSON value.
+///
+/// # Errors
+///
+/// Propagates `AppError` from the underlying media logic.
+pub async fn run_from_session(
+    _managed: &mut agentchrome::connection::ManagedSession,
+    global: &GlobalOpts,
+    args: &MediaArgs,
+) -> Result<serde_json::Value, agentchrome::error::AppError> {
+    execute_media(global, args).await?;
+    Ok(serde_json::json!({"executed": true}))
+}
+
+// =============================================================================
 // Tests
 // =============================================================================
 

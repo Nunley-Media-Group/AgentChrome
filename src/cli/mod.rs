@@ -750,6 +750,111 @@ EXAMPLES:
   agentchrome man navigate | less"
     )]
     Man(ManArgs),
+
+    /// Execute a batch script of agentchrome commands
+    #[command(
+        long_about = "Execute a JSON batch script composed of agentchrome commands, conditional \
+            branches, and loops against the active CDP session. The script runs sequentially \
+            and emits a structured JSON result array on stdout. Use 'script run -' to read \
+            a script from stdin.\n\n\
+            SCRIPT FORMAT (JSON v1):\n\
+              { \"commands\": [\n\
+                { \"cmd\": [\"navigate\", \"https://example.com\"] },\n\
+                { \"cmd\": [\"js\", \"exec\", \"document.title\"], \"bind\": \"title\" },\n\
+                { \"if\": \"$vars.title.includes('Example')\",\n\
+                  \"then\": [{ \"cmd\": [\"page\", \"snapshot\"] }],\n\
+                  \"else\": [] },\n\
+                { \"loop\": { \"count\": 3 }, \"body\": [{ \"cmd\": [\"interact\", \"click\", \"s1\"] }] }\n\
+              ] }",
+        after_long_help = "\
+EXAMPLES:
+  # Run a script file
+  agentchrome script run workflow.json
+
+  # Read a script from stdin
+  echo '{\"commands\":[{\"cmd\":[\"navigate\",\"https://example.com\"]}]}' | agentchrome script run -
+
+  # Stop at the first failure
+  agentchrome script run --fail-fast workflow.json
+
+  # Validate a script without dispatching any commands
+  agentchrome script run --dry-run workflow.json
+
+  # Chain navigate and js exec to extract the page title
+  agentchrome script run - <<'EOF'
+{\"commands\":[
+  {\"cmd\":[\"navigate\",\"https://example.com\"]},
+  {\"cmd\":[\"js\",\"exec\",\"document.title\"],\"bind\":\"title\"}
+]}
+EOF"
+    )]
+    Script(ScriptArgs),
+}
+
+// =============================================================================
+// Script subcommand types
+// =============================================================================
+
+/// Arguments for the `script` command group.
+#[derive(Args)]
+pub struct ScriptArgs {
+    #[command(subcommand)]
+    pub sub: ScriptSubcommand,
+}
+
+/// Script subcommands.
+#[derive(Subcommand)]
+pub enum ScriptSubcommand {
+    /// Run a JSON batch script
+    #[command(
+        long_about = "Run a JSON batch script against the active CDP session. The script file \
+            should contain a JSON object with a 'commands' array. Each command is an argv-style \
+            array of strings. Use '-' as the file path to read from stdin.\n\n\
+            Supports conditional branching (if/then/else), count and while loops, and \
+            variable binding (bind: \"name\") with $vars.name substitution in later steps.",
+        after_long_help = "\
+EXAMPLES:
+  # Run a script file
+  agentchrome script run workflow.json
+
+  # Read a script from stdin (- means stdin)
+  cat workflow.json | agentchrome script run -
+
+  # Stop at the first failing step and exit non-zero
+  agentchrome script run --fail-fast workflow.json
+
+  # Validate the script without dispatching commands (offline)
+  agentchrome script run --dry-run workflow.json
+
+  # Pretty-print the result JSON
+  agentchrome script run --pretty workflow.json"
+    )]
+    Run(ScriptRunArgs),
+}
+
+/// Arguments for `script run`.
+#[derive(Args)]
+pub struct ScriptRunArgs {
+    /// Path to a JSON script file (`-` reads from stdin)
+    #[arg(
+        value_name = "FILE",
+        help = "Path to a JSON script file; use '-' to read from stdin"
+    )]
+    pub file: String,
+
+    /// Stop at the first failing step and exit with code 1
+    #[arg(
+        long,
+        help = "Stop execution at the first failing step and exit non-zero"
+    )]
+    pub fail_fast: bool,
+
+    /// Validate the script without dispatching any commands to Chrome
+    #[arg(
+        long,
+        help = "Parse and validate the script without executing any commands"
+    )]
+    pub dry_run: bool,
 }
 
 /// Chrome release channel to use when launching.

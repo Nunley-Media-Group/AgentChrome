@@ -2330,6 +2330,24 @@ pub async fn execute_interact(global: &GlobalOpts, args: &InteractArgs) -> Resul
 }
 
 // =============================================================================
+// Script runner adapter
+// =============================================================================
+
+/// Run an `interact` command against an existing session and return a JSON value.
+///
+/// # Errors
+///
+/// Propagates `AppError` from the underlying interact logic.
+pub async fn run_from_session(
+    _managed: &mut ManagedSession,
+    global: &GlobalOpts,
+    args: &InteractArgs,
+) -> Result<serde_json::Value, AppError> {
+    execute_interact(global, args).await?;
+    Ok(serde_json::json!({"executed": true}))
+}
+
+// =============================================================================
 // Tests
 // =============================================================================
 

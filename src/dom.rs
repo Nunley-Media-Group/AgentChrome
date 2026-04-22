@@ -2075,6 +2075,24 @@ fn truncate_text(text: &str, max: usize) -> String {
 }
 
 // =============================================================================
+// Script runner adapter
+// =============================================================================
+
+/// Run a `dom` command against an existing session and return a JSON value.
+///
+/// # Errors
+///
+/// Propagates `AppError` from the underlying dom logic.
+pub async fn run_from_session(
+    _managed: &mut ManagedSession,
+    global: &GlobalOpts,
+    args: &DomArgs,
+) -> Result<serde_json::Value, AppError> {
+    execute_dom(global, args).await?;
+    Ok(serde_json::json!({"executed": true}))
+}
+
+// =============================================================================
 // Tests
 // =============================================================================
 

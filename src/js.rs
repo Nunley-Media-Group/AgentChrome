@@ -587,6 +587,55 @@ async fn execute_in_worker(
     })
 }
 
+// =============================================================================
+// Script runner adapter
+// =============================================================================
+
+/// Run a `js` command against an existing session and return its JSON output.
+///
+/// # Errors
+///
+/// Propagates `AppError` from the underlying js logic.
+pub async fn run_from_session(
+    managed: &mut agentchrome::connection::ManagedSession,
+    _global: &GlobalOpts,
+    args: &JsArgs,
+) -> Result<serde_json::Value, AppError> {
+    let JsCommand::Exec(exec_args) = &args.command;
+
+    let code = resolve_code(exec_args)?;
+
+    managed.ensure_domain("Runtime").await?;
+
+    let result = execute_expression_with_context(managed, &code, !exec_args.no_await, None).await?;
+
+    // Check for exception
+    if let Some(exception_details) = result.get("exceptionDetails") {
+        let exception = &exception_details["exception"];
+        let error_desc = exception["description"]
+            .as_str()
+            .or_else(|| exception_details["text"].as_str())
+            .unwrap_or("unknown error")
+            .to_string();
+        return Err(AppError {
+            message: format!("js exec failed: {error_desc}"),
+            code: agentchrome::error::ExitCode::GeneralError,
+            custom_json: None,
+        });
+    }
+
+    let cdp_result = &result["result"];
+    let js_type = js_type_string(cdp_result);
+    let value = extract_result_value(cdp_result);
+    let (value, was_truncated) = apply_truncation(value, exec_args.max_size);
+
+    Ok(serde_json::json!({
+        "result": value,
+        "type": js_type,
+        "truncated": was_truncated,
+    }))
+}
+
 /// Execute a function with an element context via Runtime.callFunctionOn on a given session.
 async fn execute_with_uid_on_session(
     session: &ManagedSession,

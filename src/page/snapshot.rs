@@ -390,6 +390,59 @@ pub async fn execute_snapshot(
     })
 }
 
+// =============================================================================
+// Script runner compute function
+// =============================================================================
+
+/// Compute a page snapshot against an existing session and return the JSON value.
+///
+/// Used by the script runner to invoke `page snapshot` without printing to stdout.
+///
+/// # Errors
+///
+/// Returns `AppError` on snapshot failure.
+pub async fn compute_snapshot(
+    managed: &mut agentchrome::connection::ManagedSession,
+    _args: &PageSnapshotArgs,
+) -> Result<serde_json::Value, AppError> {
+    // Delegate to a minimal implementation using the provided session.
+    managed.ensure_domain("Accessibility").await?;
+    managed.ensure_domain("Runtime").await?;
+
+    let result = managed
+        .send_command("Accessibility.getFullAXTree", None)
+        .await
+        .map_err(|e| AppError::snapshot_failed(&e.to_string()))?;
+
+    let nodes = result["nodes"]
+        .as_array()
+        .ok_or_else(|| AppError::snapshot_failed("response missing 'nodes' array"))?;
+
+    let build = crate::snapshot::build_tree(nodes, false);
+
+    // Persist UID mapping
+    let (url, _) = super::get_page_info(managed).await?;
+    let state = crate::snapshot::SnapshotState {
+        url,
+        timestamp: agentchrome::session::now_iso8601(),
+        uid_map: build.uid_map.clone(),
+        frame_index: None,
+        frame_id: None,
+        aggregate: false,
+        frame_uid_ranges: Vec::new(),
+        frame_ids: Vec::new(),
+    };
+    if let Err(e) = crate::snapshot::write_snapshot_state(&state) {
+        eprintln!("warning: could not save snapshot state: {e}");
+    }
+
+    serde_json::to_value(&build.root).map_err(|e| AppError {
+        message: format!("serialization error: {e}"),
+        code: ExitCode::GeneralError,
+        custom_json: None,
+    })
+}
+
 /// Aggregate snapshot: build main-frame tree and splice every enumerable
 /// iframe's accessibility tree under its owner node.
 #[allow(clippy::too_many_lines)]

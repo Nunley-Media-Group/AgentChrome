@@ -273,6 +273,69 @@ async fn collect_frame_execution_contexts(
 }
 
 // =============================================================================
+// Script runner compute function
+// =============================================================================
+
+/// Compute page text against an existing session and return the JSON value.
+///
+/// Used by the script runner to invoke `page text` without printing to stdout.
+///
+/// # Errors
+///
+/// Returns `AppError` on evaluation failure.
+pub async fn compute_text(
+    managed: &mut agentchrome::connection::ManagedSession,
+    args: &PageTextArgs,
+) -> Result<serde_json::Value, agentchrome::error::AppError> {
+    managed.ensure_domain("Runtime").await?;
+
+    let expression = match &args.selector {
+        None => "document.body?.innerText ?? ''".to_string(),
+        Some(selector) => {
+            let escaped = escape_selector(selector);
+            format!(
+                r#"(() => {{ const el = document.querySelector("{escaped}"); if (!el) return {{ __error: "not_found" }}; return el.innerText; }})()"#
+            )
+        }
+    };
+
+    let params = serde_json::json!({
+        "expression": expression,
+        "returnByValue": true,
+    });
+
+    let result = managed
+        .send_command("Runtime.evaluate", Some(params))
+        .await
+        .map_err(|e| agentchrome::error::AppError {
+            message: format!("page text evaluation failed: {e}"),
+            code: agentchrome::error::ExitCode::GeneralError,
+            custom_json: None,
+        })?;
+
+    if let Some(exception) = result.get("exceptionDetails") {
+        let description = exception["exception"]["description"]
+            .as_str()
+            .or_else(|| exception["text"].as_str())
+            .unwrap_or("unknown error");
+        return Err(agentchrome::error::AppError::evaluation_failed(description));
+    }
+
+    let value = &result["result"]["value"];
+    if let Some(error) = value.get("__error") {
+        if error.as_str() == Some("not_found") {
+            let selector = args.selector.as_deref().unwrap_or("unknown");
+            return Err(agentchrome::error::AppError::element_not_found(selector));
+        }
+    }
+
+    let text = value.as_str().unwrap_or_default().to_string();
+    let (url, title) = super::get_page_info(managed).await?;
+
+    Ok(serde_json::json!({ "text": text, "url": url, "title": title }))
+}
+
+// =============================================================================
 // Tests
 // =============================================================================
 

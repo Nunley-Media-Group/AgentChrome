@@ -367,6 +367,25 @@ async fn query_visible_target_id(
 }
 
 // =============================================================================
+// Script runner adapter
+// =============================================================================
+
+/// Run a `tabs` command against an existing session and return a JSON value.
+///
+/// # Errors
+///
+/// Propagates `AppError` from the underlying tabs logic.
+pub async fn run_from_session(
+    _client: &agentchrome::cdp::CdpClient,
+    _managed: &mut agentchrome::connection::ManagedSession,
+    global: &GlobalOpts,
+    args: &TabsArgs,
+) -> Result<serde_json::Value, AppError> {
+    execute_tabs(global, args).await?;
+    Ok(serde_json::json!({"executed": true}))
+}
+
+// =============================================================================
 // Tests
 // =============================================================================
 

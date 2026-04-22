@@ -4,6 +4,7 @@ mod cli;
 mod console;
 mod cookie;
 mod coord_helpers;
+mod script;
 // Re-export the library's coords module so `crate::coords` works in shared code (cli/mod.rs).
 mod coords {
     pub use agentchrome::coords::*;
@@ -45,6 +46,7 @@ use agentchrome::session::{self, SessionData};
 
 use cli::{
     ChromeChannel, Cli, Command, CompletionsArgs, ConfigCommand, ConnectArgs, GlobalOpts, ManArgs,
+    ScriptSubcommand,
 };
 
 #[tokio::main]
@@ -189,6 +191,7 @@ async fn run(cli: &Cli) -> Result<(), AppError> {
         Command::Capabilities(args) => capabilities::execute_capabilities(&global, args),
         Command::Completions(args) => execute_completions(args),
         Command::Man(args) => execute_man(args),
+        Command::Script(args) => execute_script(&global, args).await,
     }
 }
 
@@ -742,6 +745,98 @@ fn kill_process(pid: u32) {
             .args(["/T", "/F", "/PID", &pid.to_string()])
             .output();
     }
+}
+
+// =============================================================================
+// Script execution
+// =============================================================================
+
+async fn execute_script(global: &GlobalOpts, args: &cli::ScriptArgs) -> Result<(), AppError> {
+    use std::io::Read as _;
+
+    use script::parser::parse_script;
+    use script::result::DryRunReport;
+    use script::runner::{RunOptions, run_script, validate_dry_run};
+
+    let ScriptSubcommand::Run(run_args) = &args.sub;
+
+    let bytes: Vec<u8> = if run_args.file == "-" {
+        let mut buf = Vec::new();
+        std::io::stdin()
+            .read_to_end(&mut buf)
+            .map_err(|e| AppError {
+                message: format!("failed to read script from stdin: {e}"),
+                code: ExitCode::GeneralError,
+                custom_json: None,
+            })?;
+        buf
+    } else {
+        std::fs::read(&run_args.file).map_err(|e| {
+            if e.kind() == std::io::ErrorKind::NotFound {
+                AppError {
+                    message: format!("script file not found: {}", run_args.file),
+                    code: ExitCode::GeneralError,
+                    custom_json: None,
+                }
+            } else {
+                AppError {
+                    message: format!("failed to read script file '{}': {e}", run_args.file),
+                    code: ExitCode::GeneralError,
+                    custom_json: None,
+                }
+            }
+        })?
+    };
+
+    let script_doc = parse_script(&bytes)?;
+
+    if run_args.dry_run {
+        let steps = validate_dry_run(&script_doc)?;
+        let report = DryRunReport {
+            dispatched: false,
+            ok: true,
+            steps,
+        };
+        print_json(&report)?;
+        return Ok(());
+    }
+
+    let opts_connection = output::connect_from_global(global).await?;
+    let target = agentchrome::connection::resolve_target(
+        &opts_connection.resolved.host,
+        opts_connection.resolved.port,
+        global.tab.as_deref(),
+        global.page_id.as_deref(),
+    )
+    .await?;
+    let session = opts_connection.client.create_session(&target.id).await?;
+    let mut managed = agentchrome::connection::ManagedSession::new(session);
+
+    let run_opts = RunOptions {
+        fail_fast: run_args.fail_fast,
+        dry_run: false,
+    };
+
+    let report = run_script(
+        &script_doc,
+        &opts_connection.client,
+        &mut managed,
+        global,
+        &run_opts,
+    )
+    .await?;
+
+    if global.output.pretty {
+        let json = serde_json::to_string_pretty(&report).map_err(|e| AppError {
+            message: format!("serialization error: {e}"),
+            code: ExitCode::GeneralError,
+            custom_json: None,
+        })?;
+        println!("{json}");
+    } else {
+        print_json(&report)?;
+    }
+    Ok(())
 }
 
 #[cfg(test)]

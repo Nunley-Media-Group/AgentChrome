@@ -1211,6 +1211,28 @@ pub async fn execute_form(global: &GlobalOpts, args: &FormArgs) -> Result<(), Ap
 }
 
 // =============================================================================
+// Script runner adapter
+// =============================================================================
+
+/// Run a `form` command against an existing session and return a JSON value.
+///
+/// This adapter executes the form command using the global connection settings
+/// (which reuse the same Chrome instance via the session file) and returns a
+/// status value. Full output capture requires further refactoring.
+///
+/// # Errors
+///
+/// Propagates `AppError` from the underlying form logic.
+pub async fn run_from_session(
+    _managed: &mut ManagedSession,
+    global: &GlobalOpts,
+    args: &FormArgs,
+) -> Result<serde_json::Value, AppError> {
+    execute_form(global, args).await?;
+    Ok(serde_json::json!({"executed": true}))
+}
+
+// =============================================================================
 // Tests
 // =============================================================================
 

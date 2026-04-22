@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.35.0] - 2026-04-21
+
+### Added
+
+- Add `script run <file>` subcommand for batch execution of AgentChrome commands from a JSON script file, with sequential execution, fail-fast mode (`--fail-fast`), conditional branching (if/else), loop constructs (count and condition-based), variable binding for passing output between commands, and `--dry-run` validation; stdin supported via `-` as the file argument, reducing multi-step workflows (e.g., 92-slide SCORM courses) from hundreds of tool calls to one (#199)
+- Add `run_from_session` adapters across all command modules enabling script-driven reuse of existing CDP sessions without per-command reconnect overhead (#199)
+- Add BDD coverage in `tests/features/batch-script-execution.feature` for script execution, fail-fast, branching, loops, variable binding, and dry-run (#199)
+
 ## [1.34.0] - 2026-04-21
 
 ### Added

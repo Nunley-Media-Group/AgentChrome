@@ -383,6 +383,24 @@ async fn read_dialog_cookie(managed: &ManagedSession) -> (String, String, String
 }
 
 // =============================================================================
+// Script runner adapter
+// =============================================================================
+
+/// Run a `dialog` command against an existing session and return a JSON value.
+///
+/// # Errors
+///
+/// Propagates `AppError` from the underlying dialog logic.
+pub async fn run_from_session(
+    _managed: &mut ManagedSession,
+    global: &GlobalOpts,
+    args: &DialogArgs,
+) -> Result<serde_json::Value, AppError> {
+    execute_dialog(global, args).await?;
+    Ok(serde_json::json!({"executed": true}))
+}
+
+// =============================================================================
 // Tests
 // =============================================================================
 

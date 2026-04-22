@@ -477,6 +477,25 @@ fn build_framework_challenge(bundle: &DetectorBundle<'_>) -> Challenge {
 }
 
 // =============================================================================
+// Script runner adapter
+// =============================================================================
+
+/// Run a `diagnose` command against an existing session and return a JSON value.
+///
+/// # Errors
+///
+/// Propagates `AppError` from the underlying diagnose logic.
+#[allow(dead_code)]
+pub async fn run_from_session(
+    _managed: &mut agentchrome::connection::ManagedSession,
+    global: &GlobalOpts,
+    args: &DiagnoseArgs,
+) -> Result<serde_json::Value, AppError> {
+    execute_diagnose(global, args).await?;
+    Ok(serde_json::json!({"executed": true}))
+}
+
+// =============================================================================
 // Tests (T008: severity + challenge assembly)
 // =============================================================================
 

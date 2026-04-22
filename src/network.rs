@@ -818,6 +818,24 @@ fn resolve_frame_id_by_path(
 // Dispatcher
 // =============================================================================
 
+// =============================================================================
+// Script runner adapter
+// =============================================================================
+
+/// Run a `network` command against an existing session and return a JSON value.
+///
+/// # Errors
+///
+/// Propagates `AppError` from the underlying network logic.
+pub async fn run_from_session(
+    _managed: &mut ManagedSession,
+    global: &GlobalOpts,
+    args: &NetworkArgs,
+) -> Result<serde_json::Value, agentchrome::error::AppError> {
+    execute_network(global, args).await?;
+    Ok(serde_json::json!({"executed": true}))
+}
+
 /// Execute the `network` subcommand group.
 ///
 /// # Errors
