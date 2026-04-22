@@ -470,7 +470,7 @@ pub async fn resolve_target(
 /// Chrome re-emits `Page.javascriptDialogOpening` to newly-attached sessions
 /// when `Page.enable` is sent, but `Page.enable` itself blocks when a dialog
 /// is already open. We use a short timeout so auto-dismiss can proceed.
-const PAGE_ENABLE_TIMEOUT_MS: u64 = 300;
+pub const PAGE_ENABLE_TIMEOUT_MS: u64 = 300;
 
 /// A CDP session wrapper that tracks which domains have been enabled,
 /// ensuring each domain is only enabled once (lazy domain enabling).
