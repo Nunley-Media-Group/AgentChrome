@@ -348,10 +348,8 @@ pub async fn execute_find(
 
     let matches = if let Some(frame_str) = frame {
         let arg = agentchrome::frame::parse_frame_arg(frame_str)?;
-        let mut frame_ctx =
-            agentchrome::frame::resolve_frame(&client, &mut managed, &arg).await?;
-        let frame_session =
-            agentchrome::frame::frame_session_mut(&mut frame_ctx, &mut managed);
+        let mut frame_ctx = agentchrome::frame::resolve_frame(&client, &mut managed, &arg).await?;
+        let frame_session = agentchrome::frame::frame_session_mut(&mut frame_ctx, &mut managed);
         gather_find_matches(frame_session, args).await?
     } else {
         gather_find_matches(&mut managed, args).await?
