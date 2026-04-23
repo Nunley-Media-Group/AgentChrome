@@ -176,3 +176,35 @@ Feature: Skill command group for agentic tool integration
     Given the project README.md exists
     When I read the skill installer documentation
     Then it lists "gemini" or "Gemini CLI" as a supported tool
+
+  # =============================================================================
+  # Issue #220 — Enrich SKILL.md template with YAML frontmatter and discovery paths
+  # =============================================================================
+
+  Scenario: SKILL.md has YAML frontmatter on install (AC1)
+    Given no particular agentic environment is active
+    When I run "agentchrome skill install --tool claude-code"
+    Then the exit code is 0
+    And the installed SKILL.md starts with a YAML frontmatter block
+    And the frontmatter contains name "agentchrome"
+    And the frontmatter description contains "automate a browser"
+    And the frontmatter description contains "fill a form"
+    And the frontmatter description contains "test a login"
+    And the frontmatter description contains "scrape a page"
+    And the frontmatter description contains "take a screenshot"
+    And the frontmatter description contains "inspect console / network"
+
+  Scenario: SKILL.md names high-leverage discovery paths (AC2)
+    Given no particular agentic environment is active
+    When I run "agentchrome skill install --tool claude-code"
+    Then the exit code is 0
+    And the installed SKILL.md body contains "diagnose"
+    And the installed SKILL.md body contains "examples strategies"
+    And the installed SKILL.md body contains "--include-snapshot"
+    And the installed SKILL.md body contains "output_file"
+
+  Scenario: AppendSection install writes version marker inside section markers (AC5 T005)
+    Given no particular agentic environment is active
+    When I run "agentchrome skill install --tool windsurf"
+    Then the exit code is 0
+    And the installed windsurf skill file contains "<!-- agentchrome-version: " inside the section markers

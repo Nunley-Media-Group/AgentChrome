@@ -4892,9 +4892,11 @@ fn skill_file_has_version(world: &mut SkillWorld) {
     let temp_home = world.temp_home.as_ref().expect("No temp home");
     let path = temp_home.path().join(".claude/skills/agentchrome/SKILL.md");
     let content = std::fs::read_to_string(&path).expect("Failed to read skill file");
+    // The SKILL_TEMPLATE (T004) uses YAML frontmatter: `version: "X.Y.Z"`.
+    // The legacy `Version:` heading is no longer written by install/update.
     assert!(
-        content.contains("Version:"),
-        "Skill file does not contain version stamp"
+        content.contains("version:"),
+        "Skill file does not contain YAML version key\ncontent: {content}"
     );
 }
 
@@ -4955,9 +4957,10 @@ fn skill_file_overwritten(world: &mut SkillWorld) {
         .unwrap_or_else(|e| panic!("stdout is not valid JSON: {e}\nstdout: {}", world.stdout));
     let path = json["path"].as_str().expect("missing 'path' field");
     let content = std::fs::read_to_string(path).expect("Failed to read skill file");
+    // The SKILL_TEMPLATE (T004) uses YAML frontmatter: `version: "X.Y.Z"`.
     assert!(
-        content.contains("Version:"),
-        "Skill file should contain version stamp"
+        content.contains("version:"),
+        "Skill file should contain YAML version key\ncontent: {content}"
     );
 }
 
@@ -5087,9 +5090,10 @@ fn skill_gemini_file_has_version(world: &mut SkillWorld) {
     let temp_home = world.temp_home.as_ref().expect("No temp home");
     let path = temp_home.path().join(".gemini/instructions/agentchrome.md");
     let content = std::fs::read_to_string(&path).expect("Failed to read Gemini skill file");
+    // The SKILL_TEMPLATE (T004) uses YAML frontmatter: `version: "X.Y.Z"`.
     assert!(
-        content.contains("Version:"),
-        "Gemini skill file does not contain version stamp"
+        content.contains("version:"),
+        "Gemini skill file does not contain YAML version key\ncontent: {content}"
     );
 }
 
@@ -5100,6 +5104,418 @@ fn skill_readme_lists_gemini(world: &mut SkillWorld) {
     assert!(
         has_gemini,
         "README does not mention Gemini as a supported tool"
+    );
+}
+
+// --- SKILL.md enrichment Then steps (issue #220 / T021) ---
+
+/// Read the installed SKILL.md from the path reported in stdout JSON.
+fn read_installed_skill_md(world: &SkillWorld) -> String {
+    let json: serde_json::Value = serde_json::from_str(world.stdout.trim())
+        .unwrap_or_else(|e| panic!("stdout is not valid JSON: {e}\nstdout: {}", world.stdout));
+    let path = json["path"]
+        .as_str()
+        .expect("missing 'path' field in stdout");
+    std::fs::read_to_string(path)
+        .unwrap_or_else(|e| panic!("failed to read installed SKILL.md at {path}: {e}"))
+}
+
+/// Read the installed windsurf `global_rules.md` from the temp home.
+fn read_installed_windsurf_skill(world: &SkillWorld) -> String {
+    let temp_home = world.temp_home.as_ref().expect("No temp home");
+    let path = temp_home
+        .path()
+        .join(".codeium/windsurf/memories/global_rules.md");
+    std::fs::read_to_string(&path).unwrap_or_else(|e| {
+        panic!(
+            "failed to read windsurf skill file at {}: {e}",
+            path.display()
+        )
+    })
+}
+
+#[then("the installed SKILL.md starts with a YAML frontmatter block")]
+fn skill_md_starts_with_frontmatter(world: &mut SkillWorld) {
+    let content = read_installed_skill_md(world);
+    assert!(
+        content.starts_with("---\n"),
+        "SKILL.md does not start with YAML frontmatter delimiter '---'\ncontent: {content}"
+    );
+}
+
+#[then(expr = "the frontmatter contains name {string}")]
+fn skill_md_frontmatter_name(world: &mut SkillWorld, expected_name: String) {
+    let content = read_installed_skill_md(world);
+    let expected_line = format!("name: {expected_name}");
+    assert!(
+        content.contains(&expected_line),
+        "SKILL.md frontmatter does not contain '{expected_line}'\ncontent: {content}"
+    );
+}
+
+#[then(expr = "the frontmatter description contains {string}")]
+fn skill_md_frontmatter_description_contains(world: &mut SkillWorld, phrase: String) {
+    let content = read_installed_skill_md(world);
+    assert!(
+        content.contains(&phrase),
+        "SKILL.md frontmatter description does not contain '{phrase}'\ncontent: {content}"
+    );
+}
+
+#[then(expr = "the installed SKILL.md body contains {string}")]
+fn skill_md_body_contains(world: &mut SkillWorld, phrase: String) {
+    let content = read_installed_skill_md(world);
+    assert!(
+        content.contains(&phrase),
+        "SKILL.md body does not contain '{phrase}'\ncontent: {content}"
+    );
+}
+
+#[then(
+    "the installed windsurf skill file contains \"<!-- agentchrome-version: \" inside the section markers"
+)]
+fn skill_windsurf_version_marker(world: &mut SkillWorld) {
+    let content = read_installed_windsurf_skill(world);
+    assert!(
+        content.contains("<!-- agentchrome:start -->"),
+        "Windsurf skill file missing section start marker\ncontent: {content}"
+    );
+    assert!(
+        content.contains("<!-- agentchrome:end -->"),
+        "Windsurf skill file missing section end marker\ncontent: {content}"
+    );
+    let start = content
+        .find("<!-- agentchrome:start -->")
+        .expect("start marker not found");
+    let end = content
+        .find("<!-- agentchrome:end -->")
+        .expect("end marker not found");
+    let section = &content[start..end];
+    assert!(
+        section.contains("<!-- agentchrome-version: "),
+        "Version marker '<!-- agentchrome-version: ' not found inside section markers\nsection: {section}"
+    );
+}
+
+// =============================================================================
+// StaleSkillWorld — skill staleness check BDD tests (issue #220)
+// =============================================================================
+//
+// Scenarios in skill-staleness.feature are logic-only (no Chrome required).
+// Each scenario plants a skill file with a known version into a temp directory
+// that is passed as HOME to the agentchrome binary under test, then checks
+// whether the staleness notice appears on stderr.
+
+#[derive(Debug, Default, World)]
+struct StaleSkillWorld {
+    binary_path: Option<PathBuf>,
+    temp_home: Option<tempfile::TempDir>,
+    /// stdout from the last command invocation.
+    stdout: String,
+    /// stderr from the last command invocation.
+    stderr: String,
+    exit_code: Option<i32>,
+    /// stderr captured by a second invocation (used by AC10 independence test).
+    second_stderr: String,
+    /// Whether the suppression env var should be cleared between invocations.
+    suppress_env_var: Option<String>,
+}
+
+impl StaleSkillWorld {
+    fn ensure_temp_home(&mut self) -> &tempfile::TempDir {
+        if self.temp_home.is_none() {
+            self.temp_home = Some(tempfile::tempdir().expect("failed to create temp dir"));
+        }
+        self.temp_home.as_ref().unwrap()
+    }
+
+    /// Write a skill file for `tool` at the expected path under `temp_home`.
+    ///
+    /// The content contains a YAML `version:` line so the staleness check can parse it.
+    fn plant_skill(&mut self, tool: &str, version: &str) {
+        let temp_home = self.ensure_temp_home().path().to_path_buf();
+        let skill_path = match tool {
+            "claude-code" => temp_home.join(".claude/skills/agentchrome/SKILL.md"),
+            "windsurf" => temp_home.join(".codeium/windsurf/memories/global_rules.md"),
+            "cursor" => temp_home.join(".cursor/rules/agentchrome.mdc"),
+            "gemini" => temp_home.join(".gemini/instructions/agentchrome.md"),
+            "aider" => temp_home.join(".aider/agentchrome.md"),
+            "continue" => temp_home.join(".continue/rules/agentchrome.md"),
+            "copilot-jb" => {
+                temp_home.join(".config/github-copilot/intellij/global-copilot-instructions.md")
+            }
+            other => panic!("Unknown tool '{other}' in plant_skill"),
+        };
+        if let Some(parent) = skill_path.parent() {
+            std::fs::create_dir_all(parent)
+                .unwrap_or_else(|e| panic!("failed to create dir {}: {e}", parent.display()));
+        }
+        let content =
+            format!("---\nname: agentchrome\nversion: \"{version}\"\n---\n\n# agentchrome skill\n");
+        std::fs::write(&skill_path, &content)
+            .unwrap_or_else(|e| panic!("failed to write skill file: {e}"));
+    }
+
+    /// Run `agentchrome skill list` (no Chrome needed) with the temp HOME set and optional env vars.
+    ///
+    /// `--version` is handled by clap before `run()` is invoked, so it never triggers the
+    /// staleness check. `skill list` is the lightest command that goes through `run()`.
+    fn run_with_home(&mut self, extra_env: &[(&str, &str)]) {
+        let binary = self.binary_path.clone().unwrap_or_else(binary_path);
+        let temp_home = self.ensure_temp_home().path().to_path_buf();
+
+        let mut cmd = std::process::Command::new(&binary);
+        cmd.args(["skill", "list"])
+            .env_clear()
+            .env("HOME", &temp_home)
+            .env("USERPROFILE", &temp_home)
+            .env("PATH", std::env::var("PATH").unwrap_or_default());
+
+        for (key, val) in extra_env {
+            cmd.env(key, val);
+        }
+
+        let output = cmd
+            .output()
+            .unwrap_or_else(|e| panic!("failed to run binary: {e}"));
+        self.stdout = String::from_utf8_lossy(&output.stdout).to_string();
+        self.stderr = String::from_utf8_lossy(&output.stderr).to_string();
+        self.exit_code = Some(output.status.code().unwrap_or(-1));
+    }
+
+    /// Run a second invocation and capture to `second_stderr`.
+    fn run_second_with_home(&mut self, extra_env: &[(&str, &str)]) {
+        let binary = self.binary_path.clone().unwrap_or_else(binary_path);
+        let temp_home = self.ensure_temp_home().path().to_path_buf();
+
+        let mut cmd = std::process::Command::new(&binary);
+        cmd.args(["skill", "list"])
+            .env_clear()
+            .env("HOME", &temp_home)
+            .env("USERPROFILE", &temp_home)
+            .env("PATH", std::env::var("PATH").unwrap_or_default());
+        for (key, val) in extra_env {
+            cmd.env(key, val);
+        }
+
+        let output = cmd
+            .output()
+            .unwrap_or_else(|e| panic!("failed to run binary (second): {e}"));
+        self.second_stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    }
+}
+
+// --- StaleSkillWorld Given steps ---
+
+#[given(expr = "an installed skill for {word} with version {string} planted in a temp home")]
+fn stale_skill_planted(world: &mut StaleSkillWorld, tool: String, version: String) {
+    let path = binary_path();
+    assert!(path.exists(), "Binary not found at {}", path.display());
+    world.binary_path = Some(path);
+    world.plant_skill(&tool, &version);
+}
+
+#[given(expr = "an installed skill for {word} with version {string} planted in the same temp home")]
+fn stale_skill_planted_same_home(world: &mut StaleSkillWorld, tool: String, version: String) {
+    // Binary already set by a prior Given; just plant the additional tool.
+    world.plant_skill(&tool, &version);
+}
+
+#[given(expr = "a skill installed at the current binary version for {word} in a temp home")]
+fn fresh_skill_planted(world: &mut StaleSkillWorld, tool: String) {
+    let path = binary_path();
+    assert!(path.exists(), "Binary not found at {}", path.display());
+    world.binary_path = Some(path);
+    // Use the real binary version so the staleness check reports "not stale".
+    let version = env!("CARGO_PKG_VERSION");
+    world.plant_skill(&tool, version);
+}
+
+#[given("no skill is installed in a temp home")]
+fn no_skill_in_temp_home(world: &mut StaleSkillWorld) {
+    let path = binary_path();
+    assert!(path.exists(), "Binary not found at {}", path.display());
+    world.binary_path = Some(path);
+    // Just initialize the temp home without planting anything.
+    world.ensure_temp_home();
+}
+
+#[given(expr = "a config file with {string} under {string} in the temp home")]
+fn stale_skill_config_file(world: &mut StaleSkillWorld, setting: String, section: String) {
+    // Write to ~/.agentchrome.toml (option 5 in the config search order) so it works
+    // cross-platform without relying on XDG_CONFIG_HOME or macOS Library paths.
+    let temp_home = world.ensure_temp_home().path().to_path_buf();
+    let config_path = temp_home.join(".agentchrome.toml");
+    let content = format!("{section}\n{setting}\n");
+    std::fs::write(&config_path, &content)
+        .unwrap_or_else(|e| panic!("failed to write config: {e}"));
+}
+
+// --- StaleSkillWorld When steps ---
+
+#[when("I invoke agentchrome with the planted home")]
+fn stale_invoke_default(world: &mut StaleSkillWorld) {
+    world.run_with_home(&[]);
+}
+
+#[when(expr = "I invoke agentchrome with the planted home and env var {string} set to {string}")]
+fn stale_invoke_with_env(world: &mut StaleSkillWorld, key: String, val: String) {
+    let env_pairs = vec![(key.as_str(), val.as_str())];
+    // We need to own the strings — call a closure to avoid borrow issues.
+    let binary = world.binary_path.clone().unwrap_or_else(binary_path);
+    let temp_home = world.ensure_temp_home().path().to_path_buf();
+
+    let mut cmd = std::process::Command::new(&binary);
+    cmd.args(["skill", "list"])
+        .env_clear()
+        .env("HOME", &temp_home)
+        .env("USERPROFILE", &temp_home)
+        .env("PATH", std::env::var("PATH").unwrap_or_default());
+    for (k, v) in &env_pairs {
+        cmd.env(k, v);
+    }
+    let output = cmd
+        .output()
+        .unwrap_or_else(|e| panic!("failed to run binary: {e}"));
+    world.stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    world.stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    world.exit_code = Some(output.status.code().unwrap_or(-1));
+    world.suppress_env_var = Some(key);
+}
+
+#[when("I invoke agentchrome with the planted home without the suppression env var")]
+fn stale_invoke_without_suppress(world: &mut StaleSkillWorld) {
+    // The suppression env var was cleared via env_clear() in run_with_home.
+    world.run_with_home(&[]);
+}
+
+#[when("I invoke agentchrome twice with the planted home")]
+fn stale_invoke_twice(world: &mut StaleSkillWorld) {
+    world.run_with_home(&[]);
+    world.run_second_with_home(&[]);
+}
+
+#[when(expr = "I run skill update for {word} with the planted home")]
+fn stale_run_skill_update(world: &mut StaleSkillWorld, tool: String) {
+    let binary = world.binary_path.clone().unwrap_or_else(binary_path);
+    let temp_home = world.ensure_temp_home().path().to_path_buf();
+
+    let output = std::process::Command::new(&binary)
+        .args(["skill", "update", "--tool", &tool])
+        .env_clear()
+        .env("HOME", &temp_home)
+        .env("USERPROFILE", &temp_home)
+        .env("PATH", std::env::var("PATH").unwrap_or_default())
+        .output()
+        .unwrap_or_else(|e| panic!("failed to run skill update: {e}"));
+
+    world.stdout = String::from_utf8_lossy(&output.stdout).to_string();
+    world.stderr = String::from_utf8_lossy(&output.stderr).to_string();
+    world.exit_code = Some(output.status.code().unwrap_or(-1));
+}
+
+// --- StaleSkillWorld Then steps ---
+
+#[then(expr = "stderr contains a line starting with {string}")]
+fn stale_stderr_line_starts_with(world: &mut StaleSkillWorld, prefix: String) {
+    let found = world
+        .stderr
+        .lines()
+        .any(|line| line.starts_with(prefix.as_str()));
+    assert!(
+        found,
+        "No stderr line starts with '{prefix}'\nstderr: {}",
+        world.stderr
+    );
+}
+
+#[then(expr = "that line contains {string}")]
+fn stale_notice_line_contains(world: &mut StaleSkillWorld, expected: String) {
+    // Find the staleness notice line and check it contains the expected string.
+    let found = world.stderr.lines().any(|line| {
+        (line.starts_with("note: installed agentchrome skill")) && line.contains(expected.as_str())
+    });
+    assert!(
+        found,
+        "No staleness notice line contains '{expected}'\nstderr: {}",
+        world.stderr
+    );
+}
+
+#[then("stderr contains exactly one staleness notice line")]
+fn stale_exactly_one_notice(world: &mut StaleSkillWorld) {
+    let count = world
+        .stderr
+        .lines()
+        .filter(|line| line.starts_with("note: installed agentchrome skill"))
+        .count();
+    assert_eq!(
+        count, 1,
+        "Expected exactly one staleness notice line, found {count}\nstderr: {}",
+        world.stderr
+    );
+}
+
+#[then("stderr does not contain \"note: installed agentchrome skill\"")]
+fn stale_no_notice(world: &mut StaleSkillWorld) {
+    assert!(
+        !world.stderr.contains("note: installed agentchrome skill"),
+        "Unexpected staleness notice in stderr\nstderr: {}",
+        world.stderr
+    );
+}
+
+#[then("the exit code is 0")]
+fn stale_exit_code_zero(world: &mut StaleSkillWorld) {
+    assert_eq!(
+        world.exit_code,
+        Some(0),
+        "Expected exit code 0, got {:?}\nstdout: {}\nstderr: {}",
+        world.exit_code,
+        world.stdout,
+        world.stderr
+    );
+}
+
+#[then(expr = "the output contains action {string}")]
+fn stale_output_contains_action(world: &mut StaleSkillWorld, expected_action: String) {
+    let json: serde_json::Value = serde_json::from_str(world.stdout.trim())
+        .unwrap_or_else(|e| panic!("stdout is not valid JSON: {e}\nstdout: {}", world.stdout));
+    assert_eq!(
+        json["action"].as_str(),
+        Some(expected_action.as_str()),
+        "Expected action={expected_action}, got {:?}",
+        json["action"]
+    );
+}
+
+#[then("a subsequent staleness check against the same home produces no notice")]
+fn stale_subsequent_no_notice(world: &mut StaleSkillWorld) {
+    // Re-run without the suppression env var; the updated file should have the
+    // current binary version so no notice is emitted.
+    world.run_second_with_home(&[]);
+    assert!(
+        !world
+            .second_stderr
+            .contains("note: installed agentchrome skill"),
+        "Unexpected staleness notice after skill update\nstderr: {}",
+        world.second_stderr
+    );
+}
+
+#[then("each invocation emits the staleness notice independently")]
+fn stale_each_invocation_independent(world: &mut StaleSkillWorld) {
+    assert!(
+        world.stderr.contains("note: installed agentchrome skill"),
+        "First invocation did not emit staleness notice\nstderr: {}",
+        world.stderr
+    );
+    assert!(
+        world
+            .second_stderr
+            .contains("note: installed agentchrome skill"),
+        "Second invocation did not emit staleness notice\nsecond_stderr: {}",
+        world.second_stderr
     );
 }
 
@@ -5490,6 +5906,10 @@ async fn main() {
 
     // Skill command group — uses temp dirs, no Chrome needed.
     SkillWorld::run("tests/features/skill-command-group.feature").await;
+
+    // Skill staleness check (issue #220) — all scenarios are logic-only, no Chrome needed.
+    // Scenarios plant versioned skill files in a temp home and verify the stderr notice.
+    StaleSkillWorld::run("tests/features/skill-staleness.feature").await;
 
     // README documentation — all scenarios are file-parsing tests (no Chrome needed).
     ReadmeWorld::run("tests/features/readme.feature").await;

@@ -181,3 +181,111 @@ Feature: Large Response Detection with Guided Search and Full-Response Override
     When I run "page snapshot --plain --search login"
     Then stdout contains plain-text tree nodes matching "login"
     And stdout does not contain "large_response"
+
+  # =============================================================================
+  # Issue #220 — Extend temp-file gating to remaining large-response commands
+  # =============================================================================
+  # All scenarios below are Chrome-dependent and are skipped in CI.
+  # They are validated during the /verify-code manual smoke test against the
+  # tests/fixtures/harden-progressive-disclosure.html fixture.
+
+  # --- AC3: newly gated commands emit TempFileOutput above threshold ---
+
+  Scenario: audit above threshold emits TempFileOutput with audit summary (AC3, AC4)
+    Given a page that produces a Lighthouse report exceeding 16 KB
+    When I run "audit"
+    Then stdout is a TempFileOutput object
+    And the "command" field is "audit"
+    And the "summary" object contains "categories" as an array
+    And the "summary" object contains "total_issues" as an integer
+    And the "summary" object contains "failing_audit_ids" as an array
+    And the exit code is 0
+
+  Scenario: dom select above threshold emits TempFileOutput with dom-select summary (AC3, AC4)
+    Given a page with enough DOM nodes that dom select produces more than 16 KB
+    When I run "dom select *"
+    Then stdout is a TempFileOutput object
+    And the "command" field is "dom select"
+    And the "summary" object contains "match_count" as an integer
+    And the "summary" object contains "first_match" as an object
+    And the exit code is 0
+
+  Scenario: dom attributes above threshold emits TempFileOutput with dom-attributes summary (AC3, AC4)
+    Given a page with elements with many attributes producing more than 16 KB
+    When I run "dom attributes --selector *"
+    Then stdout is a TempFileOutput object
+    And the "command" field is "dom attributes"
+    And the "summary" object contains "attribute_count" as an integer
+    And the "summary" object contains "keys_seen" as an array
+    And the exit code is 0
+
+  Scenario: dom events above threshold emits TempFileOutput with dom-events summary (AC3, AC4)
+    Given a page with many event listeners producing more than 16 KB
+    When I run "dom events --selector *"
+    Then stdout is a TempFileOutput object
+    And the "command" field is "dom events"
+    And the "summary" object contains "listener_count" as an integer
+    And the "summary" object contains "event_types" as an array
+    And the exit code is 0
+
+  Scenario: page analyze above threshold emits TempFileOutput with page-analyze summary (AC3, AC4)
+    Given a page that produces a page analyze result exceeding 16 KB
+    When I run "page analyze"
+    Then stdout is a TempFileOutput object
+    And the "command" field is "page analyze"
+    And the "summary" object contains "iframe_count" as an integer
+    And the "summary" object contains "overlay_count" as an integer
+    And the "summary" object contains "has_shadow_dom" as a boolean
+    And the exit code is 0
+
+  Scenario: page find above threshold emits TempFileOutput with page-find summary (AC3, AC4)
+    Given a page with enough interactive elements that page find produces more than 16 KB
+    When I run "page find --role *"
+    Then stdout is a TempFileOutput object
+    And the "command" field is "page find"
+    And the "summary" object contains "match_count" as an integer
+    And the "summary" object contains "roles_seen" as an array
+    And the exit code is 0
+
+  Scenario: console read above threshold emits TempFileOutput with console-read summary (AC3, AC4)
+    Given a page that emits more than 200 console messages
+    When I run "console read"
+    Then stdout is a TempFileOutput object
+    And the "command" field is "console read"
+    And the "summary" object contains "message_count" as an integer
+    And the "summary" object contains "error_count" as an integer
+    And the "summary" object contains "warning_count" as an integer
+    And the "summary" object contains "levels_seen" as an array
+    And the exit code is 0
+
+  Scenario: interact click with include-snapshot above threshold emits compound schema (AC3, AC5)
+    Given a clickable element on a page whose snapshot exceeds 16 KB
+    When I run "interact click <uid> --include-snapshot"
+    Then stdout is a compound TempFileOutput object
+    And stdout contains "success" at the top level
+    And stdout contains "uid" at the top level
+    And the "snapshot" key contains "output_file" pointing to a temp file
+    And the "snapshot" key contains "size_bytes" as a positive integer
+    And the "snapshot" key contains "command" set to "interact click"
+    And the "snapshot" key contains a "summary" object with "total_nodes"
+    And the exit code is 0
+
+  # --- AC5: compound schema below threshold is fully inline ---
+
+  Scenario: interact click with include-snapshot below threshold is fully inline (AC5)
+    Given a clickable element on a small page whose snapshot is under 16 KB
+    When I run "interact click <uid> --include-snapshot"
+    Then stdout does not contain "output_file"
+    And stdout contains "success" at the top level
+    And stdout contains "snapshot" as an inline object
+    And the exit code is 0
+
+  # --- AC9: below-threshold behavior unchanged ---
+
+  Scenario: page find below threshold returns raw JSON array unchanged (AC9)
+    Given a page with only three interactive elements
+    When I run "page find --role button"
+    Then stdout is a JSON array
+    And stdout does not contain "output_file"
+    And stdout does not contain "TempFileOutput"
+    And the exit code is 0
