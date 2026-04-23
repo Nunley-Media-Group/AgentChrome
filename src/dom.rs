@@ -2013,7 +2013,9 @@ async fn execute_tree(global: &GlobalOpts, args: &DomTreeArgs) -> Result<(), App
     // Determine the root and depth for DOM.getDocument
     let depth = args.depth.map_or(-1, i64::from);
 
-    let root_node = if let Some(ref root_target) = args.root {
+    let target = args.root_positional.as_ref().or(args.root.as_ref());
+
+    let root_node = if let Some(root_target) = target {
         // Resolve root target and get its subtree
         let node_id = resolve_node(&managed, root_target, None).await?.node_id;
         managed
@@ -2037,7 +2039,7 @@ async fn execute_tree(global: &GlobalOpts, args: &DomTreeArgs) -> Result<(), App
             })?
     };
 
-    let node = if args.root.is_some() {
+    let node = if target.is_some() {
         &root_node["node"]
     } else {
         &root_node["root"]
