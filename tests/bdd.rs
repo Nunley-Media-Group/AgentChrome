@@ -536,6 +536,31 @@ fn script_fixture_content(filename: &str) -> Option<&'static str> {
 }
 "#,
         ),
+        "page-find.json" => Some(
+            r#"{
+  "commands": [
+    { "cmd": ["page", "find", "Submit"], "bind": "match" }
+  ]
+}
+"#,
+        ),
+        "page-screenshot.json" => Some(
+            r#"{
+  "commands": [
+    { "cmd": ["page", "screenshot", "--file", "/tmp/agentchrome-script-smoke.png"] }
+  ]
+}
+"#,
+        ),
+        "find-then-click.json" => Some(
+            r#"{
+  "commands": [
+    { "cmd": ["page", "find", "Submit"], "bind": "match" },
+    { "cmd": ["interact", "click", "$vars.match[0].uid"] }
+  ]
+}
+"#,
+        ),
         _ => None,
     }
 }
