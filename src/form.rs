@@ -10,7 +10,7 @@ use crate::cli::{
     FormArgs, FormClearArgs, FormCommand, FormFillArgs, FormFillManyArgs, FormSubmitArgs,
     FormUploadArgs, GlobalOpts,
 };
-use crate::output::{print_output, setup_session};
+use crate::output::{self, print_output, setup_session};
 use crate::snapshot;
 
 // =============================================================================
@@ -750,7 +750,13 @@ async fn execute_fill(
         print_fill_plain(&result);
         Ok(())
     } else {
-        print_output(&result, &global.output)
+        output::emit_with_snapshot(
+            &result,
+            &global.output,
+            "form fill",
+            "snapshot",
+            crate::snapshot::summary_of_snapshot,
+        )
     }
 }
 
@@ -825,7 +831,13 @@ async fn execute_fill_many(
             }
             Ok(())
         } else {
-            print_output(&output, &global.output)
+            output::emit_with_snapshot(
+                &output,
+                &global.output,
+                "form fill-many",
+                "snapshot",
+                crate::snapshot::summary_of_snapshot,
+            )
         }
     } else {
         let output = FillManyOutput::Plain(results);
@@ -891,7 +903,13 @@ async fn execute_clear(
         print_clear_plain(&result);
         Ok(())
     } else {
-        print_output(&result, &global.output)
+        output::emit_with_snapshot(
+            &result,
+            &global.output,
+            "form clear",
+            "snapshot",
+            crate::snapshot::summary_of_snapshot,
+        )
     }
 }
 
@@ -921,6 +939,7 @@ const LARGE_FILE_THRESHOLD: u64 = 100 * 1024 * 1024;
 // =============================================================================
 
 /// Execute the `form upload` command.
+#[allow(clippy::too_many_lines)]
 async fn execute_upload(
     global: &GlobalOpts,
     args: &FormUploadArgs,
@@ -1040,7 +1059,13 @@ async fn execute_upload(
         print_upload_plain(&result);
         Ok(())
     } else {
-        print_output(&result, &global.output)
+        output::emit_with_snapshot(
+            &result,
+            &global.output,
+            "form upload",
+            "snapshot",
+            crate::snapshot::summary_of_snapshot,
+        )
     }
 }
 
@@ -1061,6 +1086,7 @@ fn read_json_file(path: &Path) -> Result<String, AppError> {
 // =============================================================================
 
 /// Execute the `form submit` command.
+#[allow(clippy::too_many_lines)]
 async fn execute_submit(
     global: &GlobalOpts,
     args: &FormSubmitArgs,
@@ -1184,7 +1210,13 @@ async fn execute_submit(
         print_submit_plain(&result);
         Ok(())
     } else {
-        print_output(&result, &global.output)
+        output::emit_with_snapshot(
+            &result,
+            &global.output,
+            "form submit",
+            "snapshot",
+            crate::snapshot::summary_of_snapshot,
+        )
     }
 }
 

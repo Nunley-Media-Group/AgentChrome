@@ -49,6 +49,17 @@ pub struct ConfigFile {
     pub tabs: TabsConfig,
     /// WebSocket keep-alive configuration.
     pub keepalive: KeepaliveConfigFile,
+    /// Skill staleness-check configuration.
+    pub skill: SkillConfigFile,
+}
+
+/// `[skill]` section of the TOML config file.
+#[derive(Debug, Default, Clone, Deserialize, Serialize)]
+#[serde(default)]
+pub struct SkillConfigFile {
+    /// When `Some(false)`, the staleness-check notice is suppressed on every
+    /// invocation. When `None` or `Some(true)`, the check runs normally.
+    pub check_enabled: Option<bool>,
 }
 
 #[derive(Debug, Default, Clone, Deserialize, Serialize)]
@@ -331,6 +342,14 @@ struct StrictConfigFile {
     tabs: StrictTabsConfig,
     #[serde(default)]
     keepalive: StrictKeepaliveConfig,
+    #[serde(default)]
+    skill: StrictSkillConfig,
+}
+
+#[derive(Default, Deserialize)]
+#[serde(deny_unknown_fields)]
+struct StrictSkillConfig {
+    check_enabled: Option<bool>,
 }
 
 #[derive(Default, Deserialize)]
@@ -394,6 +413,9 @@ impl From<StrictConfigFile> for ConfigFile {
             },
             keepalive: KeepaliveConfigFile {
                 interval_ms: s.keepalive.interval_ms,
+            },
+            skill: SkillConfigFile {
+                check_enabled: s.skill.check_enabled,
             },
         }
     }
@@ -640,6 +662,7 @@ unknown_key = "hello"
                 filter_internal: Some(false),
             },
             keepalive: KeepaliveConfigFile::default(),
+            skill: SkillConfigFile::default(),
         };
         let path = PathBuf::from("/tmp/test.toml");
         let resolved = resolve_config(&config, Some(path.clone()));
@@ -800,5 +823,33 @@ unknown_key = "hello"
         assert_eq!(parsed["connection"]["port"], 9222);
         assert_eq!(parsed["connection"]["host"], "127.0.0.1");
         assert_eq!(parsed["output"]["format"], "json");
+    }
+
+    #[test]
+    fn skill_check_enabled_false_round_trips() {
+        let toml = "[skill]\ncheck_enabled = false\n";
+        let config = parse_config(toml, Path::new("test.toml"));
+        assert_eq!(
+            config.skill.check_enabled,
+            Some(false),
+            "skill.check_enabled should be Some(false)"
+        );
+    }
+
+    #[test]
+    fn skill_section_absent_gives_none() {
+        let toml = "[connection]\nport = 9222\n";
+        let config = parse_config(toml, Path::new("test.toml"));
+        assert_eq!(
+            config.skill.check_enabled, None,
+            "absent [skill] section should leave check_enabled as None"
+        );
+    }
+
+    #[test]
+    fn skill_check_enabled_true_round_trips() {
+        let toml = "[skill]\ncheck_enabled = true\n";
+        let config = parse_config(toml, Path::new("test.toml"));
+        assert_eq!(config.skill.check_enabled, Some(true));
     }
 }

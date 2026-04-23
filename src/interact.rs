@@ -12,7 +12,7 @@ use crate::cli::{
 };
 use crate::coord_helpers::{frame_viewport_offset, resolve_element_box};
 use crate::navigate::{DEFAULT_NAVIGATE_TIMEOUT_MS, wait_for_event, wait_for_network_idle};
-use crate::output::{print_output, setup_session_with_interceptors};
+use crate::output::{self, setup_session_with_interceptors};
 use crate::snapshot;
 use agentchrome::coords::{CoordValue, resolve_relative_coords};
 
@@ -1649,7 +1649,13 @@ async fn execute_scroll(
         print_scroll_plain(&result, mode_label);
         Ok(())
     } else {
-        print_output(&result, &global.output)
+        output::emit_with_snapshot(
+            &result,
+            &global.output,
+            "interact scroll",
+            "snapshot",
+            crate::snapshot::summary_of_snapshot,
+        )
     }
 }
 
@@ -1783,7 +1789,13 @@ async fn execute_click(
         print_click_plain(&result);
         Ok(())
     } else {
-        print_output(&result, &global.output)
+        output::emit_with_snapshot(
+            &result,
+            &global.output,
+            "interact click",
+            "snapshot",
+            crate::snapshot::summary_of_snapshot,
+        )
     }
 }
 
@@ -1942,7 +1954,13 @@ async fn execute_click_at(
         print_click_at_plain(&result);
         Ok(())
     } else {
-        print_output(&result, &global.output)
+        output::emit_with_snapshot(
+            &result,
+            &global.output,
+            "interact click-at",
+            "snapshot",
+            crate::snapshot::summary_of_snapshot,
+        )
     }
 }
 
@@ -2001,7 +2019,13 @@ async fn execute_hover(
         print_hover_plain(&result);
         Ok(())
     } else {
-        print_output(&result, &global.output)
+        output::emit_with_snapshot(
+            &result,
+            &global.output,
+            "interact hover",
+            "snapshot",
+            crate::snapshot::summary_of_snapshot,
+        )
     }
 }
 
@@ -2068,7 +2092,13 @@ async fn execute_drag(
         print_drag_plain(&result);
         Ok(())
     } else {
-        print_output(&result, &global.output)
+        output::emit_with_snapshot(
+            &result,
+            &global.output,
+            "interact drag",
+            "snapshot",
+            crate::snapshot::summary_of_snapshot,
+        )
     }
 }
 
@@ -2189,7 +2219,13 @@ async fn execute_drag_at(
         print_drag_at_plain(&result);
         Ok(())
     } else {
-        print_output(&result, &global.output)
+        output::emit_with_snapshot(
+            &result,
+            &global.output,
+            "interact drag-at",
+            "snapshot",
+            crate::snapshot::summary_of_snapshot,
+        )
     }
 }
 
@@ -2264,7 +2300,13 @@ async fn execute_mousedown_at(
         print_mousedown_at_plain(&result);
         Ok(())
     } else {
-        print_output(&result, &global.output)
+        output::emit_with_snapshot(
+            &result,
+            &global.output,
+            "interact mousedown-at",
+            "snapshot",
+            crate::snapshot::summary_of_snapshot,
+        )
     }
 }
 
@@ -2339,7 +2381,13 @@ async fn execute_mouseup_at(
         print_mouseup_at_plain(&result);
         Ok(())
     } else {
-        print_output(&result, &global.output)
+        output::emit_with_snapshot(
+            &result,
+            &global.output,
+            "interact mouseup-at",
+            "snapshot",
+            crate::snapshot::summary_of_snapshot,
+        )
     }
 }
 
@@ -2386,7 +2434,13 @@ async fn execute_type(
         print_type_plain(&result);
         Ok(())
     } else {
-        print_output(&result, &global.output)
+        output::emit_with_snapshot(
+            &result,
+            &global.output,
+            "interact type",
+            "snapshot",
+            crate::snapshot::summary_of_snapshot,
+        )
     }
 }
 
@@ -2436,7 +2490,13 @@ async fn execute_key(
         print_key_plain(&result);
         Ok(())
     } else {
-        print_output(&result, &global.output)
+        output::emit_with_snapshot(
+            &result,
+            &global.output,
+            "interact key",
+            "snapshot",
+            crate::snapshot::summary_of_snapshot,
+        )
     }
 }
 
