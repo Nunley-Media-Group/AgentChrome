@@ -1,0 +1,203 @@
+# File: tests/features/harden-progressive-disclosure.feature (companion spec — actual implementation
+#       splits into tests/features/skill-staleness.feature (new) plus additions to
+#       tests/features/large-response-detection.feature and tests/features/skill-command-group.feature)
+#
+# Generated from: specs/feature-harden-progressive-disclosure-enrich-skill-md-extend-temp-file-gating-notify-on-stale-skill/requirements.md
+# Issue: #220
+
+Feature: Harden progressive disclosure (skill enrichment, temp-file gating, staleness notice)
+  As an AI agent using agentchrome
+  I want the installed skill to advertise every discovery path, large responses to stay in budget,
+  and a notice when my installed skill is stale
+  So that I can discover, exercise, and act on capabilities without wasting tokens or acting on stale guidance
+
+  Background:
+    Given the agentchrome binary version is known as the binary version
+
+  # --- AC1: SKILL.md YAML frontmatter on install ---
+
+  Scenario: claude-code install writes YAML frontmatter with trigger phrases
+    Given no agentchrome skill is installed for claude-code
+    When I run "agentchrome skill install --tool claude-code"
+    Then the installed SKILL.md begins with a YAML frontmatter block
+    And the frontmatter contains keys "name", "description", "version"
+    And the description names "automate a browser"
+    And the description names "fill a form"
+    And the description names "test a login"
+    And the description names "scrape a page"
+    And the description names "take a screenshot"
+    And the description names "inspect console / network"
+    And the version value equals the binary version
+
+  Scenario: cursor install writes .mdc frontmatter compatible with Cursor rules format
+    Given no agentchrome skill is installed for cursor
+    When I run "agentchrome skill install --tool cursor"
+    Then the installed file path ends with ".mdc"
+    And the file begins with a YAML frontmatter block
+    And the frontmatter contains a quoted version value
+
+  Scenario: subsequent install preserves frontmatter shape (no duplicates)
+    Given an agentchrome skill is already installed for claude-code at the binary version
+    When I run "agentchrome skill install --tool claude-code"
+    Then the installed SKILL.md contains exactly one YAML frontmatter block
+    And no frontmatter keys are duplicated
+
+  # --- AC2: SKILL.md names high-leverage discovery paths ---
+
+  Scenario: SKILL.md body names diagnose, strategies, include-snapshot, and temp-file pattern
+    Given the SKILL.md template is rendered by skill install
+    Then the body contains "agentchrome diagnose <url>"
+    And the body contains "agentchrome diagnose --current"
+    And the body contains "agentchrome examples strategies"
+    And the body contains "--include-snapshot"
+    And the body contains "output_file"
+    And the body contains a one-sentence explanation that the temp-file object is used above ~16 KB
+    And the body documents that streaming commands are exempt
+
+  # --- AC3: output::emit wired into remaining large-response commands ---
+
+  Scenario Outline: Newly gated commands emit TempFileOutput above threshold
+    Given a page that will produce more than 16 KB of JSON for <command>
+    When I run "agentchrome <command>"
+    Then stdout is a single JSON object
+    And stdout contains the keys "output_file", "size_bytes", "command", "summary"
+    And the "command" field equals "<command>"
+    And a file exists at the "output_file" path
+    And the file size matches "size_bytes"
+
+    Examples:
+      | command                    |
+      | audit lighthouse           |
+      | dom select *               |
+      | dom attributes <uid>       |
+      | dom events <uid>           |
+      | page analyze               |
+      | page find --role button    |
+      | console read               |
+
+  Scenario: Streaming commands remain exempt from temp-file gating
+    Given a page with active console output
+    When I run "agentchrome console follow" for 1 second
+    Then stdout is streamed NDJSON, one message per line
+    And stdout is NOT a TempFileOutput object
+
+  # --- AC4: Domain-appropriate summary per command ---
+
+  Scenario: audit summary shape
+    Given an audit invocation produces more than 16 KB of output
+    When I run "agentchrome audit lighthouse <url>"
+    Then the "summary" field has keys "categories", "total_issues", "failing_audit_ids"
+    And "categories" is an array of objects with keys "id" and "score"
+
+  Scenario: page analyze summary shape with null-safe framework field
+    Given a page with no detectable framework
+    When I run "agentchrome page analyze" and the output exceeds the threshold
+    Then the "summary" field has key "framework" with value null
+    And the "summary" field has keys "iframe_count", "overlay_count", "has_shadow_dom"
+
+  # --- AC5: Compound --include-snapshot schema ---
+
+  Scenario: Compound include-snapshot above threshold offloads snapshot only
+    Given a clickable element exists on a page that produces a large snapshot
+    When I run "agentchrome interact click <uid> --include-snapshot"
+    Then stdout contains top-level keys "success", "uid", "navigation", "snapshot"
+    And the "snapshot" field has keys "output_file", "size_bytes", "command", "summary"
+    And the "success" field is a boolean
+    And the "uid" field is the clicked element's uid
+    And "navigation" information is present inline
+
+  Scenario: Compound include-snapshot below threshold is fully inline
+    Given a clickable element exists on a page producing a small snapshot under 16 KB
+    When I run "agentchrome interact click <uid> --include-snapshot"
+    Then stdout contains top-level keys "success", "uid", "navigation", "snapshot"
+    And the "snapshot" field is an inline snapshot object (not a TempFileOutput)
+
+  # --- AC6: Skill-staleness notice on invocation ---
+
+  Scenario: Stale skill emits a single note line on stderr
+    Given an installed claude-code skill with version "1.40.0"
+    And the binary version is "1.42.0"
+    When I run "agentchrome tabs list"
+    Then stderr contains exactly one line matching "note: installed agentchrome skill for claude-code is v1\\.40\\.0 but binary is v1\\.42\\.0 .*"
+    And the notice is the first line of stderr output
+
+  Scenario: Up-to-date skill emits no staleness notice
+    Given an installed claude-code skill with version equal to the binary version
+    When I run "agentchrome tabs list"
+    Then stderr contains no "note: installed agentchrome skill" line
+
+  Scenario: No installed skill → no staleness notice
+    Given no agentchrome skill is installed for any tool
+    When I run "agentchrome tabs list"
+    Then stderr contains no "note: installed agentchrome skill" line
+
+  Scenario: Env var suppresses the staleness notice
+    Given an installed claude-code skill with a stale version
+    When I run "AGENTCHROME_NO_SKILL_CHECK=1 agentchrome tabs list"
+    Then stderr contains no "note: installed agentchrome skill" line
+
+  Scenario: Config key suppresses the staleness notice
+    Given an installed claude-code skill with a stale version
+    And a config file with "[skill]\ncheck_enabled = false"
+    When I run "agentchrome tabs list" against that config
+    Then stderr contains no "note: installed agentchrome skill" line
+
+  # --- AC7: Multi-tool aggregation ---
+
+  Scenario: Two stale tools produce a single aggregated notice
+    Given an installed claude-code skill with version "1.40.0"
+    And an installed cursor skill with version "1.41.0"
+    And the binary version is "1.42.0"
+    When I run "agentchrome tabs list"
+    Then stderr contains exactly one line matching "note: installed agentchrome skills for (claude-code|cursor), (claude-code|cursor) are stale \\(oldest v1\\.40\\.0, binary v1\\.42\\.0\\) .*"
+
+  Scenario: Only stale tools are aggregated; fresh tools are omitted from the notice
+    Given an installed claude-code skill with the binary version
+    And an installed cursor skill with version "1.40.0"
+    When I run "agentchrome tabs list"
+    Then stderr contains a line mentioning "cursor"
+    And stderr's notice line does not mention "claude-code"
+
+  # --- AC8: skill update idempotency ---
+
+  Scenario: skill update when versions match is idempotent and exits 0
+    Given an installed claude-code skill whose version equals the binary version
+    When I run "agentchrome skill update --tool claude-code"
+    Then the exit code is 0
+    And stdout JSON has "action" equal to "updated"
+    And the installed file parses as valid YAML frontmatter
+    And a subsequent "agentchrome tabs list" emits no staleness notice
+
+  # --- AC9: Below-threshold preserved ---
+
+  Scenario Outline: Below-threshold output is inline JSON unchanged
+    Given a page that produces less than 16 KB of JSON for <command>
+    When I run "agentchrome <command>"
+    Then stdout is raw inline JSON for <command>
+    And stdout is NOT a TempFileOutput object
+    And no temp file is written
+
+    Examples:
+      | command                 |
+      | page analyze            |
+      | page find --role button |
+      | console read            |
+
+  # --- AC10: Cross-invocation consistency ---
+
+  Scenario: Staleness check runs on every invocation, not cached across a shell session
+    Given an installed claude-code skill with a stale version
+    When I run "agentchrome tabs list" twice in succession
+    Then each invocation emits exactly one staleness notice to stderr
+
+  Scenario: Staleness notice still fires for streaming commands, before streaming begins
+    Given an installed claude-code skill with a stale version
+    When I run "agentchrome console follow" for 1 second
+    Then the first line of stderr is the staleness notice
+    And console-follow streaming continues normally after the notice
+
+  # --- AC11: BDD coverage sentinel ---
+
+  Scenario: All acceptance criteria have Gherkin scenarios
+    Given this feature file covers the acceptance criteria list in requirements.md
+    Then every AC (AC1 through AC11) maps to at least one scenario above
