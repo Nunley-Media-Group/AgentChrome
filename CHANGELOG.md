@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.43.0] - 2026-04-22
+
+### Added
+
+- Enrich installed SKILL.md template with YAML frontmatter (`name`, `description`, `version`) and body entries for `diagnose`, `examples strategies`, `--include-snapshot`, and the temp-file response pattern — so agent discovery works out-of-the-box. (#220)
+- Extend `output::emit` temp-file gating to `audit`, `dom select/attributes/events`, `page analyze/find`, `console read`, and every `--include-snapshot` interaction code path; each gated command defines a domain-appropriate `summary` shape. (#220)
+- Add compound `--include-snapshot` output schema that preserves interaction confirmation fields inline while offloading the large snapshot payload to a temp file. (#220)
+- Add skill-staleness check: on every invocation, compare the installed skill's `Version:` marker against `CARGO_PKG_VERSION` and emit a single stderr notice when stale; checks all known tool install locations, aggregating if multiple are stale; suppressible via `AGENTCHROME_NO_SKILL_CHECK=1` or `skill_check_enabled = false`; adds <1 ms overhead. (#220)
+- Add `capabilities <command>` detail path gated by `output::emit` when response exceeds threshold. (#220)
+- BDD coverage: new `tests/features/skill-staleness.feature` (AC6–AC8) and extended `tests/features/large-response-detection.feature` with scenarios for all newly gated command paths, compound-schema, and SKILL.md frontmatter assertions. (#220)
+
 ## [1.42.0] - 2026-04-22
 
 ### Changed
