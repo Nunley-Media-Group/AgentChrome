@@ -98,11 +98,18 @@ async fn main() {
     }
 }
 
-/// If a clap `UnknownArgument` error was raised for `--uid` or `--selector` on a
-/// subcommand whose target is a positional (e.g., `interact click`), build a
-/// `"Did you mean: agentchrome <sub> <value>"` suffix. Returns `None` for any
-/// other error kind, any other flag, or when the subcommand path / value cannot
-/// be recovered from argv.
+/// If a clap `UnknownArgument` error was raised for a flag whose correct form
+/// is a positional on the invoked subcommand, build a
+/// `"Did you mean: agentchrome <sub> <value>"` suffix. Handles:
+///
+/// - `--uid` / `--selector` on any positional-target subcommand — value is read
+///   from argv (e.g., `interact click --uid s6` → `... interact click s6`).
+/// - `--accept` / `--dismiss` on `dialog handle` — the closed `DialogAction`
+///   enum means the value is the flag name itself (e.g.,
+///   `dialog handle --accept` → `... dialog handle accept`).
+///
+/// Returns `None` for any other error kind, any other flag, or when the
+/// subcommand path / value cannot be recovered from argv.
 fn syntax_hint(err: &clap::Error, argv: &[String]) -> Option<String> {
     if !matches!(err.kind(), ErrorKind::UnknownArgument) {
         return None;
@@ -114,14 +121,15 @@ fn syntax_hint(err: &clap::Error, argv: &[String]) -> Option<String> {
     };
     // Clap renders InvalidArg as the flag name plus optional `<VALUE>` / `=VALUE` suffix.
     let bare = invalid.split([' ', '=']).next().unwrap_or("");
-    let flag = match bare {
-        "--uid" => "--uid",
-        "--selector" => "--selector",
+    let sub_path = resolve_subcommand_path(argv)?;
+
+    let value = match bare {
+        "--uid" | "--selector" => extract_flag_value(argv, bare)?,
+        "--accept" | "--dismiss" if sub_path == "dialog handle" => {
+            bare.trim_start_matches('-').to_string()
+        }
         _ => return None,
     };
-
-    let value = extract_flag_value(argv, flag)?;
-    let sub_path = resolve_subcommand_path(argv)?;
     Some(format!("Did you mean: agentchrome {sub_path} {value}"))
 }
 
@@ -944,6 +952,40 @@ mod tests {
         assert!(
             syntax_hint(&err, &a).is_none(),
             "hint must only fire for --uid / --selector misuse"
+        );
+    }
+
+    #[test]
+    fn syntax_hint_dialog_handle_accept_produces_did_you_mean() {
+        let result = Cli::try_parse_from(["agentchrome", "dialog", "handle", "--accept"]);
+        let err = result.err().expect("expected clap error");
+        assert_eq!(err.kind(), ErrorKind::UnknownArgument);
+        let a = argv(&["agentchrome", "dialog", "handle", "--accept"]);
+        let hint = syntax_hint(&err, &a).expect("expected a hint");
+        assert_eq!(hint, "Did you mean: agentchrome dialog handle accept");
+    }
+
+    #[test]
+    fn syntax_hint_dialog_handle_dismiss_produces_did_you_mean() {
+        let result = Cli::try_parse_from(["agentchrome", "dialog", "handle", "--dismiss"]);
+        let err = result.err().expect("expected clap error");
+        assert_eq!(err.kind(), ErrorKind::UnknownArgument);
+        let a = argv(&["agentchrome", "dialog", "handle", "--dismiss"]);
+        let hint = syntax_hint(&err, &a).expect("expected a hint");
+        assert_eq!(hint, "Did you mean: agentchrome dialog handle dismiss");
+    }
+
+    #[test]
+    fn syntax_hint_accept_not_fired_on_unrelated_subcommand() {
+        // `--accept` as UnknownArgument on a subcommand other than `dialog handle`
+        // must NOT produce the dialog-specific hint.
+        let result = Cli::try_parse_from(["agentchrome", "connect", "--accept"]);
+        let err = result.err().expect("expected clap error");
+        assert_eq!(err.kind(), ErrorKind::UnknownArgument);
+        let a = argv(&["agentchrome", "connect", "--accept"]);
+        assert!(
+            syntax_hint(&err, &a).is_none(),
+            "hint must only fire for --accept / --dismiss on `dialog handle`"
         );
     }
 
