@@ -1,0 +1,149 @@
+{
+  "version": 1,
+  "specs": {
+    ".claude/specs/bug-fix-clap-validation-json-stderr/requirements.md": {
+      "hash": "5cc8aa15438e7e4a1d70889173c5544ec03c48a9c1c68fa816fa96e86f19b947",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-connect-auto-discover-overwrites-session-pid/requirements.md": {
+      "hash": "ef799618e34b8087d00458eb552f2bc0646ba45c03fa8ca4c92b83a8943cd42c",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-connect-auto-discover-reconnect/requirements.md": {
+      "hash": "7ec1e2b2e77e599527d645b4baef8744b068128dd887c5dc75842778ba771791",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-connect-launch-timeout/requirements.md": {
+      "hash": "f681fa7ac95f42d1f959733c34c063b8bde0e7a5dbd69cc099be05fdb571ff6f",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-connect-status-output-flags/requirements.md": {
+      "hash": "a20920f30c49801e88122998a0e284adf375d01086e162e734c3358c068dd449",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-console-read-empty-array/requirements.md": {
+      "hash": "06d5f6b57ef855a4f26a3fab7fcc9fbcfb0dfdf432b2d1a8fb7417ca54b32333",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-dialog-commands-timeout-with-open-dialog/requirements.md": {
+      "hash": "07adeeea2b8dd51d4f0af449e9d2fd68ce743bdcc075581a5a692e9feabcb237",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-dialog-handle-no-dialog-open/requirements.md": {
+      "hash": "22fff9cea8a83d21a03837d356c51aedb868b792dc738f75cdd87b8de90641a8",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-dialog-info-wrong-type-empty-message/requirements.md": {
+      "hash": "c751bad1c6c96038cdb8d3edbe51cf5bab55dd2210fe46598200c0ef2373a17e",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-disconnect-process-not-killed/requirements.md": {
+      "hash": "002a3c5061b64bbf0c19256ade291d2745f2818d703034e5ee2abc94954900b8",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-emulate-overrides-persistence/requirements.md": {
+      "hash": "7671ddb45aca6d13bcae1d6181387e074364f401a4a204cfa348cc91b3f84b0c",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-emulate-reset-viewport/requirements.md": {
+      "hash": "239567a7d6272ae3d15f89b13877eba1505eb433a5b461b35c49c2a4047b82eb",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-emulate-status-inaccurate-state/requirements.md": {
+      "hash": "e5c8c7bdf61f991fc738922eb1dcdcd68ae2134566d655f3b88c087e806c2977",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-enable-automation-flag/requirements.md": {
+      "hash": "a1c455a42cbadd327d16b3232a1c3f918c13c70eea50bf2e70e26324cc268e98",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-form-fill-many-json-arg-collision/requirements.md": {
+      "hash": "9c056022ae89d26bca7f2a6b8e6d7fcb60a7d6744d1493812e5cd44cc54889f5",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-form-fill-textarea/requirements.md": {
+      "hash": "549687cc3794fe0804a5744f91cedfa3796334a9865110fd96cc10425c1f5f51",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-js-exec-double-json-stderr/requirements.md": {
+      "hash": "2e64c207fb265770ac117dc21b1cd05847d2cd9846227339a5c336bba71fa630",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-navigate-back-forward-cross-origin-timeout/requirements.md": {
+      "hash": "aad9f4310856a2a14828241cbc211f62c9a3aec3efb56094c01bd44777bc85bb",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-navigate-timeout/requirements.md": {
+      "hash": "4ebe0e5a8d6aabb1000654208b1e74518dbbf22ac12440a9fb5b1225a3c4173e",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-network-list-empty-array/requirements.md": {
+      "hash": "2553b81fd95c4e24a4efdc13af061f864165f625bb93c01af54e3f99dc6df097",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-network-list-size-zero/requirements.md": {
+      "hash": "37db8ba1213e8f2637c7ff2bd94ec6193dde29c48c4b0a81ab22d3a6a8f7bd7c",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-network-list-timestamps/requirements.md": {
+      "hash": "057068f4f978169c70b9caa80c8a2998fa7d8aefdd5c1ef2011bdc1bbdeaa572",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-page-commands-wrong-tab-after-activate/requirements.md": {
+      "hash": "8ff40fd1fa47f0b40f55a70d3e7d9aba8691ef285dbfe4d5f01e6a31011d43d3",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-page-find-role-standalone/requirements.md": {
+      "hash": "badd4f37df84c2179a2764cdd2fd9ee1e4105e2cbe84d8744618972c4117cc17",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-page-screenshot-uid-node-not-found/requirements.md": {
+      "hash": "fcb26ee53bf01d319e1bd71041a4679098266201dd6a495793ba8312e6c7c9cb",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-page-snapshot-empty-accessibility-tree/requirements.md": {
+      "hash": "383a6891f9ea4d27d59fb28578b4152f9a333434bfd63905eb92331804d2fe25",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-perf-cross-invocation-state-loss/requirements.md": {
+      "hash": "aa0fadc2d2c9a2b36351f66b2800aeea1428b6abb441d5c80e2eb899b2fe53bf",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-perf-record-duration/requirements.md": {
+      "hash": "11a4708fd8ea6733c181eabf83894a813cfecee6bdc6c489bc16e5fa0a5e07cd",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-perf-vitals-missing-metrics/requirements.md": {
+      "hash": "11717f1eb2d897a986920af280138fd54fbdae357af12d88e68735919978d8ed",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-perf-vitals-null-cls-ttfb/requirements.md": {
+      "hash": "2a4f169c2e2324fa307d071e8516045b2b4229fe69aecd3246204bef2dc01cda",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-snapshot-ignored-nodes/requirements.md": {
+      "hash": "81dbf96d94d23355dc9a8dd97410e3c290a38f7fec292f8e048bacba0d13eb8f",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-spa-same-document-navigate-timeout/requirements.md": {
+      "hash": "fb5bb449cf6b3de26a9f8f1c021b69b9a40d4b32a205770615e1490f53ec3908",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-tabs-activate-state-propagation/requirements.md": {
+      "hash": "eeff9c9e4d9cf5d5d16ed327f73de3b203955521a383a3af55c40eb2e4f284b7",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-tabs-close-remaining-count/requirements.md": {
+      "hash": "d5603de4e525b4866af83a257b20e509ac739ca82c0663bd2247940e48d10cd2",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-tabs-create-background-activation/requirements.md": {
+      "hash": "06f31f97361107f216a9d47ee2a2c5f5ed76df193e108861aa29ae6b00baf89b",
+      "lastAnalyzed": "2026-02-25"
+    },
+    ".claude/specs/bug-fix-tabs-create-background/requirements.md": {
+      "hash": "6c9dca072f6404ce3c781f8760d0fc291bc25c43be887f5c2258c4a5e4852d91",
+      "lastAnalyzed": "2026-02-25"
+    }
+  }
+}
