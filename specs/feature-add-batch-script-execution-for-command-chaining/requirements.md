@@ -1,8 +1,8 @@
 # Requirements: Batch Script Execution
 
-**Issues**: #199
-**Date**: 2026-04-21
-**Status**: Draft
+**Issues**: #199, #247
+**Date**: 2026-04-23
+**Status**: Amended
 **Author**: Rich Nunley
 
 ---
@@ -150,6 +150,39 @@ The feature introduces a new `script` command group with a `run <file>` subcomma
 **Then** no flag or positional collides with any global flag (`--json`, `--pretty`, `--port`, `--host`, `--timeout`, `--config`, etc.)
 **And** the `cmd` key inside a script step is internal JSON, not a CLI flag
 
+### AC17: `page find` is executable inside a script (added by #247)
+
+**Given** a script step `{ "cmd": ["page", "find", "Submit"], "bind": "match" }`
+**And** an active CDP session on a page containing a button labelled "Submit"
+**When** `agentchrome script run find.json` is executed
+**Then** the step's `status` is `"ok"`
+**And** `results[i].output` contains the same structured find result a standalone `agentchrome page find "Submit"` invocation would emit (match array with `uid`, `role`, `name`, `bounding_box`)
+**And** `$vars.match` is set to that same output for later steps to consume
+
+### AC18: `page screenshot` is executable inside a script (added by #247)
+
+**Given** a script step `{ "cmd": ["page", "screenshot", "--file", "/tmp/out.png"] }`
+**And** an active CDP session
+**When** the script runs
+**Then** the step's `status` is `"ok"`
+**And** the file `/tmp/out.png` is written with a valid PNG payload
+**And** `results[i].output` matches the standalone `page screenshot` JSON (path + dimensions + format)
+
+### AC19: Bind-then-use pattern drives interact click (added by #247)
+
+**Given** a script whose step 1 is `{ "cmd": ["page", "find", "Submit"], "bind": "match" }` and whose step 2 is `{ "cmd": ["interact", "click", "$vars.match[0].uid"] }`
+**When** the script runs against a page with a "Submit" button
+**Then** step 1 resolves a UID into `$vars.match`
+**And** step 2 receives the UID via argument substitution
+**And** step 2 clicks the same element that `page find` located (verified by a downstream DOM assertion)
+
+### AC20: Existing script-supported page subcommands are unaffected (added by #247)
+
+**Given** an existing script using `page snapshot` and `page text`
+**When** the script runs against the updated binary
+**Then** step outputs match the pre-amendment outputs byte-for-byte (structure, shape, fields)
+**And** no new warnings or errors appear on stderr
+
 ### AC16: Stateful sub-commands work across script steps
 
 **Given** a script whose first step creates a new tab and whose second step issues `page snapshot` against the active tab
@@ -195,6 +228,10 @@ Feature: Batch Script Execution
 | FR12 | BDD scenarios covering AC1–AC16 | Must | cucumber-rs, `tests/features/batch-script-execution.feature` |
 | FR13 | Per-step `duration_ms` and overall `total_ms` in the result JSON | Should | Useful for profiling agent scripts |
 | FR14 | Script steps execute against the active session (connect/disconnect not embedded in the script language in v1) | Must | Avoids complex state machines; matches existing stateless-CLI model |
+| FR15 | `page find` is dispatchable by the script runner via `run_from_session` (added by #247) | Must | Output shape matches standalone `agentchrome page find` |
+| FR16 | `page screenshot` is dispatchable by the script runner via `run_from_session` (added by #247) | Must | Output shape matches standalone `agentchrome page screenshot`; file I/O honours `--file` |
+| FR17 | Remove/replace the `"this page subcommand is not yet supported in scripts"` guard so that the two newly supported subcommands are not rejected, while still rejecting the remaining unsupported ones with a clear message (added by #247) | Must | Keep the guard as a default arm; whitelist only `snapshot`, `text`, `find`, `screenshot` in v1.1 |
+| FR18 | `examples script` includes at least one sample that uses `page find` and at least one that uses `page screenshot` (added by #247) | Should | Demonstrates the canonical snapshot-then-act pattern using the new subcommands |
 
 ---
 
@@ -276,6 +313,8 @@ N/A — CLI-only surface.
 - Script sharing, marketplace, or remote script URLs.
 - Managing connect/disconnect from inside scripts (session is established externally).
 - Arbitrary Rust evaluation or arbitrary Node scripting — `if` / `while` expressions are constrained to Chrome `Runtime.evaluate`.
+- Adding script-runner support for other `page` subcommands in this amendment (e.g. `page resize`, `page wait`, `page hittest`, `page element`, `page frames`, `page workers`, `page analyze`, `page coords`) — handled by separate issues when needed (added by #247).
+- Changes to the external CLI behaviour of `page find` or `page screenshot` — this amendment only makes them dispatchable from inside a script (added by #247).
 
 ---
 
@@ -302,6 +341,7 @@ N/A — CLI-only surface.
 | Issue | Date | Summary |
 |-------|------|---------|
 | #199 | 2026-04-21 | Initial feature spec |
+| #247 | 2026-04-23 | Add `page find` and `page screenshot` to the script runner's supported subcommand set |
 
 ---
 

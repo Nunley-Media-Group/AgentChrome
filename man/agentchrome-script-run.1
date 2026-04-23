@@ -68,3 +68,9 @@ Validate the script schema without dispatching to Chrome
 .TP
 .B \`agentchrome script run -\`
 Read the script from stdin instead of a file
+.TP
+.B \`echo '{"commands":[{"cmd":["page","find","Submit"],"bind":"match"},{"cmd":["interact","click","$vars.match[0].uid"]}]}' | agentchrome script run -\`
+Discover an element via page find, bind the result, then click it
+.TP
+.B \`echo '{"commands":[{"cmd":["page","screenshot","--file","out.png"]}]}' | agentchrome script run -\`
+Capture a screenshot to a file from inside a script

@@ -592,6 +592,160 @@ pub async fn execute_screenshot(
 }
 
 // =============================================================================
+// Script runner compute function
+// =============================================================================
+
+/// Capture a screenshot against an existing session and return the structured
+/// JSON output (matches `ScreenshotResult` or `ScreenshotFileResult` shape).
+///
+/// Used by the script runner to invoke `page screenshot` without printing to
+/// stdout.
+///
+/// # Errors
+///
+/// Returns `AppError` on argument validation or capture failure.
+#[allow(clippy::too_many_lines)]
+pub async fn compute_screenshot(
+    managed: &mut ManagedSession,
+    args: &PageScreenshotArgs,
+) -> Result<serde_json::Value, AppError> {
+    validate_scroll_container(args)?;
+    if args.full_page && (args.selector.is_some() || args.uid.is_some()) {
+        return Err(AppError::screenshot_failed(
+            "Cannot combine --full-page with --selector or --uid",
+        ));
+    }
+
+    managed.ensure_domain("Page").await?;
+    managed.ensure_domain("Runtime").await?;
+    if args.selector.is_some() || args.scroll_container.is_some() {
+        managed.ensure_domain("DOM").await?;
+    }
+
+    let format_str = screenshot_format_str(args.format);
+    let mut saved_styles_token: Option<String> = None;
+
+    let (clip, capture_beyond_viewport, dimensions) = if let Some(ref selector) = args.selector {
+        let clip = resolve_selector_clip(managed, selector).await?;
+        let dims = clip_dimensions(&clip);
+        (Some(clip), false, dims)
+    } else if let Some(ref uid) = args.uid {
+        let clip = resolve_uid_clip(managed, uid).await?;
+        let dims = clip_dimensions(&clip);
+        (Some(clip), false, dims)
+    } else if let (true, Some(sc_selector)) = (args.full_page, &args.scroll_container) {
+        let (cont_w, cont_h) = get_container_scroll_dimensions(managed, sc_selector).await?;
+        let token = override_container_styles(managed, sc_selector).await?;
+        saved_styles_token = Some(token);
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        let dims = (cont_w as u32, cont_h as u32);
+        set_viewport_size(managed, dims.0, dims.1).await?;
+        (None, true, dims)
+    } else if args.full_page {
+        let (page_w, page_h) = get_page_dimensions(managed).await?;
+        let (_vp_w, vp_h) = get_viewport_dimensions(managed).await?;
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        let page_h_u32 = page_h as u32;
+        if page_h_u32 <= vp_h {
+            eprintln!(
+                "warning: full-page dimensions match viewport ({page_h_u32}px). \
+                 Content may be inside a scrollable container. \
+                 Use --scroll-container <selector> to capture it."
+            );
+        }
+        #[allow(clippy::cast_possible_truncation, clippy::cast_sign_loss)]
+        let dims = (page_w as u32, page_h as u32);
+        set_viewport_size(managed, dims.0, dims.1).await?;
+        (None, true, dims)
+    } else if let Some(ref clip_str) = args.clip {
+        let clip = parse_clip(clip_str)?;
+        let dims = clip_dimensions(&clip);
+        (Some(clip), false, dims)
+    } else {
+        let dims = get_viewport_dimensions(managed).await?;
+        (None, false, dims)
+    };
+
+    let mut params = serde_json::json!({ "format": format_str });
+    if !matches!(args.format, ScreenshotFormat::Png) {
+        let quality = args.quality.unwrap_or(80);
+        params["quality"] = serde_json::json!(quality);
+    }
+    if let Some(ref clip) = clip {
+        params["clip"] = serde_json::json!({
+            "x": clip.x,
+            "y": clip.y,
+            "width": clip.width,
+            "height": clip.height,
+            "scale": 1,
+        });
+    }
+    if capture_beyond_viewport {
+        params["captureBeyondViewport"] = serde_json::json!(true);
+    }
+
+    let result = managed
+        .send_command("Page.captureScreenshot", Some(params))
+        .await
+        .map_err(|e| AppError::screenshot_failed(&e.to_string()));
+
+    if let Some(ref token) = saved_styles_token {
+        let _ = restore_container_styles(managed, token).await;
+    }
+    if args.full_page {
+        clear_viewport_override(managed).await?;
+    }
+
+    let result = result?;
+    let data = result["data"]
+        .as_str()
+        .ok_or_else(|| AppError::screenshot_failed("No image data in response"))?;
+    let (width, height) = dimensions;
+
+    if data.len() > LARGE_IMAGE_THRESHOLD {
+        eprintln!(
+            "warning: screenshot data is {}MB (base64)",
+            data.len() / 1_000_000
+        );
+    }
+
+    let value = if let Some(ref file_path) = args.file {
+        use base64::Engine;
+        let bytes = base64::engine::general_purpose::STANDARD
+            .decode(data)
+            .map_err(|e| {
+                AppError::screenshot_failed(&format!("Failed to decode image data: {e}"))
+            })?;
+        std::fs::write(file_path, &bytes).map_err(|e| {
+            AppError::screenshot_failed(&format!(
+                "Failed to write screenshot to file: {}: {e}",
+                file_path.display()
+            ))
+        })?;
+        serde_json::to_value(ScreenshotFileResult {
+            format: format_str.to_string(),
+            file: file_path.display().to_string(),
+            width,
+            height,
+        })
+    } else {
+        serde_json::to_value(ScreenshotResult {
+            format: format_str.to_string(),
+            data: data.to_string(),
+            width,
+            height,
+        })
+    }
+    .map_err(|e| AppError {
+        message: format!("serialization error: {e}"),
+        code: ExitCode::GeneralError,
+        custom_json: None,
+    })?;
+
+    Ok(value)
+}
+
+// =============================================================================
 // Tests
 // =============================================================================
 

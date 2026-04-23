@@ -536,6 +536,31 @@ fn script_fixture_content(filename: &str) -> Option<&'static str> {
 }
 "#,
         ),
+        "page-find.json" => Some(
+            r#"{
+  "commands": [
+    { "cmd": ["page", "find", "Submit"], "bind": "match" }
+  ]
+}
+"#,
+        ),
+        "page-screenshot.json" => Some(
+            r#"{
+  "commands": [
+    { "cmd": ["page", "screenshot", "--file", "/tmp/agentchrome-script-smoke.png"] }
+  ]
+}
+"#,
+        ),
+        "find-then-click.json" => Some(
+            r#"{
+  "commands": [
+    { "cmd": ["page", "find", "Submit"], "bind": "match" },
+    { "cmd": ["interact", "click", "$vars.match[0].uid"] }
+  ]
+}
+"#,
+        ),
         _ => None,
     }
 }
@@ -4029,6 +4054,9 @@ const BATCH_SCRIPT_TESTABLE_SCENARIOS: &[&str] = &[
     "AC11 — script run --help long form includes EXAMPLES",
     "AC12 — Capabilities manifest includes the script surface",
     "AC13 — examples script prints worked examples",
+    "AC17 dry-run — page find passes script schema validation",
+    "AC18 dry-run — page screenshot passes script schema validation",
+    "AC19 dry-run — page find then interact click passes validation",
 ];
 
 const COORD_SPACE_TESTABLE_SCENARIOS: &[&str] = &[

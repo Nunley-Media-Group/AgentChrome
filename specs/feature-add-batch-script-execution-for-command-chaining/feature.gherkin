@@ -157,3 +157,37 @@ Feature: Batch Script Execution
     When I run the script
     Then step 2 observes the tab created by step 1
     And the behaviour holds in both headed and headless runtimes
+
+  # Added by issue #247 — page find and page screenshot in script runner
+
+  Scenario: AC17 — page find is executable inside a script
+    Given a script file "page-find.json" with a single step "page find Submit" bound to "match"
+    And the fixture page contains a button labelled "Submit"
+    When I run "agentchrome script run page-find.json"
+    Then the exit code is 0
+    And results[0].status equals "ok"
+    And results[0].output is the same shape as standalone "agentchrome page find Submit"
+    And "$vars.match" is set to that output for subsequent steps
+
+  Scenario: AC18 — page screenshot is executable inside a script
+    Given a script file "page-screenshot.json" with a single step "page screenshot --file /tmp/out.png"
+    When I run the script
+    Then the exit code is 0
+    And results[0].status equals "ok"
+    And the file "/tmp/out.png" exists and is a valid PNG
+    And results[0].output matches the standalone page screenshot JSON shape
+
+  Scenario: AC19 — Bind page find output then drive interact click
+    Given a script "find-then-click.json" whose step 1 is "page find Submit" bound to "match"
+    And whose step 2 is "interact click $vars.match[0].uid"
+    When I run the script
+    Then step 1 resolves a UID into "$vars.match"
+    And step 2 receives the UID via argument substitution
+    And step 2 clicks the same element that page find located
+
+  Scenario: AC20 — Existing page snapshot / page text script steps still work
+    Given a script file using "page snapshot" and "page text" only
+    When I run the script against the updated binary
+    Then every step status is "ok"
+    And stdout matches the pre-amendment output byte-for-byte
+    And stderr contains no new warnings or errors
