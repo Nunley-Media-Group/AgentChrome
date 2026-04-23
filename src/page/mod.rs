@@ -204,9 +204,9 @@ pub async fn run_from_session(
     match &args.command {
         PageCommand::Snapshot(snap_args) => snapshot::compute_snapshot(managed, snap_args).await,
         PageCommand::Text(text_args) => text::compute_text(managed, text_args).await,
-        PageCommand::Find(find_args) => find::compute_find(managed, find_args, None).await,
+        PageCommand::Find(find_args) => find::compute_find(managed, find_args).await,
         PageCommand::Screenshot(ss_args) => {
-            screenshot::compute_screenshot(managed, ss_args, None).await
+            screenshot::compute_screenshot(managed, ss_args).await
         }
         _ => Err(AppError {
             message: "this page subcommand is not yet supported in scripts; \

@@ -599,8 +599,7 @@ pub async fn execute_screenshot(
 /// JSON output (matches `ScreenshotResult` or `ScreenshotFileResult` shape).
 ///
 /// Used by the script runner to invoke `page screenshot` without printing to
-/// stdout. Frame targeting is not supported from inside scripts in v1.1 — pass
-/// `None`.
+/// stdout.
 ///
 /// # Errors
 ///
@@ -609,18 +608,7 @@ pub async fn execute_screenshot(
 pub async fn compute_screenshot(
     managed: &mut ManagedSession,
     args: &PageScreenshotArgs,
-    frame: Option<&str>,
 ) -> Result<serde_json::Value, AppError> {
-    if frame.is_some() {
-        return Err(AppError {
-            message: "page screenshot with --frame is not supported inside scripts; \
-                 omit --frame for main-frame execution"
-                .to_string(),
-            code: ExitCode::GeneralError,
-            custom_json: None,
-        });
-    }
-
     validate_scroll_container(args)?;
     if args.full_page && (args.selector.is_some() || args.uid.is_some()) {
         return Err(AppError::screenshot_failed(

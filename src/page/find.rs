@@ -384,7 +384,6 @@ pub async fn execute_find(
 /// Run `page find` against an existing session and return the matches as JSON.
 ///
 /// Used by the script runner to invoke `page find` without printing to stdout.
-/// Frame targeting is not supported from inside scripts in v1.1 — pass `None`.
 ///
 /// # Errors
 ///
@@ -392,17 +391,7 @@ pub async fn execute_find(
 pub async fn compute_find(
     managed: &mut ManagedSession,
     args: &PageFindArgs,
-    frame: Option<&str>,
 ) -> Result<serde_json::Value, AppError> {
-    if frame.is_some() {
-        return Err(AppError {
-            message: "page find with --frame is not supported inside scripts; \
-                 omit --frame for main-frame execution"
-                .to_string(),
-            code: ExitCode::GeneralError,
-            custom_json: None,
-        });
-    }
     validate_find_args(args)?;
     let matches = gather_find_matches(managed, args).await?;
     serde_json::to_value(&matches).map_err(|e| AppError {
