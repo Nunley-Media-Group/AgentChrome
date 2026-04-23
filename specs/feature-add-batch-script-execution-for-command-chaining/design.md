@@ -1,8 +1,8 @@
 # Design: Batch Script Execution
 
-**Issues**: #199
-**Date**: 2026-04-21
-**Status**: Draft
+**Issues**: #199, #247
+**Date**: 2026-04-23
+**Status**: Amended
 **Author**: Rich Nunley
 
 ---
@@ -292,6 +292,53 @@ N/A — CLI only.
 
 ---
 
+## Amendment #247 — `page find` and `page screenshot` in the script runner
+
+### Background
+
+`src/page/mod.rs::run_from_session` is the adapter the script dispatcher calls for `page` subcommands. Today it whitelists only `snapshot` and `text`, returning `"this page subcommand is not yet supported in scripts; use snapshot or text"` for anything else (`src/page/mod.rs:204-214`). That guard blocks the canonical snapshot-then-act automation loop: scripts cannot call `page find` to discover UIDs that later `interact click` or `form fill` steps target, and cannot call `page screenshot` for visual verification artifacts.
+
+The two existing adapter branches follow a clear pattern — `execute_<subcmd>` handles the CLI entry point (opens a session, then calls a `compute_<subcmd>(managed, args)` helper), and `compute_<subcmd>` is what the script runner reuses. The fix is to apply the same pattern to `find` and `screenshot`, then extend the `run_from_session` match.
+
+### Code changes
+
+| File | Change | Rationale |
+|------|--------|-----------|
+| `src/page/find.rs` | Extract a `pub async fn compute_find(managed: &mut ManagedSession, args: &PageFindArgs, frame: Option<&str>) -> Result<serde_json::Value, AppError>` from the body of `execute_find`, containing everything after `setup_session`. `execute_find` retains session setup and delegates to `compute_find`. | Mirrors the `compute_snapshot` / `compute_text` pattern already used by the script-runner adapter. Keeps the standalone CLI path byte-identical. |
+| `src/page/screenshot.rs` | Same extraction: `pub async fn compute_screenshot(managed: &mut ManagedSession, args: &PageScreenshotArgs, frame: Option<&str>) -> Result<serde_json::Value, AppError>`. `execute_screenshot` keeps argument validation (`validate_scroll_container`, the full-page vs selector/uid mutual-exclusion check) and session setup, then delegates. | Same pattern; validation must stay in the CLI entry so that dry-run / script paths see the same rejection behaviour. |
+| `src/page/mod.rs::run_from_session` | Extend the match to also route `PageCommand::Find(find_args)` → `find::compute_find(managed, find_args, None)` and `PageCommand::Screenshot(ss_args)` → `screenshot::compute_screenshot(managed, ss_args, None)`. Keep the `_ => Err(...)` arm and update the message to `"this page subcommand is not yet supported in scripts; use snapshot, text, find, or screenshot"`. | FR17 — unsupported subcommands must still return a structured error; the error text is updated to reflect the new whitelist. |
+
+`frame` is passed as `None` from the script adapter in v1.1 — script-level frame targeting is a separate feature (see existing `feature-add-iframe-frame-targeting-support/`) and is explicitly out of scope for this amendment.
+
+### Alternatives considered (amendment)
+
+| Option | Description | Why not selected |
+|--------|-------------|------------------|
+| Remove the guard entirely | Route every `PageCommand` variant through `run_from_session` with a generic dispatch | Some subcommands (`page resize`, `page wait`, `page hittest`, `page element`, `page analyze`, `page coords`, `page frames`, `page workers`) have unrelated failure modes and lack `compute_` helpers; silently enabling them would ship partly-tested paths. The amendment scope (#247) is limited to the two subcommands explicitly requested. |
+| Add a single untyped `page` passthrough that re-parses argv in the script runner | Script runner would forward the argv to a `page::run_from_argv` that re-dispatches via clap | Duplicates the adapter pattern the other modules already use, and discards the typed `PageCommand` the dispatcher already holds. The extract-`compute_*` path is smaller and keeps tests close to the code they cover. |
+
+### Blast radius
+
+- **Direct impact**: `src/page/find.rs`, `src/page/screenshot.rs`, `src/page/mod.rs`. No CLI surface changes; no clap changes.
+- **Indirect impact**: Callers of `execute_find` / `execute_screenshot` (only `execute_page` in `src/page/mod.rs:93-115`) see no behavioural change — the extraction is a refactor where the public entry point still does session setup and then runs the same logic.
+- **Risk level**: Low. The added dispatch rows are additive; the updated guard message is user-facing but retains the same shape and exit code.
+
+### Regression risk
+
+| Risk | Likelihood | Mitigation |
+|------|------------|------------|
+| `execute_find` / `execute_screenshot` behaviour diverges after extraction | Low | Keep validation and session setup in `execute_*` exactly as today; only the post-session body moves into `compute_*`. Existing BDD scenarios for standalone `page find` / `page screenshot` must continue to pass. |
+| Script-runner return shape doesn't match standalone CLI for these subcommands | Low | `compute_*` returns the same `serde_json::Value` the CLI path printed — reuse the existing serialization, don't re-shape. Covered by AC17/AC18. |
+| Other `page` subcommands silently start working | Low | The updated match still has a default `Err(...)` arm; the whitelist is explicit. A unit test on `run_from_session` covers both the allowed and rejected paths. |
+
+### Testing strategy (amendment)
+
+| Layer | Type | Coverage |
+|-------|------|----------|
+| `page::run_from_session` | Unit | Happy paths for `find` / `screenshot`, reject path for one non-whitelisted variant (e.g. `PageCommand::Frames`) with a shape-checked error |
+| BDD | Integration | AC17, AC18, AC19 scenarios tagged within the existing `tests/features/batch-script-execution.feature` |
+| Smoke test | Manual | Extend the existing smoke script to use `page find` + `page screenshot` + a `bind`-then-`interact click` chain |
+
 ## Open Questions
 
 - [ ] Does the runner serialize each step's output via `serde_json::Value`, or keep a type-erased handle to avoid re-serialization for the response? (Leaning `Value` for simplicity.)
@@ -304,6 +351,7 @@ N/A — CLI only.
 | Issue | Date | Summary |
 |-------|------|---------|
 | #199 | 2026-04-21 | Initial feature spec |
+| #247 | 2026-04-23 | Extract `compute_find` / `compute_screenshot` and route them through `page::run_from_session`; update the unsupported-subcommand message |
 
 ---
 

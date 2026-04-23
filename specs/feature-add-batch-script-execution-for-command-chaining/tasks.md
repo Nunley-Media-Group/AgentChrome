@@ -1,8 +1,8 @@
 # Tasks: Batch Script Execution
 
-**Issues**: #199
-**Date**: 2026-04-21
-**Status**: Planning
+**Issues**: #199, #247
+**Date**: 2026-04-23
+**Status**: In Progress
 **Author**: Rich Nunley
 
 ---
@@ -16,7 +16,8 @@
 | CLI integration | 3 | [ ] |
 | Integration (cross-feature) | 2 | [ ] |
 | Testing | 4 | [ ] |
-| **Total** | **16** | |
+| Enhancement — #247 (page find + screenshot in scripts) | 5 | [ ] |
+| **Total** | **21** | |
 
 Reference `steering/structure.md` — command modules live at `src/<name>.rs` or `src/<name>/mod.rs`; clap derive types live in `src/cli/mod.rs`; BDD lives in `tests/features/` + `tests/bdd.rs`.
 
@@ -227,6 +228,73 @@ Reference `steering/structure.md` — command modules live at `src/<name>.rs` or
 
 ---
 
+---
+
+## Phase 6: Enhancement — Issue #247 (page find + screenshot in scripts)
+
+Adds `page find` and `page screenshot` dispatch to the script runner. See design.md § "Amendment #247".
+
+### T017: Extract `compute_find` helper
+
+**File(s)**: `src/page/find.rs`
+**Type**: Modify
+**Depends**: None (refactor of existing standalone code; independent of batch-script runner tasks)
+**Acceptance**:
+- [ ] New `pub async fn compute_find(managed: &mut ManagedSession, args: &PageFindArgs, frame: Option<&str>) -> Result<serde_json::Value, AppError>` contains the body currently following `setup_session` inside `execute_find`
+- [ ] `execute_find` now performs session setup and delegates to `compute_find`
+- [ ] Output shape of standalone `agentchrome page find` is byte-identical to pre-change output (verified by existing BDD or unit coverage)
+- [ ] `cargo test --lib` and existing `page find` BDD scenarios pass unchanged
+- [ ] No clippy warnings under project's `-D warnings -W pedantic` profile
+
+### T018: Extract `compute_screenshot` helper
+
+**File(s)**: `src/page/screenshot.rs`
+**Type**: Modify
+**Depends**: None
+**Acceptance**:
+- [ ] New `pub async fn compute_screenshot(managed: &mut ManagedSession, args: &PageScreenshotArgs, frame: Option<&str>) -> Result<serde_json::Value, AppError>` contains the body currently following `setup_session` inside `execute_screenshot`
+- [ ] `execute_screenshot` retains `validate_scroll_container` and the `--full-page` vs `--selector`/`--uid` mutual-exclusion check, then session setup, then delegates to `compute_screenshot`
+- [ ] Existing `page screenshot` BDD scenarios pass unchanged
+- [ ] `--file` still writes the PNG to the declared path via `compute_screenshot`
+- [ ] No clippy warnings
+
+### T019: Route `find` + `screenshot` in `page::run_from_session`
+
+**File(s)**: `src/page/mod.rs`
+**Type**: Modify
+**Depends**: T017, T018
+**Acceptance**:
+- [ ] `run_from_session` match includes `PageCommand::Find(args)` → `find::compute_find(managed, args, None)`
+- [ ] `run_from_session` match includes `PageCommand::Screenshot(args)` → `screenshot::compute_screenshot(managed, args, None)`
+- [ ] Default arm remains and its message is updated to `"this page subcommand is not yet supported in scripts; use snapshot, text, find, or screenshot"`
+- [ ] Unit test: `run_from_session` returns `Ok` for a stubbed find/screenshot invocation and the existing error for e.g. `PageCommand::Frames`
+- [ ] Script step `{ "cmd": ["page", "find", "Submit"] }` succeeds end-to-end against a fixture page
+
+### T020: BDD scenarios for AC17, AC18, AC19
+
+**File(s)**: `tests/features/batch-script-execution.feature`, `tests/bdd.rs`, `tests/fixtures/scripts/page-find.json`, `tests/fixtures/scripts/page-screenshot.json`, `tests/fixtures/scripts/find-then-click.json`
+**Type**: Modify + Create
+**Depends**: T019
+**Acceptance**:
+- [ ] New scenarios appended to the existing feature file for AC17 (page find scriptable), AC18 (page screenshot scriptable), AC19 (bind page find → interact click)
+- [ ] Step definitions extend the existing world state with the new fixture paths
+- [ ] Fixture HTML reuses `tests/fixtures/batch-script-execution.html` (extend if needed so a "Submit" button is present)
+- [ ] `cargo test --test bdd` passes on macOS; tests deterministic (no external network)
+- [ ] AC20 regression: pre-existing `page snapshot`/`page text` script scenarios continue to pass
+
+### T021: Refresh `examples script` samples and manual smoke
+
+**File(s)**: `src/examples/script.rs` (or equivalent), `tests/fixtures/scripts/smoke.json`
+**Type**: Modify
+**Depends**: T019, T020
+**Acceptance**:
+- [ ] `agentchrome examples script` now includes at least one sample that calls `page find` and binds the result, and at least one that calls `page screenshot`
+- [ ] `tests/fixtures/scripts/smoke.json` exercises a `page find` → `bind` → `interact click` chain and a `page screenshot` step
+- [ ] Manual smoke against headless Chrome (`cargo run -- script run tests/fixtures/scripts/smoke.json`) exits 0 and produces a well-formed `RunReport` plus a written screenshot file
+- [ ] `pkill -f 'chrome.*--remote-debugging' || true` leaves no orphaned Chrome
+
+---
+
 ## Dependency Graph
 
 ```
@@ -244,6 +312,9 @@ T001 ──┬──▶ T002 ──┬──▶ T004 ──┐
 T009, T010, T011, T012 ──▶ T013 ──▶ T014
 T002, T004, T006, T007, T003 ──▶ T015
 T013, T014, T015 ──────────────▶ T016
+
+T017 ──┐
+T018 ──┴──▶ T019 ──▶ T020 ──▶ T021
 ```
 
 ---
@@ -253,6 +324,7 @@ T013, T014, T015 ──────────────▶ T016
 | Issue | Date | Summary |
 |-------|------|---------|
 | #199 | 2026-04-21 | Initial feature spec |
+| #247 | 2026-04-23 | Add Phase 6 tasks (T017–T021) to enable `page find` and `page screenshot` inside script runner |
 
 ---
 

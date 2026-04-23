@@ -70,3 +70,61 @@ Feature: Batch Script Execution
     When I run "agentchrome examples script"
     Then the exit code should be 0
     And stdout should contain "script"
+
+  # --- Issue #247: page find + screenshot in scripts ---
+
+  Scenario: AC17 dry-run — page find passes script schema validation
+    Given a script file at "tests/fixtures/scripts/page-find.json"
+    When I run "agentchrome script run --dry-run tests/fixtures/scripts/page-find.json"
+    Then the exit code should be 0
+    And stdout should be valid JSON
+    And stdout JSON should have key "ok"
+
+  Scenario: AC18 dry-run — page screenshot passes script schema validation
+    Given a script file at "tests/fixtures/scripts/page-screenshot.json"
+    When I run "agentchrome script run --dry-run tests/fixtures/scripts/page-screenshot.json"
+    Then the exit code should be 0
+    And stdout should be valid JSON
+    And stdout JSON should have key "ok"
+
+  Scenario: AC19 dry-run — page find then interact click passes validation
+    Given a script file at "tests/fixtures/scripts/find-then-click.json"
+    When I run "agentchrome script run --dry-run tests/fixtures/scripts/find-then-click.json"
+    Then the exit code should be 0
+    And stdout should be valid JSON
+    And stdout JSON should have key "ok"
+
+  # The following live-execution scenarios require a running Chrome instance
+  # and are verified via the manual smoke test (T021), not the BDD harness.
+
+  @smoke
+  Scenario: AC17 live — page find returns matches inside a script
+    Given an active CDP session on a page containing a button labelled "Submit"
+    When I run "agentchrome script run tests/fixtures/scripts/page-find.json"
+    Then the exit code should be 0
+    And the script result for step 0 has status "ok"
+    And $vars.match contains a match with uid, role "button", and name "Submit"
+
+  @smoke
+  Scenario: AC18 live — page screenshot writes a PNG inside a script
+    Given an active CDP session
+    When I run "agentchrome script run tests/fixtures/scripts/page-screenshot.json"
+    Then the exit code should be 0
+    And the script result for step 0 has status "ok"
+    And the file "/tmp/agentchrome-script-smoke.png" is a valid PNG
+
+  @smoke
+  Scenario: AC19 live — bind page find then drive interact click
+    Given an active CDP session on a page containing a button labelled "Submit"
+    When I run "agentchrome script run tests/fixtures/scripts/find-then-click.json"
+    Then the exit code should be 0
+    And the script result for step 0 has status "ok"
+    And the script result for step 1 has status "ok"
+    And the click targeted the same element that page find located
+
+  @smoke
+  Scenario: AC20 — existing snapshot/text scripts are unchanged
+    Given an active CDP session
+    When I run "agentchrome script run tests/fixtures/scripts/simple.json"
+    Then the exit code should be 0
+    And no warnings appear on stderr

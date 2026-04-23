@@ -276,12 +276,8 @@ fn assign_uid_from_snapshot(node: &crate::snapshot::SnapshotNode, m: &mut FindMa
 // Command executor
 // =============================================================================
 
-pub async fn execute_find(
-    global: &GlobalOpts,
-    args: &PageFindArgs,
-    frame: Option<&str>,
-) -> Result<(), AppError> {
-    // Validate: at least one of query, selector, or role must be provided
+/// Validate that at least one of `--query`, `--selector`, or `--role` is provided.
+fn validate_find_args(args: &PageFindArgs) -> Result<(), AppError> {
     if args.query.is_none() && args.selector.is_none() && args.role.is_none() {
         return Err(AppError {
             message: "a text query, --selector, or --role is required".to_string(),
@@ -289,62 +285,30 @@ pub async fn execute_find(
             custom_json: None,
         });
     }
+    Ok(())
+}
 
-    let (client, mut managed) = setup_session(global).await?;
-    if global.auto_dismiss_dialogs {
-        let _dismiss = managed.spawn_auto_dismiss().await?;
-    }
+/// Run the find pipeline against a prepared session: enable required domains,
+/// capture a snapshot, then execute either the CSS-selector or accessibility
+/// text search path.
+async fn gather_find_matches(
+    session: &mut ManagedSession,
+    args: &PageFindArgs,
+) -> Result<Vec<FindMatch>, AppError> {
+    session.ensure_domain("Accessibility").await?;
+    session.ensure_domain("DOM").await?;
+    session.ensure_domain("Runtime").await?;
 
-    // Resolve optional frame context
-    let mut frame_ctx = if let Some(frame_str) = frame {
-        let arg = agentchrome::frame::parse_frame_arg(frame_str)?;
-        Some(agentchrome::frame::resolve_frame(&client, &mut managed, &arg).await?)
-    } else {
-        None
-    };
+    let build = capture_snapshot(session).await?;
 
-    // Enable required domains (needs &mut)
-    {
-        let eff_mut = if let Some(ref mut ctx) = frame_ctx {
-            agentchrome::frame::frame_session_mut(ctx, &mut managed)
-        } else {
-            &mut managed
-        };
-        eff_mut.ensure_domain("Accessibility").await?;
-        eff_mut.ensure_domain("DOM").await?;
-        eff_mut.ensure_domain("Runtime").await?;
-    }
-
-    // Capture snapshot (used by both search paths for UID assignment)
-    let build = {
-        let effective = if let Some(ref ctx) = frame_ctx {
-            agentchrome::frame::frame_session(ctx, &managed)
-        } else {
-            &managed
-        };
-        capture_snapshot(effective).await?
-    };
-
-    let effective = if let Some(ref ctx) = frame_ctx {
-        agentchrome::frame::frame_session(ctx, &managed)
-    } else {
-        &managed
-    };
-
-    let matches = if let Some(ref selector) = args.selector {
-        // CSS selector path
-        let mut css_matches = find_by_selector(effective, selector, args.limit).await?;
-
-        // Enrich CSS matches with UIDs from the snapshot tree
+    if let Some(ref selector) = args.selector {
+        let mut css_matches = find_by_selector(session, selector, args.limit).await?;
         for m in &mut css_matches {
             assign_uid_from_snapshot(&build.root, m);
         }
-
-        css_matches
+        Ok(css_matches)
     } else {
-        // Accessibility text search path
         let query = args.query.as_deref().unwrap_or("");
-
         let hits = crate::snapshot::search_tree(
             &build.root,
             query,
@@ -352,12 +316,10 @@ pub async fn execute_find(
             args.exact,
             args.limit,
         );
-
-        // Resolve bounding boxes for each hit
         let mut matches = Vec::with_capacity(hits.len());
         for hit in hits {
             let bounding_box = if let Some(backend_id) = hit.backend_dom_node_id {
-                resolve_bounding_box(effective, backend_id).await
+                resolve_bounding_box(session, backend_id).await
             } else {
                 None
             };
@@ -368,7 +330,31 @@ pub async fn execute_find(
                 bounding_box,
             });
         }
-        matches
+        Ok(matches)
+    }
+}
+
+pub async fn execute_find(
+    global: &GlobalOpts,
+    args: &PageFindArgs,
+    frame: Option<&str>,
+) -> Result<(), AppError> {
+    validate_find_args(args)?;
+
+    let (client, mut managed) = setup_session(global).await?;
+    if global.auto_dismiss_dialogs {
+        let _dismiss = managed.spawn_auto_dismiss().await?;
+    }
+
+    let matches = if let Some(frame_str) = frame {
+        let arg = agentchrome::frame::parse_frame_arg(frame_str)?;
+        let mut frame_ctx =
+            agentchrome::frame::resolve_frame(&client, &mut managed, &arg).await?;
+        let frame_session =
+            agentchrome::frame::frame_session_mut(&mut frame_ctx, &mut managed);
+        gather_find_matches(frame_session, args).await?
+    } else {
+        gather_find_matches(&mut managed, args).await?
     };
 
     // Output
@@ -389,6 +375,41 @@ pub async fn execute_find(
         "page find",
         |v: &Vec<FindMatch>| summary_of_find(v.as_slice()),
     )
+}
+
+// =============================================================================
+// Script runner compute function
+// =============================================================================
+
+/// Run `page find` against an existing session and return the matches as JSON.
+///
+/// Used by the script runner to invoke `page find` without printing to stdout.
+/// Frame targeting is not supported from inside scripts in v1.1 — pass `None`.
+///
+/// # Errors
+///
+/// Returns `AppError` on argument validation, snapshot capture, or search failure.
+pub async fn compute_find(
+    managed: &mut ManagedSession,
+    args: &PageFindArgs,
+    frame: Option<&str>,
+) -> Result<serde_json::Value, AppError> {
+    if frame.is_some() {
+        return Err(AppError {
+            message: "page find with --frame is not supported inside scripts; \
+                 omit --frame for main-frame execution"
+                .to_string(),
+            code: ExitCode::GeneralError,
+            custom_json: None,
+        });
+    }
+    validate_find_args(args)?;
+    let matches = gather_find_matches(managed, args).await?;
+    serde_json::to_value(&matches).map_err(|e| AppError {
+        message: format!("serialization error: {e}"),
+        code: ExitCode::GeneralError,
+        custom_json: None,
+    })
 }
 
 // =============================================================================

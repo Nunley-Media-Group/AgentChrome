@@ -741,6 +741,20 @@ pub fn all_examples() -> Vec<CommandGroupSummary> {
                     description: "Read the script from stdin instead of a file".into(),
                     flags: None,
                 },
+                ExampleEntry {
+                    cmd: "echo '{\"commands\":[{\"cmd\":[\"page\",\"find\",\"Submit\"],\"bind\":\"match\"},{\"cmd\":[\"interact\",\"click\",\"$vars.match[0].uid\"]}]}' | agentchrome script run -"
+                        .into(),
+                    description:
+                        "Discover an element via page find, bind the result, then click it"
+                            .into(),
+                    flags: None,
+                },
+                ExampleEntry {
+                    cmd: "echo '{\"commands\":[{\"cmd\":[\"page\",\"screenshot\",\"--file\",\"out.png\"]}]}' | agentchrome script run -"
+                        .into(),
+                    description: "Capture a screenshot to a file from inside a script".into(),
+                    flags: None,
+                },
             ],
         },
     ]
