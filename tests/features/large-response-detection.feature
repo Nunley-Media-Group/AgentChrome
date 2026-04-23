@@ -210,11 +210,11 @@ Feature: Large Response Detection with Guided Search and Full-Response Override
     And the "summary" object contains "first_match" as an object
     And the exit code is 0
 
-  Scenario: dom attributes above threshold emits TempFileOutput with dom-attributes summary (AC3, AC4)
-    Given a page with elements with many attributes producing more than 16 KB
-    When I run "dom attributes --selector *"
+  Scenario: dom get-style above threshold emits TempFileOutput with styles summary (AC3, AC4)
+    Given a page with elements whose computed styles produce more than 16 KB
+    When I run "dom get-style <uid>"
     Then stdout is a TempFileOutput object
-    And the "command" field is "dom attributes"
+    And the "command" field is "dom get-style"
     And the "summary" object contains "attribute_count" as an integer
     And the "summary" object contains "keys_seen" as an array
     And the exit code is 0

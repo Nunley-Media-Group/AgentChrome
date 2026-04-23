@@ -211,7 +211,7 @@ Minimum shapes (mirrors AC4):
 |---------|--------|-----------------|
 | `audit` | `src/audit.rs` | `{categories: [{id, score}], total_issues, failing_audit_ids}` |
 | `dom select` | `src/dom.rs` | `{match_count, first_match: {tag, role, uid}}` |
-| `dom attributes` | `src/dom.rs` | `{attribute_count, keys_seen}` |
+| `dom get-style` | `src/dom.rs` | `{attribute_count, keys_seen}` (keys are CSS property names; fills the AC3 "full-attribute read" slot) |
 | `dom events` | `src/dom.rs` | `{listener_count, event_types}` |
 | `page analyze` | `src/page/analyze.rs` | `{iframe_count, overlay_count, framework, has_shadow_dom}` |
 | `page find` | `src/page/find.rs` | `{match_count, roles_seen}` |

@@ -671,7 +671,7 @@ fn summary_of_select(value: &serde_json::Value) -> serde_json::Value {
     })
 }
 
-/// Build a domain-appropriate `summary` for `dom attributes` large-response objects.
+/// Build a domain-appropriate `summary` for `dom get-style` large-response objects.
 ///
 /// Shape: `{attribute_count, keys_seen}`
 ///
@@ -1409,7 +1409,7 @@ async fn execute_get_style(
     }
 
     let result = StyleResult { styles };
-    output::emit(&result, &global.output, "dom attributes", |v| {
+    output::emit(&result, &global.output, "dom get-style", |v| {
         summary_of_attributes(&serde_json::to_value(v).unwrap_or_default())
     })
 }

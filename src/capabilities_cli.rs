@@ -4,7 +4,25 @@ use agentchrome::capabilities::{CapabilitiesManifestListing, build_manifest};
 use agentchrome::error::{AppError, ExitCode};
 
 use crate::cli::{CapabilitiesArgs, Cli, GlobalOpts};
-use crate::output::print_output;
+use crate::output::{self, print_output};
+
+/// Build the `{subcommand_count, top_level_flags_count}` summary for a
+/// `capabilities <command>` detail descriptor offloaded above the threshold.
+fn summary_of_capabilities_detail(value: &serde_json::Value) -> serde_json::Value {
+    let subcommand_count = value
+        .get("subcommands")
+        .and_then(serde_json::Value::as_array)
+        .map(Vec::len);
+    let top_level_flags_count = value
+        .get("flags")
+        .and_then(serde_json::Value::as_array)
+        .map(Vec::len);
+
+    serde_json::json!({
+        "subcommand_count": subcommand_count,
+        "top_level_flags_count": top_level_flags_count,
+    })
+}
 
 pub fn execute_capabilities(global: &GlobalOpts, args: &CapabilitiesArgs) -> Result<(), AppError> {
     let cmd = Cli::command();
@@ -28,7 +46,9 @@ pub fn execute_capabilities(global: &GlobalOpts, args: &CapabilitiesArgs) -> Res
                     custom_json: None,
                 });
             };
-            print_output(descriptor, &global.output)
+            output::emit(descriptor, &global.output, "capabilities", |d| {
+                summary_of_capabilities_detail(&serde_json::to_value(d).unwrap_or_default())
+            })
         }
     }
 }

@@ -374,6 +374,25 @@ where
     Ok(())
 }
 
+/// Write already-serialized JSON larger than the threshold to a temp file and
+/// print a `TempFileOutput` with an empty summary. Used by
+/// `emit_with_snapshot` when the compound shape invariants (object outer,
+/// snapshot field present) do not hold — preserves the bounded-output promise.
+fn emit_oversized_fallback(full_json: &str, command_name: &str) -> Result<(), AppError> {
+    let path = write_temp_file(full_json, "json")?;
+    #[allow(clippy::cast_possible_truncation)]
+    let size_bytes = full_json.len() as u64;
+    let temp_output = TempFileOutput {
+        output_file: path,
+        size_bytes,
+        command: command_name.to_string(),
+        summary: serde_json::json!({}),
+    };
+    let output_json = serde_json::to_string(&temp_output).map_err(serialization_error)?;
+    println!("{output_json}");
+    Ok(())
+}
+
 /// Emit a compound result that carries a small interaction-confirmation payload
 /// plus a potentially large `snapshot` field.
 ///
@@ -382,12 +401,13 @@ where
 ///
 /// Otherwise, the `snapshot_field` key is extracted from the serialized value,
 /// written to a UUID-named temp file, and replaced with a `TempFileOutput`
-/// whose `summary` is produced by `snapshot_summary_fn`.  The
+/// whose `summary` is produced by `snapshot_summary_fn`. The
 /// interaction-confirmation fields (everything other than `snapshot_field`)
 /// remain inline.
 ///
-/// If the `snapshot_field` key is absent after serialization, this falls back
-/// to `emit` transparently (never panics).
+/// If the `snapshot_field` key is absent or the outer value is not a JSON
+/// object, the whole payload is offloaded to a temp file and a `TempFileOutput`
+/// with an empty summary is printed — stdout stays bounded either way.
 ///
 /// # Errors
 ///
@@ -422,17 +442,16 @@ where
         return Ok(());
     }
 
-    // 4. Extract the snapshot field.  If absent, fall back to emit.
+    // 4. Extract the snapshot field. If the outer value is not an object, or the
+    //    snapshot field is absent, offload the whole payload to a temp file so
+    //    stdout stays bounded. Summary is empty because the caller's
+    //    `snapshot_summary_fn` targets the snapshot field specifically.
     let Some(map) = outer.as_object_mut() else {
-        // Value is not an object; fall back to regular emit.
-        println!("{full_json}");
-        return Ok(());
+        return emit_oversized_fallback(&full_json, command_name);
     };
 
     let Some(snapshot_value) = map.remove(snapshot_field) else {
-        // Snapshot field absent — fall back to regular emit.
-        println!("{full_json}");
-        return Ok(());
+        return emit_oversized_fallback(&full_json, command_name);
     };
 
     // 5. Serialize the snapshot alone and write it to a temp file.
@@ -710,5 +729,15 @@ mod tests {
                 serde_json::json!({})
             });
         assert!(result.is_ok());
+    }
+
+    #[test]
+    fn emit_oversized_fallback_writes_temp_file_and_returns_temp_file_output() {
+        // Build a JSON string that we want to offload wholesale.
+        let full_json = "x".repeat(100);
+        let result = emit_oversized_fallback(&full_json, "test cmd");
+        assert!(result.is_ok());
+        // We cannot easily capture stdout in unit tests, but we verify no panic.
+        // Integration coverage comes from BDD large-response-detection.feature.
     }
 }

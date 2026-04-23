@@ -69,7 +69,7 @@ Feature: Harden progressive disclosure (skill enrichment, temp-file gating, stal
       | command                    |
       | audit lighthouse           |
       | dom select *               |
-      | dom attributes <uid>       |
+      | dom get-style <uid>        |
       | dom events <uid>           |
       | page analyze               |
       | page find --role button    |

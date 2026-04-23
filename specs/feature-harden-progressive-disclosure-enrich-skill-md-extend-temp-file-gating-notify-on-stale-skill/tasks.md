@@ -154,7 +154,7 @@ File paths follow `steering/structure.md` — `src/*.rs` for command modules, `s
 **Depends**: T006
 **Acceptance**:
 - [ ] `execute_select`, the attribute-read path, and the event-listener path each call `output::emit` with the appropriate summary builder
-- [ ] Command names are `"dom select"`, `"dom attributes"`, `"dom events"` respectively (match `capabilities` subcommand paths)
+- [ ] Command names are `"dom select"`, `"dom get-style"`, `"dom events"` respectively (match real `capabilities` subcommand paths — `dom get-style` fills the "full-attribute read" slot since there is no `dom attributes` verb)
 - [ ] Write-oriented DOM subcommands (`set-attribute`, `set-text`, `set-style`, `remove`, `get-text`, `get-html`) remain on `print_output` — they are out of scope (not listed in AC3)
 - [ ] Below-threshold behavior unchanged for every touched command
 
@@ -314,7 +314,7 @@ File paths follow `steering/structure.md` — `src/*.rs` for command modules, `s
 **Type**: Modify
 **Depends**: T007, T008, T009, T010, T011, T012
 **Acceptance**:
-- [ ] One scenario per newly gated command: `audit`, `dom select`, `dom attributes`, `dom events`, `page analyze`, `page find`, `console read`, `interact click --include-snapshot`
+- [ ] One scenario per newly gated command: `audit`, `dom select`, `dom get-style`, `dom events`, `page analyze`, `page find`, `console read`, `interact click --include-snapshot`
 - [ ] Each scenario asserts the command's `TempFileOutput.summary` matches its AC4 shape
 - [ ] One compound-schema scenario for `--include-snapshot` above threshold (AC5): interaction fields inline, `snapshot` key offloaded
 - [ ] One compound-schema scenario for `--include-snapshot` below threshold: fully inline
