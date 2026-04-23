@@ -5755,6 +5755,10 @@ async fn main() {
 
     CliWorld::run("tests/features/197-improve-error-output-consistency.feature").await;
 
+    // Dialog handle clap-error hint fix (issue #250) — argument-validation errors
+    // and a valid-parse regression case; none need a running Chrome.
+    CliWorld::run("tests/features/bug-fix-dialog-handle-clap-error.feature").await;
+
     run_dialog_features().await;
 
     // Cookie management — only CLI-testable scenarios (argument validation) can run without Chrome.
