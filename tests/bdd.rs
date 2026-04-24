@@ -6045,6 +6045,17 @@ async fn main() {
         )
         .await;
 
+    // interact click CSS-selector onclick regression (issue #252) — all scenarios require
+    // a running Chrome instance navigated to the
+    // tests/fixtures/interact-click-css-selector-onclick.html fixture, so none run in CI.
+    // The feature file documents the regression scenarios for manual / integration testing.
+    CliWorld::cucumber()
+        .filter_run_and_exit(
+            "tests/features/bug-fix-interact-click-css-selector-path-onclick-not-triggered-reliably-vs-uid-click.feature",
+            |_feature, _rule, _scenario| false, // Require real Chrome + fixture
+        )
+        .await;
+
     // Form input — only CLI-testable scenarios (argument validation, help text).
     // Scenarios requiring a running Chrome instance are commented out in the feature file.
     CliWorld::cucumber()

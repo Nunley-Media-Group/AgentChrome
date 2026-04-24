@@ -1,0 +1,42 @@
+# File: tests/features/bug-fix-interact-click-css-selector-path-onclick-not-triggered-reliably-vs-uid-click.feature
+#
+# Generated from: specs/bug-fix-interact-click-css-selector-path-onclick-not-triggered-reliably-vs-uid-click/requirements.md
+# Issue: #252
+# Type: Defect regression
+
+@regression
+Feature: interact click CSS selector path fires onclick handlers
+  The `interact click css:<selector>` path previously resolved the element and
+  dispatched a mouse event at the button's center but did not trigger the
+  element's `onclick` handler, while the UID path and `click-at` at the same
+  coordinates did. This was fixed by aligning the CSS-selector resolution
+  and dispatch with the UID path.
+
+  # --- Bug Is Fixed ---
+
+  @regression
+  Scenario: CSS selector click triggers the onclick-driven DOM mutation
+    Given the page "https://the-internet.herokuapp.com/add_remove_elements/" is loaded
+    And there are 0 ".added-manually" elements in the DOM
+    When I run `agentchrome interact click "css:button[onclick='addElement()']"`
+    Then the command exits 0
+    And there is 1 ".added-manually" element in the DOM
+
+  # --- Related Behavior Still Works ---
+
+  @regression
+  Scenario: UID click still triggers the onclick-driven DOM mutation
+    Given the page "https://the-internet.herokuapp.com/add_remove_elements/" is loaded
+    And a snapshot has populated the UID map for the "Add Element" button
+    And there are 0 ".added-manually" elements in the DOM
+    When I run `agentchrome interact click <uid>` for the "Add Element" button
+    Then the command exits 0
+    And there is 1 ".added-manually" element in the DOM
+
+  @regression
+  Scenario: CSS selector click on a navigation link still navigates
+    Given a page containing an "<a href>" link resolvable by CSS selector
+    When I run `agentchrome interact click "css:<navigation-selector>"`
+    Then the command exits 0
+    And the response reports "navigated": true
+    And the browser URL is the link target

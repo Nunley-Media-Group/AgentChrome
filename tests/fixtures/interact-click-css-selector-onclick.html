@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>interact click CSS selector onclick — fixture for issue #252</title>
+</head>
+<body>
+  <h1>Add / Remove Elements</h1>
+
+  <!-- Button uses an inline onclick that mutates the DOM. The issue #252
+       reproduction needs the handler to fire when the button is reached
+       via a CSS-selector click (`css:button[onclick='addElement()']`). -->
+  <button onclick="addElement()" style="margin:20px;padding:12px 20px;">Add Element</button>
+
+  <!-- Navigation target for AC3 (CSS-selector navigation click still works). -->
+  <a id="nav-link" href="#landed">Go to landing</a>
+
+  <div id="container"></div>
+
+  <script>
+    function addElement() {
+      var div = document.createElement('div');
+      div.className = 'added-manually';
+      div.textContent = 'Element added';
+      document.getElementById('container').appendChild(div);
+    }
+  </script>
+</body>
+</html>

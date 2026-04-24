@@ -272,30 +272,39 @@ async fn resolve_target_to_backend_node_id(
         // Strip 'css:' prefix
         let selector = &target[4..];
 
-        // Get document root node ID
-        let doc_response = session.send_command("DOM.getDocument", None).await?;
-        let root_node_id = doc_response["root"]["nodeId"]
-            .as_i64()
-            .ok_or_else(|| AppError::element_not_found(selector))?;
-
-        // Query selector
-        let query_params = serde_json::json!({
-            "nodeId": root_node_id,
-            "selector": selector,
-        });
-        let query_response = session
-            .send_command("DOM.querySelector", Some(query_params))
+        // Resolve via `Runtime.evaluate` + `DOM.describeNode { objectId }` rather than
+        // `DOM.getDocument` + `DOM.querySelector`. The getDocument/querySelector path can
+        // return a `nodeId` scoped to a stale document handle when DOM mutations occur
+        // between snapshot population and the click — observable as a successfully
+        // dispatched mouse event at coordinates that no longer hit the live element.
+        // Resolving via the JS object handle keeps the node bound to the live document,
+        // matching the UID path's stable `backendNodeId` semantics. (issue #252)
+        let json_quoted = serde_json::to_string(selector)
+            .map_err(|e| AppError::interaction_failed("encode_selector", &e.to_string()))?;
+        let expression = format!("document.querySelector({json_quoted})");
+        let eval_response = session
+            .send_command(
+                "Runtime.evaluate",
+                Some(serde_json::json!({
+                    "expression": expression,
+                    "returnByValue": false,
+                })),
+            )
             .await?;
 
-        let node_id = query_response["nodeId"].as_i64().unwrap_or(0);
-        if node_id == 0 {
+        if eval_response["result"]["subtype"].as_str() == Some("null") {
             return Err(AppError::element_not_found(selector));
         }
+        let object_id = eval_response["result"]["objectId"]
+            .as_str()
+            .ok_or_else(|| AppError::element_not_found(selector))?
+            .to_string();
 
-        // Get backend node ID via describeNode
-        let describe_params = serde_json::json!({ "nodeId": node_id });
         let describe_response = session
-            .send_command("DOM.describeNode", Some(describe_params))
+            .send_command(
+                "DOM.describeNode",
+                Some(serde_json::json!({ "objectId": object_id })),
+            )
             .await?;
 
         let backend_node_id = describe_response["node"]["backendNodeId"]
@@ -1699,6 +1708,7 @@ async fn execute_click(
             &mut managed
         };
         eff_mut.ensure_domain("DOM").await?;
+        eff_mut.ensure_domain("Runtime").await?;
     }
 
     managed.ensure_domain("Page").await?;

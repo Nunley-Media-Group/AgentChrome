@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.50.0] - 2026-04-23
+
+### Fixed
+
+- `agentchrome interact click "css:<selector>"` now reliably fires inline `onclick` handlers. The CSS-selector resolution path previously went through `DOM.getDocument` + `DOM.querySelector`, returning a `nodeId` scoped to a document handle that could be stale relative to the live layout; the dispatched mouse event then landed on coordinates that no longer hit the target. Resolution now goes through `Runtime.evaluate(document.querySelector(...))` + `DOM.describeNode { objectId }`, binding the node to the live document and matching the UID path's stable `backendNodeId` semantics. The UID and `click-at` paths are unchanged. (#252)
+
 ## [1.49.0] - 2026-04-23
 
 ### Fixed
