@@ -306,12 +306,8 @@ struct ConfigPathOutput {
     config_path: Option<String>,
 }
 
-/// Execute config subcommands.
-///
-/// `global_config_raw` is the raw, pre-resolution value of the global `--config`
-/// flag. The init arm consumes it as a destination when `--path` is absent
-/// (issue #249); other arms ignore it (read-side resolution lives in
-/// `resolved.config_path`).
+/// Execute config subcommands. `global_config_raw` is the pre-resolution
+/// `--config` value; only the `Init` arm consumes it (as a destination fallback).
 fn execute_config(
     cmd: &ConfigCommand,
     resolved: &config::ResolvedConfig,
@@ -332,14 +328,9 @@ fn execute_config(
                     );
                 }
             }
-            let destination = args
-                .path
-                .as_deref()
-                .or(global_config_raw)
-                .map(std::path::Path::to_path_buf);
-            let path = config::init_config(destination.as_deref()).map_err(|e| {
+            let destination = args.path.as_deref().or(global_config_raw);
+            let path = config::init_config(destination).map_err(|e| {
                 let dest = destination
-                    .as_ref()
                     .map_or_else(|| "<default>".to_string(), |p| p.display().to_string());
                 AppError {
                     message: format!("config init failed for {dest}: {e}"),

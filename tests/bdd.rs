@@ -2623,14 +2623,9 @@ fn config_blocked_parent(world: &mut ConfigWorld) {
     world.blocked_target = Some(blocker.join("sub").join("file.toml"));
 }
 
-#[when("I run agentchrome config init with --config pointing at the target path")]
-fn config_run_init_with_config(world: &mut ConfigWorld) {
-    let target = world
-        .targets
-        .values()
-        .next()
-        .cloned()
-        .expect("no target path set");
+#[when(regex = r#"^I run agentchrome config init with --config pointing at "([^"]+)"$"#)]
+fn config_run_init_with_config(world: &mut ConfigWorld, name: String) {
+    let target = world.targets.get(&name).expect("target not set");
     let target_str = target.display().to_string();
     world.run_agentchrome(&["config", "init", "--config", &target_str]);
 }
@@ -2673,16 +2668,6 @@ fn config_run_init_both(world: &mut ConfigWorld, path_name: String, config_name:
     ]);
 }
 
-#[then("the target path file exists")]
-fn config_target_exists(world: &mut ConfigWorld) {
-    let target = world.targets.values().next().expect("no target path set");
-    assert!(
-        target.exists(),
-        "expected target file at {}",
-        target.display()
-    );
-}
-
 #[then(regex = r#"^the "([^"]+)" target file exists$"#)]
 fn config_named_target_exists(world: &mut ConfigWorld, name: String) {
     let target = world.targets.get(&name).expect("target not set");
@@ -2699,9 +2684,9 @@ fn config_named_target_absent(world: &mut ConfigWorld, name: String) {
     );
 }
 
-#[then("the JSON output's \"created\" field equals the target path")]
-fn config_created_field_equals_target(world: &mut ConfigWorld) {
-    let target = world.targets.values().next().expect("no target path set");
+#[then(regex = r#"^the JSON output's "created" field equals the "([^"]+)" target path$"#)]
+fn config_created_field_equals_named(world: &mut ConfigWorld, name: String) {
+    let target = world.targets.get(&name).expect("target not set");
     let json = parse_stdout_json(world);
     let created = json
         .get("created")
@@ -2735,22 +2720,12 @@ fn config_created_field_equals_xdg(world: &mut ConfigWorld) {
     assert_eq!(created, xdg.display().to_string(), "created field mismatch");
 }
 
-#[then("the process exits with code 0")]
-fn config_process_exits_0(world: &mut ConfigWorld) {
+#[then(regex = r"^the process exits with code (\d+)$")]
+fn config_process_exit_code(world: &mut ConfigWorld, expected: i32) {
     let actual = world.exit_code.expect("no exit code captured");
     assert_eq!(
-        actual, 0,
-        "expected exit 0, got {actual}\nstdout: {}\nstderr: {}",
-        world.stdout, world.stderr
-    );
-}
-
-#[then("the process exits with code 1")]
-fn config_process_exits_1(world: &mut ConfigWorld) {
-    let actual = world.exit_code.expect("no exit code captured");
-    assert_eq!(
-        actual, 1,
-        "expected exit 1, got {actual}\nstdout: {}\nstderr: {}",
+        actual, expected,
+        "expected exit {expected}, got {actual}\nstdout: {}\nstderr: {}",
         world.stdout, world.stderr
     );
 }

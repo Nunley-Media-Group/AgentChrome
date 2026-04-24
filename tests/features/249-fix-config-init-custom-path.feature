@@ -6,9 +6,9 @@ Feature: config init honors custom destination path (issue #249)
   @regression
   Scenario: --config is honored as the init destination
     Given a writable target path "custom.toml" that does not exist
-    When I run agentchrome config init with --config pointing at the target path
-    Then the target path file exists
-    And the JSON output's "created" field equals the target path
+    When I run agentchrome config init with --config pointing at "custom.toml"
+    Then the "custom.toml" target file exists
+    And the JSON output's "created" field equals the "custom.toml" target path
     And the process exits with code 0
 
   @regression
