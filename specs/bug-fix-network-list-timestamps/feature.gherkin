@@ -1,6 +1,6 @@
 # File: tests/features/116-fix-network-list-timestamps.feature
 #
-# Generated from: .claude/specs/116-fix-network-list-timestamps/requirements.md
+# Generated from: specs/116-fix-network-list-timestamps/requirements.md
 # Issue: #116
 # Type: Defect regression
 

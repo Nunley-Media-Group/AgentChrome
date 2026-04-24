@@ -13,7 +13,7 @@ All feature development should align with these guidelines.
 
 ## Target Users
 
-### Primary: AI Agents (Claude Code, MCP clients)
+### Primary: AI Agents (Codex, MCP clients)
 
 | Characteristic | Implication |
 |----------------|-------------|
@@ -119,5 +119,5 @@ All feature development should align with these guidelines.
 
 ## References
 
-- Technical spec: `.claude/steering/tech.md`
-- Code structure: `.claude/steering/structure.md`
+- Technical spec: `steering/tech.md`
+- Code structure: `steering/structure.md`

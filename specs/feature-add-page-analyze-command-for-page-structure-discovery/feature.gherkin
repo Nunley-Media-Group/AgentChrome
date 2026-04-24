@@ -1,6 +1,6 @@
 # File: tests/features/page-analyze.feature
 #
-# Generated from: .claude/specs/feature-add-page-analyze-command-for-page-structure-discovery/requirements.md
+# Generated from: specs/feature-add-page-analyze-command-for-page-structure-discovery/requirements.md
 # Issue: #190
 
 Feature: Page Analyze Command

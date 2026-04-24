@@ -3,7 +3,7 @@
 **Issue**: #30
 **Date**: 2026-02-14
 **Status**: Draft
-**Author**: Claude (spec generation)
+**Author**: Codex (spec generation)
 
 ---
 
@@ -17,7 +17,7 @@
 
 ## Background
 
-AI agents like Claude Code need to understand what commands are available and what parameters they accept. While `--help` is human-readable and the `examples` subcommand shows usage patterns, neither provides a structured, complete schema of the CLI surface. A `agentchrome capabilities` command outputs a JSON manifest describing every command, subcommand, flag, argument, and return type — essentially an OpenAPI spec for the CLI.
+AI agents like Codex need to understand what commands are available and what parameters they accept. While `--help` is human-readable and the `examples` subcommand shows usage patterns, neither provides a structured, complete schema of the CLI surface. A `agentchrome capabilities` command outputs a JSON manifest describing every command, subcommand, flag, argument, and return type — essentially an OpenAPI spec for the CLI.
 
 This differs from the `examples` command (issue #29) in a key way: `examples` shows *how* to use commands with sample invocations, while `capabilities` describes *what* the commands are — their full parameter signatures, types, defaults, and return schemas. Together they give AI agents complete programmatic access to the CLI.
 

@@ -23,7 +23,7 @@
 - `src/cli/mod.rs` — `ConsoleFollowArgs` struct and `Follow` subcommand `long_about`/`after_long_help`
 - `src/console.rs` — `execute_follow` post-loop exit decision
 - `src/examples/commands.rs` — add `--fail-on-error` example entry
-- `README.md`, `docs/claude-code.md` — narrative updates where behavior is described
+- `README.md`, `docs/codex.md` — narrative updates where behavior is described
 
 **Type**: Modify
 **Depends**: None
@@ -32,7 +32,7 @@
 - [ ] `execute_follow` returns `AppError` only when `args.fail_on_error && saw_errors` is true; otherwise returns `Ok(())` on timeout / Ctrl+C
 - [ ] Help text for `console follow --help` describes both default monitoring (exit 0) and `--fail-on-error` assertion mode (exit 1) with a worked example for each
 - [ ] `examples` subcommand includes a `console follow --fail-on-error --timeout <ms>` entry with a short description
-- [ ] `README.md` and `docs/claude-code.md` narrative text no longer implies `console follow` fails by default on `console.error`
+- [ ] `README.md` and `docs/codex.md` narrative text no longer implies `console follow` fails by default on `console.error`
 - [ ] Bug reproduction from `requirements.md` no longer reproduces: `console follow --timeout 3000` returns exit 0 when `console.error` is observed
 - [ ] No unrelated changes included in the diff
 

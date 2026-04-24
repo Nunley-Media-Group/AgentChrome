@@ -1,6 +1,6 @@
 # File: tests/features/tab-management.feature
 #
-# Generated from: .claude/specs/7-tab-management/requirements.md
+# Generated from: specs/7-tab-management/requirements.md
 # Issue: #7
 
 Feature: Tab management commands

@@ -1,6 +1,6 @@
 # File: tests/features/137-fix-page-commands-wrong-tab-after-activate.feature
 #
-# Generated from: .claude/specs/137-fix-page-commands-wrong-tab-after-activate/requirements.md
+# Generated from: specs/137-fix-page-commands-wrong-tab-after-activate/requirements.md
 # Issue: #137
 # Type: Defect regression
 

@@ -5,7 +5,7 @@
 **Status**: Approved
 **Author**: Claude (spec generation)
 **Severity**: High
-**Related Spec**: `.claude/specs/19-network-request-monitoring/`
+**Related Spec**: `specs/19-network-request-monitoring/`
 
 ---
 

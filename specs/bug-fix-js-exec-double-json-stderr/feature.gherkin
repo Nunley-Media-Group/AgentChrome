@@ -1,6 +1,6 @@
 # File: tests/features/js-exec-double-json-stderr.feature
 #
-# Generated from: .claude/specs/96-fix-js-exec-double-json-stderr/requirements.md
+# Generated from: specs/96-fix-js-exec-double-json-stderr/requirements.md
 # Issue: #96
 # Type: Defect regression
 

@@ -1,6 +1,6 @@
 # File: tests/features/coordinate-space-helpers.feature
 #
-# Generated from: .claude/specs/feature-add-coordinate-space-helpers/requirements.md
+# Generated from: specs/feature-add-coordinate-space-helpers/requirements.md
 # Issue: #198
 
 Feature: Coordinate Space Helpers for Frame-Aware Coordinate Resolution

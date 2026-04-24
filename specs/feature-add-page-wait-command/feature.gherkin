@@ -1,6 +1,6 @@
 # File: tests/features/page-wait.feature
 #
-# Generated from: .claude/specs/feature-add-page-wait-command/requirements.md
+# Generated from: specs/feature-add-page-wait-command/requirements.md
 # Issues: #163, #195
 
 Feature: Page Wait Command

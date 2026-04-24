@@ -1,6 +1,6 @@
 # File: tests/features/114-fix-connect-status-output-flags.feature
 #
-# Generated from: .claude/specs/114-fix-connect-status-output-flags/requirements.md
+# Generated from: specs/114-fix-connect-status-output-flags/requirements.md
 # Issue: #114
 # Type: Defect regression
 

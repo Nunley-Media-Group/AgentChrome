@@ -1,6 +1,6 @@
 # File: tests/features/87-fix-connect-auto-discover-overwrites-session-pid.feature
 #
-# Generated from: .claude/specs/87-fix-connect-auto-discover-overwrites-session-pid/requirements.md
+# Generated from: specs/87-fix-connect-auto-discover-overwrites-session-pid/requirements.md
 # Issue: #87
 # Type: Defect regression
 

@@ -1,6 +1,6 @@
 # File: tests/features/119-fix-perf-vitals-null-cls-ttfb.feature
 #
-# Generated from: .claude/specs/119-fix-perf-vitals-null-cls-ttfb/requirements.md
+# Generated from: specs/119-fix-perf-vitals-null-cls-ttfb/requirements.md
 # Issue: #119
 # Type: Defect regression
 

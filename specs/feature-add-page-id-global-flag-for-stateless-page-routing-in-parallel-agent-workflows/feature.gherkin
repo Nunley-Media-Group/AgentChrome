@@ -1,6 +1,6 @@
 # File: tests/features/page-id-global-flag.feature
 #
-# Generated from: .claude/specs/feature-add-page-id-global-flag-for-stateless-page-routing-in-parallel-agent-workflows/requirements.md
+# Generated from: specs/feature-add-page-id-global-flag-for-stateless-page-routing-in-parallel-agent-workflows/requirements.md
 # Issue: #170
 
 Feature: Page ID global flag for stateless page routing

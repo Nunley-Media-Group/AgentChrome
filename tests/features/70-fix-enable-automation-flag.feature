@@ -1,6 +1,6 @@
 # File: tests/features/70-fix-enable-automation-flag.feature
 #
-# Generated from: .claude/specs/70-fix-enable-automation-flag/requirements.md
+# Generated from: specs/70-fix-enable-automation-flag/requirements.md
 # Issue: #70
 # Type: Defect regression
 

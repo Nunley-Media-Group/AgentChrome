@@ -1,6 +1,6 @@
 # File: tests/features/68-fix-connect-launch-timeout.feature
 #
-# Generated from: .claude/specs/68-fix-connect-launch-timeout/requirements.md
+# Generated from: specs/68-fix-connect-launch-timeout/requirements.md
 # Issue: #68
 # Type: Defect regression
 

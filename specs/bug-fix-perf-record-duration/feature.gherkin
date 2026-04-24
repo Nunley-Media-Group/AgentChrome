@@ -1,6 +1,6 @@
 # File: tests/features/118-fix-perf-record-duration.feature
 #
-# Generated from: .claude/specs/118-fix-perf-record-duration/requirements.md
+# Generated from: specs/118-fix-perf-record-duration/requirements.md
 # Issue: #118
 # Type: Defect regression
 

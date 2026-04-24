@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude
 **Severity**: High
-**Related Spec**: `.claude/specs/22-performance-tracing/`
+**Related Spec**: `specs/22-performance-tracing/`
 
 ---
 

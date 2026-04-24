@@ -1,6 +1,6 @@
 # File: tests/features/94-fix-connect-auto-discover-reconnect.feature
 #
-# Generated from: .claude/specs/94-fix-connect-auto-discover-reconnect/requirements.md
+# Generated from: specs/94-fix-connect-auto-discover-reconnect/requirements.md
 # Issue: #94
 # Type: Defect regression
 

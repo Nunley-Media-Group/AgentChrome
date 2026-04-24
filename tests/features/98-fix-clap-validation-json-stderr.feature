@@ -1,6 +1,6 @@
 # File: tests/features/98-fix-clap-validation-json-stderr.feature
 #
-# Generated from: .claude/specs/98-fix-clap-validation-json-stderr/requirements.md
+# Generated from: specs/98-fix-clap-validation-json-stderr/requirements.md
 # Issue: #98
 # Type: Defect regression
 

@@ -6,9 +6,9 @@
 ![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue)
 ![Crates.io](https://img.shields.io/crates/v/agentchrome)
 
-AgentChrome is a native CLI tool for browser automation via the Chrome DevTools Protocol, designed for AI coding agents — especially [Claude Code](https://docs.anthropic.com/en/docs/claude-code). Every command outputs structured JSON, uses accessibility-tree UIDs for element targeting, and returns typed exit codes for programmatic error handling. No Node.js, no Python, no MCP server — just a fast Rust binary your agent calls from the shell.
+AgentChrome is a native CLI tool for browser automation via the Chrome DevTools Protocol, designed for AI coding agents such as Codex. Every command outputs structured JSON, uses accessibility-tree UIDs for element targeting, and returns typed exit codes for programmatic error handling. No Node.js, no Python, no MCP server — just a fast Rust binary your agent calls from the shell.
 
-## Claude Code Integration
+## Codex Integration
 
 **1. Install AgentChrome** (see [Installation](#installation) for more options)
 
@@ -16,29 +16,19 @@ AgentChrome is a native CLI tool for browser automation via the Chrome DevTools 
 cargo install agentchrome
 ```
 
-**2. Install the agentchrome skill**
+**2. Add AgentChrome guidance to Codex**
 
 ```sh
-agentchrome skill install                  # auto-detect
-agentchrome skill install --tool gemini    # or target a specific tool
+curl -fsSL https://raw.githubusercontent.com/Nunley-Media-Group/AgentChrome/main/examples/AGENTS.md.example > AGENTS.md
 ```
 
-This auto-detects your agentic coding tool and installs a skill file that tells the AI agent what agentchrome is and how to discover its capabilities. Supported tools: Claude Code, Windsurf, Aider, Continue.dev, GitHub Copilot (JetBrains), Cursor, and Gemini CLI (installs to `~/.gemini/instructions/agentchrome.md`). Run `agentchrome skill list` to see install paths for every supported tool. After upgrading agentchrome, run `agentchrome skill update` to refresh the skill with the current version.
+This adds a project-local `AGENTS.md` with the browser automation workflow Codex should follow. AgentChrome is self-documenting through `agentchrome --help`, `agentchrome capabilities`, and `agentchrome examples`, so Codex can discover the current CLI surface directly from the installed binary.
 
-<details>
-<summary>Alternative: manual CLAUDE.md template</summary>
-
-```sh
-curl -fsSL https://raw.githubusercontent.com/Nunley-Media-Group/AgentChrome/main/examples/CLAUDE.md.example > CLAUDE.md
-```
-
-</details>
-
-**3. Ask Claude Code to use the browser**
+**3. Ask Codex to use the browser**
 
 > "Check if the login form at localhost:3000 works correctly"
 
-Behind the scenes, Claude Code will run commands like:
+Behind the scenes, Codex will run commands like:
 
 ```sh
 agentchrome connect --launch --headless
@@ -49,7 +39,9 @@ agentchrome interact click s4 --include-snapshot
 agentchrome console read --errors-only
 ```
 
-See the full [Claude Code Integration Guide](docs/claude-code.md) for workflows, efficiency tips, and error handling patterns.
+See the full [Codex Integration Guide](docs/codex.md) for workflows, efficiency tips, and error handling patterns.
+
+For agentic tools supported by AgentChrome's built-in skill installer, use `agentchrome skill install` to write the tool-specific guidance file and `agentchrome skill update` after upgrading AgentChrome.
 
 ## Features
 
@@ -380,7 +372,7 @@ Available strategies: `iframes`, `overlays`, `scorm`, `drag-and-drop`, `shadow-d
 
 ## Related Projects
 
-- **[Chrome DevTools MCP](https://github.com/anthropics/anthropic-quickstarts/tree/main/browser-automation-mcp)** — MCP server for browser automation via the Model Context Protocol. If you need MCP-based browser control rather than a CLI tool, check it out.
+- **Chrome DevTools MCP servers** — If you need MCP-based browser control rather than a CLI tool, use a CDP-backed MCP server.
 
 ## Contributing
 
@@ -390,7 +382,7 @@ All contributions must follow the [NMG-SDLC](https://github.com/Nunley-Media-Gro
 
 - [Rust](https://rustup.rs/) 1.85.0 or later (pinned via `rust-toolchain.toml`)
 - Chrome or Chromium (for integration testing)
-- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) with the [NMG-SDLC plugin](https://github.com/Nunley-Media-Group/nmg-plugins) installed
+- Codex with the [NMG-SDLC plugin](https://github.com/Nunley-Media-Group/nmg-plugins) installed
 
 ### Build and test
 

@@ -3,12 +3,11 @@ name: executing-learning
 description: "Build debug binary, launch headed Chrome, explore a website to learn its navigation and features, file bugs found using /creating-issues."
 argument-hint: "[url]"
 disable-model-invocation: true
-allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Task, AskUserQuestion, Skill, EnterPlanMode
 ---
 
 # Executing Learning
 
-Build the debug binary, launch Chrome in **headed mode**, and explore a website to learn how to navigate it using agentchrome. Exercise every relevant command group (navigate, page, interact, form, tabs, js, console, network, emulate, perf, dialog) against the site. Any bugs, broken commands, or missing functionality discovered during exploration should be filed as GitHub issues using `/creating-issues`.
+Build the debug binary, launch Chrome in **headed mode**, and explore a website to learn how to navigate it using agentchrome. Exercise every relevant command group (navigate, page, interact, form, tabs, js, console, network, emulate, perf, dialog) against the site. Any bugs, broken commands, or missing functionality discovered during exploration should be filed as GitHub issues.
 
 ## Default Target
 
@@ -31,7 +30,7 @@ If an argument is provided, use that URL instead:
 2. **Explore organically** — navigate the site like a user would, don't follow a rigid script
 3. **Exercise breadth** — try as many agentchrome commands as the site allows
 4. **Note everything** — track what works, what fails, and what's missing
-5. **File bugs with `/creating-issues`** — use the existing skill for each defect found
+5. **File bugs as GitHub issues** — use the repository's normal issue workflow for each defect found
 6. **Do NOT fix anything** — only observe, analyze, and report
 7. **Clean up Chrome** — always kill Chrome processes when done
 
@@ -62,9 +61,9 @@ If an argument is provided, use that URL instead:
 
 ### Step 1: Gather Context
 
-1. Read `.claude/steering/product.md` for product vision and command inventory
-2. Read `.claude/steering/tech.md` for build instructions
-3. Read `.claude/steering/structure.md` for code organization (useful for root cause analysis)
+1. Read `steering/product.md` for product vision and command inventory
+2. Read `steering/tech.md` for build instructions
+3. Read `steering/structure.md` for code organization (useful for root cause analysis)
 4. Determine the target URL:
    - If `$ARGUMENTS` is provided and is a valid URL, use it
    - Otherwise, default to `https://www.saucedemo.com/`
@@ -151,7 +150,7 @@ For each finding, note:
 
 ### Step 6: File Defect Issues
 
-For each bug or missing functionality found in Step 4, invoke `/creating-issues` with:
+For each bug or missing functionality found in Step 4, file a GitHub issue with:
 
 - A description of the defect or enhancement need
 - The exact reproduction steps (CLI commands used)

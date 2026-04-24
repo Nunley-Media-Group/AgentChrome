@@ -1,6 +1,6 @@
 # File: tests/features/73-snapshot-empty-tree.feature
 #
-# Generated from: .claude/specs/73-fix-page-snapshot-empty-accessibility-tree/requirements.md
+# Generated from: specs/73-fix-page-snapshot-empty-accessibility-tree/requirements.md
 # Issue: #73
 # Type: Defect regression
 

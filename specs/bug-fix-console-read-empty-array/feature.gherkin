@@ -1,6 +1,6 @@
 # File: tests/features/103-fix-console-read-empty-array.feature
 #
-# Generated from: .claude/specs/103-fix-console-read-empty-array/requirements.md
+# Generated from: specs/103-fix-console-read-empty-array/requirements.md
 # Issue: #103
 # Type: Defect regression
 

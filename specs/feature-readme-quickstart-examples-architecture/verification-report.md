@@ -18,7 +18,7 @@
 | AC5 | Usage Examples with common workflows | PASS | `README.md:127-213` — 6 collapsible examples: screenshot, text extraction, JS, forms, network, perf tracing |
 | AC6 | Command Reference with all commands | PASS | `README.md:215-236` — Table with all 16 commands; directs to `--help` and man pages |
 | AC7 | Architecture with CDP diagram | PASS | `README.md:238-263` — ASCII diagram, CDP/WebSocket description, session management, performance notes |
-| AC8 | Claude Code Integration section | PASS | `README.md:265-289` — AI agent usage explanation, CLAUDE.md code block snippet, common workflows |
+| AC8 | Codex Integration section | PASS | `README.md:265-289` — AI agent usage explanation, AGENTS.md code block snippet, common workflows |
 | AC9 | Contributing with development setup | PASS | `README.md:290-319` — Prerequisites, build/test/lint commands, code style notes |
 | AC10 | License section | PASS | `README.md:321-324` — Dual MIT/Apache-2.0 with links to LICENSE-MIT and LICENSE-APACHE |
 | AC11 | Collapsible sections for lengthy content | PASS | 7 `<details>` tags (1 in Installation, 6 in Usage Examples); 324 lines total, under 500-line target |
@@ -57,7 +57,7 @@ All 19 BDD scenarios pass, covering:
 - Usage Examples (screenshot, text, JS, forms, network, collapsible sections)
 - Command Reference (all 16 commands, help reference)
 - Architecture (diagram, CDP, WebSocket, session management, performance)
-- Claude Code Integration (explanation + CLAUDE.md snippet)
+- Codex Integration (explanation + AGENTS.md snippet)
 - Contributing (build, test, code style)
 - License (dual MIT/Apache-2.0, file links)
 

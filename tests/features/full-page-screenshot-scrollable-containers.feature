@@ -1,6 +1,6 @@
 # File: tests/features/full-page-screenshot-scrollable-containers.feature
 #
-# Generated from: .claude/specs/feature-fix-full-page-screenshot-to-capture-scrollable-inner-containers/requirements.md
+# Generated from: specs/feature-fix-full-page-screenshot-to-capture-scrollable-inner-containers/requirements.md
 # Issue: #184
 #
 # CLI-testable scenarios: validation errors (AC5, AC6) that fail before Chrome connection.

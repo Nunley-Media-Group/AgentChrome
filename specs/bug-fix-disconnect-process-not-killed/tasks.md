@@ -35,7 +35,7 @@
 
 ### T002: Add Regression Test
 
-**File(s)**: `.claude/specs/101-fix-disconnect-process-not-killed/feature.gherkin`, `tests/features/101-fix-disconnect-process-not-killed.feature`
+**File(s)**: `specs/101-fix-disconnect-process-not-killed/feature.gherkin`, `tests/features/101-fix-disconnect-process-not-killed.feature`
 **Type**: Create
 **Depends**: T001
 **Acceptance**:

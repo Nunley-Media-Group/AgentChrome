@@ -1,6 +1,6 @@
 # File: tests/features/100-fix-emulate-reset-viewport.feature
 #
-# Generated from: .claude/specs/100-fix-emulate-reset-viewport/requirements.md
+# Generated from: specs/100-fix-emulate-reset-viewport/requirements.md
 # Issue: #100
 # Type: Defect regression
 

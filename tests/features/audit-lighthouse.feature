@@ -1,6 +1,6 @@
 # File: tests/features/audit-lighthouse.feature
 #
-# Generated from: .claude/specs/feature-add-audit-lighthouse-command/requirements.md
+# Generated from: specs/feature-add-audit-lighthouse-command/requirements.md
 # Issue: #169
 
 Feature: Audit Lighthouse

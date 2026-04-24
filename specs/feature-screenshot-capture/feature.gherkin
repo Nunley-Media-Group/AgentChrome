@@ -1,6 +1,6 @@
 # File: tests/features/screenshot-capture.feature
 #
-# Generated from: .claude/specs/12-screenshot-capture/requirements.md
+# Generated from: specs/12-screenshot-capture/requirements.md
 # Issue: #12
 
 Feature: Screenshot capture

@@ -2,7 +2,7 @@
 
 **Date**: 2026-02-15
 **Issue**: #83
-**Reviewer**: Claude Code
+**Reviewer**: Codex
 **Scope**: Defect fix verification against spec
 
 ---

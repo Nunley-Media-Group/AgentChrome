@@ -1,6 +1,6 @@
 # File: tests/features/session-connection-management.feature
 #
-# Generated from: .claude/specs/6-session-and-connection-management/requirements.md
+# Generated from: specs/6-session-and-connection-management/requirements.md
 # Issue: #6
 
 Feature: Session and connection management

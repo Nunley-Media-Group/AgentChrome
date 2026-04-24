@@ -1,6 +1,6 @@
 # File: tests/features/perf.feature
 #
-# Generated from: .claude/specs/22-performance-tracing/requirements.md
+# Generated from: specs/22-performance-tracing/requirements.md
 # Issue: #22
 # Updated for issue #76: replaced perf start/stop with perf record
 

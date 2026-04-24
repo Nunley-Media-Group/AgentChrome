@@ -1,6 +1,6 @@
 # File: tests/features/compact-snapshot-mode.feature
 #
-# Generated from: .claude/specs/feature-add-compact-snapshot-mode-ai-agent-token-efficiency/requirements.md
+# Generated from: specs/feature-add-compact-snapshot-mode-ai-agent-token-efficiency/requirements.md
 # Issue: #162
 
 Feature: Compact Snapshot Mode

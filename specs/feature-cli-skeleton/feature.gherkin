@@ -1,6 +1,6 @@
 # File: tests/features/cli-skeleton.feature
 #
-# Generated from: .claude/specs/3-cli-skeleton/requirements.md
+# Generated from: specs/3-cli-skeleton/requirements.md
 # Issue: #3
 
 Feature: CLI skeleton with clap derive macros and top-level help

@@ -1,6 +1,6 @@
 # File: tests/features/136-fix-form-fill-textarea.feature
 #
-# Generated from: .claude/specs/136-fix-form-fill-textarea/requirements.md
+# Generated from: specs/136-fix-form-fill-textarea/requirements.md
 # Issue: #136
 # Type: Defect regression
 

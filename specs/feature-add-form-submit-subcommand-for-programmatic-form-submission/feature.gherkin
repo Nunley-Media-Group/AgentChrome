@@ -1,6 +1,6 @@
 # File: tests/features/form-submit.feature
 #
-# Generated from: .claude/specs/feature-add-form-submit-subcommand-for-programmatic-form-submission/requirements.md
+# Generated from: specs/feature-add-form-submit-subcommand-for-programmatic-form-submission/requirements.md
 # Issue: #147
 
 Feature: Form submit subcommand

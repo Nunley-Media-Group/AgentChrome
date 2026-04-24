@@ -3,7 +3,7 @@
 **Issue**: #3
 **Date**: 2026-02-10
 **Status**: Draft
-**Author**: Claude (spec-driven)
+**Author**: Codex (spec-driven)
 
 ---
 
@@ -17,7 +17,7 @@
 
 ## Background
 
-agentchrome is a Rust CLI tool for browser automation via the Chrome DevTools Protocol. It is designed to be consumed primarily by AI agents (Claude Code), which means every subcommand, flag, and argument must have rich, descriptive help text. This issue establishes the foundational CLI structure — the argument parsing, subcommand hierarchy, global options, output format flags, and exit code conventions — that all future commands will build upon.
+agentchrome is a Rust CLI tool for browser automation via the Chrome DevTools Protocol. It is designed to be consumed primarily by AI agents (Codex), which means every subcommand, flag, and argument must have rich, descriptive help text. This issue establishes the foundational CLI structure — the argument parsing, subcommand hierarchy, global options, output format flags, and exit code conventions — that all future commands will build upon.
 
 The current `main.rs` only prints the package name and version. This feature replaces that with a full clap-based CLI skeleton.
 

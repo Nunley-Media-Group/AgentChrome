@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude
 **Severity**: High
-**Related Spec**: `.claude/specs/122-fix-tabs-activate-state-propagation/`
+**Related Spec**: `specs/122-fix-tabs-activate-state-propagation/`
 
 ---
 

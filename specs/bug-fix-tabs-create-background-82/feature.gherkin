@@ -1,6 +1,6 @@
 # File: tests/features/82-fix-tabs-create-background.feature
 #
-# Generated from: .claude/specs/82-fix-tabs-create-background/requirements.md
+# Generated from: specs/82-fix-tabs-create-background/requirements.md
 # Issue: #82
 # Type: Defect regression
 

@@ -1,6 +1,6 @@
 # File: tests/features/perf-record.feature
 #
-# Generated from: .claude/specs/76-fix-perf-cross-invocation-state-loss/requirements.md
+# Generated from: specs/76-fix-perf-cross-invocation-state-loss/requirements.md
 # Issue: #76
 # Type: Defect regression
 

@@ -1,6 +1,6 @@
 # File: tests/features/146-console-read-runtime-messages.feature
 #
-# Generated from: .claude/specs/146-console-read-runtime-messages/requirements.md
+# Generated from: specs/146-console-read-runtime-messages/requirements.md
 # Issue: #146
 
 Feature: Console Read Runtime Messages

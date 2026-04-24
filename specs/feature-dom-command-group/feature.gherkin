@@ -1,6 +1,6 @@
 # File: tests/features/149-dom-command-group.feature
 #
-# Generated from: .claude/specs/149-dom-command-group/requirements.md
+# Generated from: specs/149-dom-command-group/requirements.md
 # Issue: #149
 
 Feature: DOM command group

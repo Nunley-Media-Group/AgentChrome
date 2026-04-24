@@ -1,6 +1,6 @@
 # File: tests/features/emulate.feature
 #
-# Generated from: .claude/specs/21-device-network-viewport-emulation/requirements.md
+# Generated from: specs/21-device-network-viewport-emulation/requirements.md
 # Issue: #21
 
 Feature: Device, network, and viewport emulation

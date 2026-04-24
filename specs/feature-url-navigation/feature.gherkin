@@ -1,6 +1,6 @@
 # File: tests/features/url-navigation.feature
 #
-# Generated from: .claude/specs/8-url-navigation/requirements.md
+# Generated from: specs/8-url-navigation/requirements.md
 # Issue: #8
 
 Feature: URL Navigation

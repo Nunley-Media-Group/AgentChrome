@@ -5,7 +5,7 @@
 **Status**: Approved
 **Author**: Claude
 **Severity**: High
-**Related Spec**: `.claude/specs/12-screenshot-capture/`
+**Related Spec**: `specs/12-screenshot-capture/`
 
 ---
 

@@ -1,6 +1,6 @@
 # File: tests/features/dialog-timeout-fix.feature
 #
-# Generated from: .claude/specs/86-fix-dialog-commands-timeout-with-open-dialog/requirements.md
+# Generated from: specs/86-fix-dialog-commands-timeout-with-open-dialog/requirements.md
 # Issue: #86
 # Type: Defect regression
 

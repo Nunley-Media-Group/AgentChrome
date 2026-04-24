@@ -1,6 +1,6 @@
 # File: tests/features/examples-strategies.feature
 #
-# Generated from: .claude/specs/feature-add-interaction-strategy-guide-to-examples-command/requirements.md
+# Generated from: specs/feature-add-interaction-strategy-guide-to-examples-command/requirements.md
 # Issue: #201
 
 Feature: Interaction Strategy Guide in Examples Command

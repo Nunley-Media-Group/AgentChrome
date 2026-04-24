@@ -1,6 +1,6 @@
 # File: tests/features/page-element.feature
 #
-# Generated from: .claude/specs/feature-add-page-element-command-for-targeted-element-state-queries-by-uid/requirements.md
+# Generated from: specs/feature-add-page-element-command-for-targeted-element-state-queries-by-uid/requirements.md
 # Issue: #165
 
 Feature: Page element command

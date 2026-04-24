@@ -1,6 +1,6 @@
 # File: tests/features/74-fix-emulate-status-inaccurate-state.feature
 #
-# Generated from: .claude/specs/74-fix-emulate-status-inaccurate-state/requirements.md
+# Generated from: specs/74-fix-emulate-status-inaccurate-state/requirements.md
 # Issue: #74
 # Type: Defect regression
 

@@ -1,6 +1,6 @@
 # File: tests/features/accessibility-tree-snapshot.feature
 #
-# Generated from: .claude/specs/10-accessibility-tree-snapshot/requirements.md
+# Generated from: specs/10-accessibility-tree-snapshot/requirements.md
 # Issue: #10
 
 Feature: Accessibility tree snapshot

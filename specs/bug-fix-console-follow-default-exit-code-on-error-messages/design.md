@@ -55,7 +55,7 @@ This is the minimal correct fix:
 | `src/cli/mod.rs` (`Follow` subcommand doc attributes) | Expand `long_about` and `after_long_help` to describe default monitoring behavior and `--fail-on-error` assertion mode, with at least one worked example for each | FR3 / AC3 |
 | `src/console.rs` (`execute_follow` post-loop decision) | Change the `if saw_errors` branch to `if args.fail_on_error && saw_errors` | FR1 / FR2 — flip default, preserve opt-in |
 | `src/examples/commands.rs` | Add an `ExampleEntry` for `agentchrome console follow --fail-on-error --timeout 10000` with a short description | FR3 / AC3 |
-| `README.md`, `docs/claude-code.md` | Update any narrative text that implies `console follow` exits non-zero on errors by default | FR3 — keep user-facing docs consistent |
+| `README.md`, `docs/codex.md` | Update any narrative text that implies `console follow` exits non-zero on errors by default | FR3 — keep user-facing docs consistent |
 
 ### Blast Radius
 

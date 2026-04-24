@@ -1,6 +1,6 @@
 # File: tests/features/keyboard.feature
 #
-# Generated from: .claude/specs/15-keyboard-input/requirements.md
+# Generated from: specs/15-keyboard-input/requirements.md
 # Issue: #15
 
 Feature: Keyboard Input

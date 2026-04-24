@@ -1,6 +1,6 @@
 # File: tests/features/skill-command-group.feature
 #
-# Generated from: .claude/specs/feature-add-agentchrome-skill-command-group/requirements.md
+# Generated from: specs/feature-add-agentchrome-skill-command-group/requirements.md
 # Issue: #172
 
 Feature: Skill command group for agentic tool integration

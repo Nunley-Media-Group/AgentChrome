@@ -1,6 +1,6 @@
 # File: tests/features/144-fix-spa-same-document-navigate-timeout.feature
 #
-# Generated from: .claude/specs/144-fix-spa-same-document-navigate-timeout/requirements.md
+# Generated from: specs/144-fix-spa-same-document-navigate-timeout/requirements.md
 # Issue: #144
 # Type: Defect regression
 

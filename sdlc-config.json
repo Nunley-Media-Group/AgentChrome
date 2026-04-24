@@ -1,8 +1,8 @@
 {
-  "projectPath": "/Volumes/Fast Brick/source/repos/agentchrome",
-  "pluginsPath": "/Users/rnunley/.claude/plugins/cache/nmg-plugins/nmg-sdlc/1.54.2",
-  "pluginRoot": "/Users/rnunley/.claude/plugins/cache/nmg-plugins/nmg-sdlc/1.54.2",
-  "model": "opus",
+  "projectPath": "/Volumes/Fast Brick/source/repos/AgentChrome",
+  "pluginsPath": "/Users/rnunley/.codex/plugins/cache/nmg-plugins/nmg-sdlc/1.59.0",
+  "pluginRoot": "/Users/rnunley/.codex/plugins/cache/nmg-plugins/nmg-sdlc/1.59.0",
+  "model": "gpt-5.4",
   "discordChannelId": "",
   "logDir": "",
   "maxLogDiskUsageMB": 500,

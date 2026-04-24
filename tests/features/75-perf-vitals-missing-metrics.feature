@@ -1,6 +1,6 @@
 # File: tests/features/75-perf-vitals-missing-metrics.feature
 #
-# Generated from: .claude/specs/75-fix-perf-vitals-missing-metrics/requirements.md
+# Generated from: specs/75-fix-perf-vitals-missing-metrics/requirements.md
 # Issue: #75
 # Type: Defect regression
 

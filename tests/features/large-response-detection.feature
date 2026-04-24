@@ -1,6 +1,6 @@
 # File: tests/features/large-response-detection.feature
 #
-# Generated from: .claude/specs/feature-add-large-response-detection-with-guided-search-and-full-response-override/requirements.md
+# Generated from: specs/feature-add-large-response-detection-with-guided-search-and-full-response-override/requirements.md
 # Issue: #168
 
 Feature: Large Response Detection with Guided Search and Full-Response Override

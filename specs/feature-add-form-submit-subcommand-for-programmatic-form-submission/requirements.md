@@ -19,7 +19,7 @@
 
 The `form` command group provides `fill`, `fill-many`, `clear`, and `upload` for form interaction, but has no `submit` subcommand. Currently, agents must submit forms by either clicking a submit button (`interact click css:#submit-button`) or pressing Enter on a focused field (`interact key Enter`). While these workarounds are viable for most cases, a dedicated `form submit` command would be more ergonomic and reliable — especially for forms with no visible submit button, AJAX-only submissions, or cases where the submit button is dynamically rendered.
 
-The related original form feature spec is at `.claude/specs/16-form-input-and-filling/`, which explicitly lists "Form submission" as out of scope.
+The related original form feature spec is at `specs/16-form-input-and-filling/`, which explicitly lists "Form submission" as out of scope.
 
 ---
 

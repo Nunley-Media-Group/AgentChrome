@@ -1,6 +1,6 @@
 # File: tests/features/man-page-generation.feature
 #
-# Generated from: .claude/specs/27-man-page-generation/requirements.md
+# Generated from: specs/27-man-page-generation/requirements.md
 # Issue: #27
 
 Feature: Man Page Generation

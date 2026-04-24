@@ -3,7 +3,7 @@
 **Issues**: #162
 **Date**: 2026-03-16
 **Status**: Planning
-**Author**: Claude
+**Author**: Codex
 
 ---
 
@@ -90,18 +90,18 @@
 
 ### T005: Update built-in help documentation and examples
 
-**File(s)**: `src/examples.rs`, `docs/claude-code.md`
+**File(s)**: `src/examples.rs`, `docs/codex.md`
 **Type**: Modify
 **Depends**: T002
 **Acceptance**:
 - [ ] `src/examples.rs` — add a compact snapshot example entry (e.g., `"agentchrome page snapshot --compact"` with description `"Compact snapshot — interactive and landmark elements only"`)
-- [ ] `docs/claude-code.md` — "Efficiency Tips" section updated to mention `--compact` for reducing token consumption
-- [ ] `docs/claude-code.md` — "Best Practices" section updated: recommend `--compact` for AI agents, mention `--include-snapshot --compact` combination
-- [ ] `docs/claude-code.md` — "Recommended Workflow Loops" section updated: show `page snapshot --compact` in the snapshot-interact-snapshot loop
-- [ ] `docs/claude-code.md` — at least one example conversation snippet uses `--compact`
+- [ ] `docs/codex.md` — "Efficiency Tips" section updated to mention `--compact` for reducing token consumption
+- [ ] `docs/codex.md` — "Best Practices" section updated: recommend `--compact` for AI agents, mention `--include-snapshot --compact` combination
+- [ ] `docs/codex.md` — "Recommended Workflow Loops" section updated: show `page snapshot --compact` in the snapshot-interact-snapshot loop
+- [ ] `docs/codex.md` — at least one example conversation snippet uses `--compact`
 - [ ] No existing examples broken or removed
 
-**Notes**: The Claude Code integration guide is the primary documentation AI agents read. Recommending `--compact` there directly impacts adoption.
+**Notes**: The Codex integration guide is the primary documentation AI agents read. Recommending `--compact` there directly impacts adoption.
 
 ---
 

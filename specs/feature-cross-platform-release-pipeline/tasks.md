@@ -207,7 +207,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ### T007: Create BDD feature file for release pipeline
 
-**File(s)**: `.claude/specs/2-cross-platform-release-pipeline/feature.gherkin`
+**File(s)**: `specs/2-cross-platform-release-pipeline/feature.gherkin`
 **Type**: Create
 **Depends**: T002, T005
 **Acceptance**:

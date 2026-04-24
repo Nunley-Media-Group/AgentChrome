@@ -1,6 +1,6 @@
 # File: tests/features/145-fix-navigate-timeout.feature
 #
-# Generated from: .claude/specs/145-fix-navigate-timeout/requirements.md
+# Generated from: specs/145-fix-navigate-timeout/requirements.md
 # Issue: #145
 # Type: Defect regression
 

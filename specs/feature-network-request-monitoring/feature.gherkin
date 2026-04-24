@@ -1,6 +1,6 @@
 # File: tests/features/network.feature
 #
-# Generated from: .claude/specs/19-network-request-monitoring/requirements.md
+# Generated from: specs/19-network-request-monitoring/requirements.md
 # Issue: #19
 
 Feature: Network request monitoring

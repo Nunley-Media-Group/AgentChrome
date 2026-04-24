@@ -1,17 +1,17 @@
-# Design: Claude Code Integration Guide
+# Design: Codex Integration Guide
 
 **Issue**: #31
 **Date**: 2026-02-14
 **Status**: Draft
-**Author**: Claude (nmg-sdlc)
+**Author**: Codex (nmg-sdlc)
 
 ---
 
 ## Overview
 
-This feature creates two new documentation files and updates the README to provide comprehensive Claude Code integration guidance. The primary deliverable is `docs/claude-code.md` — a guide explaining how to use agentchrome with Claude Code, covering discovery, workflows, best practices, error handling, and an example conversation. The secondary deliverable is `examples/CLAUDE.md.example` — a drop-in template that developers can copy into their projects.
+This feature creates two new documentation files and updates the README to provide comprehensive Codex integration guidance. The primary deliverable is `docs/codex.md` — a guide explaining how to use agentchrome with Codex, covering discovery, workflows, best practices, error handling, and an example conversation. The secondary deliverable is `examples/AGENTS.md.example` — a drop-in template that developers can copy into their projects.
 
-This is a documentation-only change. No Rust code, CLI commands, or binary changes are required. The existing minimal "Claude Code Integration" section in README.md (lines 265-288) will be replaced with a concise summary that links to the full guide.
+This is a documentation-only change. No Rust code, CLI commands, or binary changes are required. The existing minimal "Codex Integration" section in README.md (lines 265-288) will be replaced with a concise summary that links to the full guide.
 
 ---
 
@@ -22,13 +22,13 @@ This is a documentation-only change. No Rust code, CLI commands, or binary chang
 ```
 agentchrome/
 ├── docs/
-│   └── claude-code.md              # NEW — Full integration guide
+│   └── codex.md              # NEW — Full integration guide
 ├── examples/
-│   └── CLAUDE.md.example           # NEW — Drop-in CLAUDE.md template
+│   └── AGENTS.md.example           # NEW — Drop-in AGENTS.md template
 └── README.md                       # MODIFIED — Replace inline section with link
 ```
 
-### Document Structure: `docs/claude-code.md`
+### Document Structure: `docs/codex.md`
 
 ```
 1. Introduction
@@ -36,13 +36,13 @@ agentchrome/
    - Prerequisites (agentchrome installed, Chrome available)
 
 2. Discovery & Setup
-   - How Claude Code discovers agentchrome (PATH, --help)
+   - How Codex discovers agentchrome (PATH, --help)
    - Machine-readable discovery via `capabilities` command
    - Learning commands via `examples` subcommand
    - Setup checklist
 
-3. CLAUDE.md Template
-   - Reference to examples/CLAUDE.md.example
+3. AGENTS.md Template
+   - Reference to examples/AGENTS.md.example
    - How to customize for your project
 
 4. Common Workflows
@@ -77,7 +77,7 @@ agentchrome/
    - Use `console follow` / `network follow` for debugging
 
 9. Example Conversation
-   - Multi-turn Claude Code session debugging a web app
+   - Multi-turn Codex session debugging a web app
    - Shows realistic command usage and output parsing
 
 10. Reference
@@ -86,7 +86,7 @@ agentchrome/
     - Link to man pages
 ```
 
-### Document Structure: `examples/CLAUDE.md.example`
+### Document Structure: `examples/AGENTS.md.example`
 
 ```
 # Browser Automation
@@ -108,14 +108,14 @@ Brief intro: this project uses agentchrome
 
 ### README.md Changes
 
-Replace lines 265-288 (current "Claude Code Integration" section) with:
+Replace lines 265-288 (current "Codex Integration" section) with:
 
 ```markdown
-## Claude Code Integration
+## Codex Integration
 
 agentchrome is designed for AI agent consumption. See the full
-[Claude Code Integration Guide](docs/claude-code.md) for workflows,
-best practices, and a drop-in [CLAUDE.md template](examples/CLAUDE.md.example).
+[Codex Integration Guide](docs/codex.md) for workflows,
+best practices, and a drop-in [AGENTS.md template](examples/AGENTS.md.example).
 ```
 
 ---
@@ -149,7 +149,7 @@ None.
 | Option | Description | Pros | Cons | Decision |
 |--------|-------------|------|------|----------|
 | **A: Expand README inline** | Add all content directly to README.md | Single file, easy to find | README already long (~320 lines); bloats the main file | Rejected — README is already comprehensive |
-| **B: Dedicated docs/ guide + example template** | `docs/claude-code.md` + `examples/CLAUDE.md.example` | Keeps README focused; guide is linkable; template is copy-pasteable | Two new directories to create | **Selected** — matches issue's acceptance criteria |
+| **B: Dedicated docs/ guide + example template** | `docs/codex.md` + `examples/AGENTS.md.example` | Keeps README focused; guide is linkable; template is copy-pasteable | Two new directories to create | **Selected** — matches issue's acceptance criteria |
 | **C: mdBook or doc site** | Generate a full documentation site | Searchable, navigable | Over-engineered for one guide; adds build dependency | Rejected — premature complexity |
 
 ---
@@ -189,7 +189,7 @@ Since this is a documentation feature, BDD tests will verify:
 |------|------------|--------|------------|
 | Commands in guide become stale as CLI evolves | Medium | Medium | Reference `agentchrome capabilities` and `agentchrome examples` as canonical sources; note in guide that these commands are always up-to-date |
 | Example conversation output doesn't match real CLI output | Low | Low | Keep example conversation output realistic but clearly marked as illustrative |
-| CLAUDE.md template too verbose or too terse | Low | Medium | Balance: include essential commands with brief explanations; link to full guide for details |
+| AGENTS.md template too verbose or too terse | Low | Medium | Balance: include essential commands with brief explanations; link to full guide for details |
 
 ---
 

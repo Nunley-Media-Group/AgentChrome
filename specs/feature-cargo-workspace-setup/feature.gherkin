@@ -1,6 +1,6 @@
-# File: .claude/specs/1-cargo-workspace-setup/feature.gherkin
+# File: specs/1-cargo-workspace-setup/feature.gherkin
 #
-# Generated from: .claude/specs/1-cargo-workspace-setup/requirements.md
+# Generated from: specs/1-cargo-workspace-setup/requirements.md
 # Issue: #1
 
 Feature: Cargo workspace setup, linting, license, and README scaffold

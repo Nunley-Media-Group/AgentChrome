@@ -1,6 +1,6 @@
 # File: tests/features/shell-completions.feature
 #
-# Generated from: .claude/specs/25-shell-completions-generation/requirements.md
+# Generated from: specs/25-shell-completions-generation/requirements.md
 # Issue: #25
 
 Feature: Shell completions generation

@@ -1,25 +1,25 @@
-# Requirements: Claude Code Integration Guide
+# Requirements: Codex Integration Guide
 
 **Issue**: #31
 **Date**: 2026-02-14
 **Status**: Draft
-**Author**: Claude (nmg-sdlc)
+**Author**: Codex (nmg-sdlc)
 
 ---
 
 ## User Story
 
-**As a** developer using Claude Code for browser automation
-**I want** a comprehensive integration guide and CLAUDE.md template for agentchrome
-**So that** Claude Code can immediately discover and effectively use agentchrome to automate Chrome in my projects
+**As a** developer using Codex for browser automation
+**I want** a comprehensive integration guide and AGENTS.md template for agentchrome
+**So that** Codex can immediately discover and effectively use agentchrome to automate Chrome in my projects
 
 ---
 
 ## Background
 
-agentchrome is built primarily for AI agent consumption. Claude Code reads CLAUDE.md files to understand project tools. Currently the README has a minimal "Claude Code Integration" section (~20 lines), but there is no dedicated guide explaining discovery patterns, recommended workflows, error handling best practices, or a drop-in CLAUDE.md template.
+agentchrome is built primarily for AI agent consumption. Codex reads AGENTS.md files to understand project tools. Currently the README has a minimal "Codex Integration" section (~20 lines), but there is no dedicated guide explaining discovery patterns, recommended workflows, error handling best practices, or a drop-in AGENTS.md template.
 
-A well-crafted integration guide will make agentchrome immediately useful to Claude Code users — this is a key differentiator for the project. The guide should leverage agentchrome's existing AI-friendly features: the `capabilities` manifest, the `examples` subcommand, JSON output, and accessibility-tree-based interaction model.
+A well-crafted integration guide will make agentchrome immediately useful to Codex users — this is a key differentiator for the project. The guide should leverage agentchrome's existing AI-friendly features: the `capabilities` manifest, the `examples` subcommand, JSON output, and accessibility-tree-based interaction model.
 
 ---
 
@@ -29,26 +29,26 @@ A well-crafted integration guide will make agentchrome immediately useful to Cla
 
 **Given** a developer has installed agentchrome
 **When** they read the integration guide
-**Then** it explains how Claude Code discovers agentchrome (PATH, `--help`, `capabilities` command)
+**Then** it explains how Codex discovers agentchrome (PATH, `--help`, `capabilities` command)
 **And** it provides a step-by-step setup checklist
 
 **Example**:
 - Given: agentchrome is installed at `/usr/local/bin/agentchrome`
-- When: the developer reads `docs/claude-code.md`
+- When: the developer reads `docs/codex.md`
 - Then: they see instructions for verifying PATH availability, using `agentchrome capabilities` for machine-readable discovery, and `agentchrome examples` for learning commands
 
-### AC2: CLAUDE.md template is provided as a drop-in example
+### AC2: AGENTS.md template is provided as a drop-in example
 
-**Given** a developer wants to enable Claude Code browser automation in their project
-**When** they copy the CLAUDE.md template into their project
+**Given** a developer wants to enable Codex browser automation in their project
+**When** they copy the AGENTS.md template into their project
 **Then** the template contains correct agentchrome commands for common operations
 **And** the template includes the recommended workflow loop (snapshot → interact → verify)
 **And** the template references key commands: `capabilities`, `examples`, `page snapshot`, `interact`, `form fill`
 
 **Example**:
-- Given: the file `examples/CLAUDE.md.example` exists
-- When: the developer copies it to their project as `CLAUDE.md` (or appends to existing)
-- Then: Claude Code can read it and understand how to use agentchrome for browser automation
+- Given: the file `examples/AGENTS.md.example` exists
+- When: the developer copies it to their project as `AGENTS.md` (or appends to existing)
+- Then: Codex can read it and understand how to use agentchrome for browser automation
 
 ### AC3: Common workflow patterns are documented
 
@@ -64,7 +64,7 @@ A well-crafted integration guide will make agentchrome immediately useful to Cla
 
 ### AC4: Efficient usage tips minimize round-trips
 
-**Given** a developer wants Claude Code to use agentchrome efficiently
+**Given** a developer wants Codex to use agentchrome efficiently
 **When** they read the tips section
 **Then** the guide explains batch commands (`form fill-many`), minimizing round-trips, using `--wait-until` to avoid race conditions, and using `--timeout` to prevent hangs
 **And** the guide explains when to use `page snapshot` vs `page text` vs `page screenshot`
@@ -78,9 +78,9 @@ A well-crafted integration guide will make agentchrome immediately useful to Cla
 
 ### AC6: Example conversation demonstrates real-world usage
 
-**Given** a developer wants to see Claude Code using agentchrome in practice
+**Given** a developer wants to see Codex using agentchrome in practice
 **When** they read the example conversation section
-**Then** they see a realistic multi-turn example showing Claude Code debugging a web app
+**Then** they see a realistic multi-turn example showing Codex debugging a web app
 **And** the example uses actual agentchrome commands with realistic output
 
 ### AC7: Best practices for AI agents are documented
@@ -100,19 +100,19 @@ A well-crafted integration guide will make agentchrome immediately useful to Cla
 ### Generated Gherkin Preview
 
 ```gherkin
-Feature: Claude Code Integration Guide
-  As a developer using Claude Code for browser automation
-  I want a comprehensive integration guide and CLAUDE.md template
-  So that Claude Code can immediately discover and use agentchrome
+Feature: Codex Integration Guide
+  As a developer using Codex for browser automation
+  I want a comprehensive integration guide and AGENTS.md template
+  So that Codex can immediately discover and use agentchrome
 
   Scenario: Integration guide covers discovery mechanisms
     Given a developer has installed agentchrome
-    When they read the integration guide at "docs/claude-code.md"
-    Then it explains how Claude Code discovers agentchrome via PATH and capabilities
+    When they read the integration guide at "docs/codex.md"
+    Then it explains how Codex discovers agentchrome via PATH and capabilities
     And it provides a step-by-step setup checklist
 
-  Scenario: CLAUDE.md template is provided as a drop-in example
-    Given the file "examples/CLAUDE.md.example" exists in the repository
+  Scenario: AGENTS.md template is provided as a drop-in example
+    Given the file "examples/AGENTS.md.example" exists in the repository
     When a developer copies it into their project
     Then it contains correct agentchrome commands for common operations
     And it includes the recommended workflow loop
@@ -135,7 +135,7 @@ Feature: Claude Code Integration Guide
   Scenario: Example conversation demonstrates real-world usage
     Given the integration guide contains an "Example Conversation" section
     When a developer reads the example
-    Then it shows a realistic multi-turn Claude Code session with agentchrome
+    Then it shows a realistic multi-turn Codex session with agentchrome
 
   Scenario: Best practices for AI agents are documented
     Given the integration guide contains a "Best Practices" section
@@ -154,13 +154,13 @@ Feature: Claude Code Integration Guide
 
 | ID | Requirement | Priority | Notes |
 |----|-------------|----------|-------|
-| FR1 | Integration guide document at `docs/claude-code.md` | Must | Comprehensive guide with all sections from AC1-AC8 |
-| FR2 | CLAUDE.md template at `examples/CLAUDE.md.example` | Must | Drop-in template with key commands and workflow loop |
-| FR3 | Discovery section: PATH, --help, capabilities, examples | Must | How Claude Code finds and learns agentchrome |
+| FR1 | Integration guide document at `docs/codex.md` | Must | Comprehensive guide with all sections from AC1-AC8 |
+| FR2 | AGENTS.md template at `examples/AGENTS.md.example` | Must | Drop-in template with key commands and workflow loop |
+| FR3 | Discovery section: PATH, --help, capabilities, examples | Must | How Codex finds and learns agentchrome |
 | FR4 | Common workflows: test, scrape, debug, form automation | Must | Complete command sequences for each |
 | FR5 | Efficiency tips: batch commands, minimize round-trips | Must | Practical optimization advice |
 | FR6 | Error handling patterns: exit codes, recovery strategies | Must | AI-agent-focused error handling |
-| FR7 | Example conversation showing Claude Code + agentchrome | Should | Realistic multi-turn debugging session |
+| FR7 | Example conversation showing Codex + agentchrome | Should | Realistic multi-turn debugging session |
 | FR8 | Best practices checklist for AI agent usage | Must | Consolidated do/don't list |
 | FR9 | Update README.md to link to the integration guide | Should | Replace minimal existing section with link |
 | FR10 | Workflow loop diagrams (snapshot → interact → verify) | Should | Visual representation of recommended loops |
@@ -208,8 +208,8 @@ Not applicable — no data storage or API changes.
 
 ## Out of Scope
 
-- Video/GIF demos of Claude Code using agentchrome (noted in issue as aspirational)
-- Automated testing of the CLAUDE.md template with Claude Code itself
+- Video/GIF demos of Codex using agentchrome (noted in issue as aspirational)
+- Automated testing of the AGENTS.md template with Codex itself
 - Changes to agentchrome binary or commands
 - Integration guides for other AI agents (Copilot, Cursor, etc.)
 - Tutorials for non-AI-agent users (covered by README and man pages)
@@ -222,7 +222,7 @@ Not applicable — no data storage or API changes.
 |--------|--------|-------------|
 | All acceptance criteria from issue #31 covered | 100% | Checklist review |
 | Commands in guide are accurate and runnable | 100% | Manual verification against `agentchrome capabilities` output |
-| CLAUDE.md template contains all key commands | Yes | Template includes capabilities, examples, snapshot, interact, form fill |
+| AGENTS.md template contains all key commands | Yes | Template includes capabilities, examples, snapshot, interact, form fill |
 | Guide is parseable by AI agents | Yes | Structured markdown with code blocks |
 
 ---

@@ -59,9 +59,9 @@ agentchrome/
 │   └── src/
 │       └── main.rs            # `cargo xtask man` — generates man pages from clap
 ├── docs/
-│   └── claude-code.md         # Claude Code integration guide
+│   └── codex.md               # Codex integration guide
 ├── examples/
-│   └── CLAUDE.md.example      # Template CLAUDE.md for users
+│   └── AGENTS.md.example      # Template AGENTS.md for users
 ├── .github/
 │   ├── workflows/
 │   │   ├── ci.yml             # CI pipeline (build, test, lint, fmt)
@@ -184,5 +184,5 @@ use crate::cli::Command;
 
 ## References
 
-- `.claude/steering/product.md` for product direction
-- `.claude/steering/tech.md` for technical standards
+- `steering/product.md` for product direction
+- `steering/tech.md` for technical standards

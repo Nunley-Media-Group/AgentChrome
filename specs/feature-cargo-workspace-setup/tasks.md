@@ -234,7 +234,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ### T009: Create BDD feature file
 
-**File(s)**: `.claude/specs/1-cargo-workspace-setup/feature.gherkin`
+**File(s)**: `specs/1-cargo-workspace-setup/feature.gherkin`
 **Type**: Create
 **Depends**: T008
 **Acceptance**:

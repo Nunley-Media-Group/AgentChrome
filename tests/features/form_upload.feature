@@ -1,6 +1,6 @@
 # File: tests/features/form_upload.feature
 #
-# Generated from: .claude/specs/23-file-upload-to-page-elements/requirements.md
+# Generated from: specs/23-file-upload-to-page-elements/requirements.md
 # Issue: #23
 
 Feature: File upload to page elements

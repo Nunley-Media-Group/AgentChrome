@@ -1,6 +1,6 @@
 # File: tests/features/83-fix-snapshot-ignored-nodes.feature
 #
-# Generated from: .claude/specs/83-fix-snapshot-ignored-nodes/requirements.md
+# Generated from: specs/83-fix-snapshot-ignored-nodes/requirements.md
 # Issue: #83
 # Type: Defect regression
 

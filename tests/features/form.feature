@@ -1,6 +1,6 @@
 # File: tests/features/form.feature
 #
-# Generated from: .claude/specs/16-form-input-and-filling/requirements.md
+# Generated from: specs/16-form-input-and-filling/requirements.md
 # Issue: #16
 
 Feature: Form input and filling

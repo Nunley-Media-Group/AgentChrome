@@ -1,6 +1,6 @@
 # File: tests/features/js-execution.feature
 #
-# Generated from: .claude/specs/13-javascript-execution/requirements.md
+# Generated from: specs/13-javascript-execution/requirements.md
 # Issues: #13, #183
 
 Feature: JavaScript execution in page context

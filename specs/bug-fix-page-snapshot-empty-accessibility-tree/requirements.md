@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude
 **Severity**: Critical
-**Related Spec**: `.claude/specs/10-accessibility-tree-snapshot/`
+**Related Spec**: `specs/10-accessibility-tree-snapshot/`
 
 ---
 

@@ -1,6 +1,6 @@
 # File: tests/features/wait-until-click.feature
 #
-# Generated from: .claude/specs/feature-wait-until-flag-interact-click-click-at-spa-aware-waiting/requirements.md
+# Generated from: specs/feature-wait-until-flag-interact-click-click-at-spa-aware-waiting/requirements.md
 # Issue: #148
 
 Feature: Wait-until flag for interact click commands

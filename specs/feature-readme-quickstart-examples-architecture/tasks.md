@@ -3,7 +3,7 @@
 **Issue**: #28
 **Date**: 2026-02-14
 **Status**: Planning
-**Author**: Claude (writing-specs)
+**Author**: Codex (writing-specs)
 
 ---
 
@@ -133,14 +133,14 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 - [ ] Mentions session management (connect/disconnect, session file)
 - [ ] Notes performance characteristics (native Rust, fast startup)
 
-### T009: Write Claude Code Integration, Contributing, and License sections
+### T009: Write Codex Integration, Contributing, and License sections
 
 **File(s)**: `README.md`
 **Type**: Modify
 **Depends**: T002
 **Acceptance**:
-- [ ] Claude Code section explains AI agent usage
-- [ ] Claude Code section includes example CLAUDE.md snippet
+- [ ] Codex section explains AI agent usage
+- [ ] Codex section includes example AGENTS.md snippet
 - [ ] Contributing section has: prerequisites (Rust, Chrome), build command, test command, lint commands
 - [ ] License section states dual MIT/Apache-2.0 with links to both files
 
@@ -212,7 +212,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 **Type**: Modify
 **Depends**: T002, T003, T004, T005, T006, T007, T008, T009
 **Acceptance**:
-- [ ] All sections present in correct order (Header → Features → Installation → Quick Start → Usage Examples → Command Reference → Architecture → Claude Code → Contributing → License)
+- [ ] All sections present in correct order (Header → Features → Installation → Quick Start → Usage Examples → Command Reference → Architecture → Codex → Contributing → License)
 - [ ] No broken Markdown links
 - [ ] Collapsible sections render correctly
 - [ ] Total README under 500 lines

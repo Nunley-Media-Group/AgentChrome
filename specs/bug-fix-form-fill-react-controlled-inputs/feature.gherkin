@@ -1,6 +1,6 @@
 # File: tests/features/161-fix-form-fill-react-controlled-inputs.feature
 #
-# Generated from: .claude/specs/bug-fix-form-fill-react-controlled-inputs/requirements.md
+# Generated from: specs/bug-fix-form-fill-react-controlled-inputs/requirements.md
 # Issue: #161
 # Type: Defect regression
 

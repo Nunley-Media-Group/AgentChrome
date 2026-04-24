@@ -1,6 +1,6 @@
 # File: tests/features/coordinate-drag-decomposed-mouse.feature
 #
-# Generated from: .claude/specs/feature-add-coordinate-drag-and-decomposed-mouse-actions/requirements.md
+# Generated from: specs/feature-add-coordinate-drag-and-decomposed-mouse-actions/requirements.md
 # Issue: #194
 
 Feature: Coordinate-based Drag and Decomposed Mouse Actions

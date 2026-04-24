@@ -1,6 +1,6 @@
 # File: tests/features/scroll.feature
 #
-# Generated from: .claude/specs/17-scroll-interactions/requirements.md
+# Generated from: specs/17-scroll-interactions/requirements.md
 # Issue: #17
 
 Feature: Scroll Interactions

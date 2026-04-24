@@ -3,7 +3,7 @@
 **Issue**: #26
 **Date**: 2026-02-14
 **Status**: Approved
-**Author**: Claude (automated)
+**Author**: Codex (automated)
 
 ---
 
@@ -17,7 +17,7 @@
 
 ## Background
 
-agentchrome's primary consumer is Claude Code and other AI agents. The `--help` output is the primary discovery mechanism for understanding what the CLI can do. Currently, the CLI has short `about` strings and `long_about` paragraphs at the command-group level, but lacks `after_help` / `after_long_help` sections with usage examples, exit code documentation, quick-start workflows, and detailed leaf-command descriptions that explain return values and how commands compose together.
+agentchrome's primary consumer is Codex and other AI agents. The `--help` output is the primary discovery mechanism for understanding what the CLI can do. Currently, the CLI has short `about` strings and `long_about` paragraphs at the command-group level, but lacks `after_help` / `after_long_help` sections with usage examples, exit code documentation, quick-start workflows, and detailed leaf-command descriptions that explain return values and how commands compose together.
 
 This feature adds comprehensive help text using clap's `about`, `long_about`, `after_help`, and `after_long_help` attributes so that an agent reading `agentchrome --help` or `agentchrome <cmd> --help` knows exactly what each command does, what parameters it takes, what it returns, and how to combine commands for common workflows.
 

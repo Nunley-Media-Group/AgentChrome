@@ -1,6 +1,6 @@
 # File: tests/features/examples.feature
 #
-# Generated from: .claude/specs/29-built-in-examples-subcommand/requirements.md
+# Generated from: specs/29-built-in-examples-subcommand/requirements.md
 # Issue: #29
 
 Feature: Built-in Examples Subcommand

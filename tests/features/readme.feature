@@ -1,6 +1,6 @@
 # File: tests/features/readme.feature
 #
-# Generated from: .claude/specs/28-readme-quickstart-examples-architecture/requirements.md
+# Generated from: specs/28-readme-quickstart-examples-architecture/requirements.md
 # Issue: #28
 
 Feature: README documentation
@@ -119,13 +119,13 @@ Feature: README documentation
     When I read the "Architecture" section
     Then it mentions "Rust" or "native" in the context of performance
 
-  # --- Claude Code Integration ---
+  # --- Codex Integration ---
 
-  Scenario: Claude Code integration guide
-    When I read the "Claude Code" section
-    Then it explains how to use agentchrome with Claude Code
-    And it links to "docs/claude-code.md"
-    And it links to "examples/CLAUDE.md.example"
+  Scenario: Codex integration guide
+    When I read the "Codex" section
+    Then it explains how to use agentchrome with Codex
+    And it links to "docs/codex.md"
+    And it links to "examples/AGENTS.md.example"
 
   # --- Contributing ---
 

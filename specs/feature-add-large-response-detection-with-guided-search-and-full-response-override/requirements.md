@@ -17,7 +17,7 @@
 
 ## Background
 
-AI agents (Claude Code, MCP clients) have finite context windows. When agentchrome commands return large responses — accessibility trees (1–10 MB), full page text, JS execution results, or network listings — the agent must consume the entire JSON output before processing it. This wastes context budget and reduces effectiveness.
+AI agents (Codex, MCP clients) have finite context windows. When agentchrome commands return large responses — accessibility trees (1–10 MB), full page text, JS execution results, or network listings — the agent must consume the entire JSON output before processing it. This wastes context budget and reduces effectiveness.
 
 Currently, commands have piecemeal truncation: `page snapshot` hard-caps at 10,000 nodes with `"truncated": true` metadata, `network get` truncates response bodies at 10 KB inline, `js exec` has an optional `--max-size` flag, and `page screenshot` warns on stderr for large base64 output. There is no unified cross-command threshold detection, no structured guidance object, no `--search` filtering flag, and no `--full-response` override.
 

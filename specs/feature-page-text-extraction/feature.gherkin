@@ -1,6 +1,6 @@
 # File: tests/features/page-text-extraction.feature
 #
-# Generated from: .claude/specs/9-page-text-extraction/requirements.md
+# Generated from: specs/9-page-text-extraction/requirements.md
 # Issue: #9
 
 Feature: Page text extraction

@@ -1,6 +1,6 @@
-# File: .claude/specs/2-cross-platform-release-pipeline/feature.gherkin
+# File: specs/2-cross-platform-release-pipeline/feature.gherkin
 #
-# Generated from: .claude/specs/2-cross-platform-release-pipeline/requirements.md
+# Generated from: specs/2-cross-platform-release-pipeline/requirements.md
 # Issue: #2
 
 Feature: Cross-platform release pipeline

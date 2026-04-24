@@ -1,6 +1,6 @@
 # File: tests/features/102-fix-network-list-empty-array.feature
 #
-# Generated from: .claude/specs/102-fix-network-list-empty-array/requirements.md
+# Generated from: specs/102-fix-network-list-empty-array/requirements.md
 # Issue: #102
 # Type: Defect regression
 

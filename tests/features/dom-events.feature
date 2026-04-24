@@ -1,6 +1,6 @@
 # File: tests/features/dom-events.feature
 #
-# Generated from: .claude/specs/feature-add-dom-events-command-for-event-listener-introspection/requirements.md
+# Generated from: specs/feature-add-dom-events-command-for-event-listener-introspection/requirements.md
 # Issue: #192
 
 Feature: DOM Events Command

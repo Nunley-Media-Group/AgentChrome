@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude
 **Severity**: Medium
-**Related Spec**: `.claude/specs/21-device-network-viewport-emulation/`
+**Related Spec**: `specs/21-device-network-viewport-emulation/`
 
 ---
 

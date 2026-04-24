@@ -2,7 +2,7 @@
 
 **Date**: 2026-02-13
 **Issue**: #15
-**Reviewer**: Claude Code
+**Reviewer**: Codex
 **Scope**: Implementation verification against spec
 
 ---

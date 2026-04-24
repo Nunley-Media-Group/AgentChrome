@@ -1,6 +1,6 @@
 # File: tests/features/element-finding.feature
 #
-# Generated from: .claude/specs/11-element-finding/requirements.md
+# Generated from: specs/11-element-finding/requirements.md
 # Issue: #11
 
 Feature: Element finding by text, CSS selector, and accessibility attributes

@@ -1,6 +1,6 @@
 # File: tests/features/cookie-management.feature
 #
-# Generated from: .claude/specs/feature-add-cookie-management-command-group/requirements.md
+# Generated from: specs/feature-add-cookie-management-command-group/requirements.md
 # Issue: #164
 
 Feature: Cookie Management

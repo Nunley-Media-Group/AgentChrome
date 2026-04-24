@@ -1,6 +1,6 @@
 # File: tests/features/form-fill-aria-combobox.feature
 #
-# Generated from: .claude/specs/feature-enhance-form-fill-to-handle-aria-combobox-elements/requirements.md
+# Generated from: specs/feature-enhance-form-fill-to-handle-aria-combobox-elements/requirements.md
 # Issue: #196
 
 Feature: Form Fill ARIA Combobox Support

@@ -2,12 +2,11 @@
 name: executing-e2e-test
 description: "Build debug binary, run end-to-end CLI tests against a real website, file defect issues for all findings."
 disable-model-invocation: true
-allowed-tools: Read, Glob, Grep, Bash(cargo build:*), Bash(kill:*), Bash(pkill:*), Bash(pgrep:*)
 ---
 
 # Executing End-to-End Tests
 
-Build the debug binary, run every CLI command against a real website (google.com) in headless mode, identify defects through actual usage, and file GitHub issues for all findings using `/creating-issues`.
+Build the debug binary, run every CLI command against a real website (google.com) in headless mode, identify defects through actual usage, and file GitHub issues for all findings.
 
 ## When to Use
 
@@ -23,15 +22,15 @@ Build the debug binary, run every CLI command against a real website (google.com
 4. **Use spec files** for expected behavior — don't look at GitHub issues
 5. **Build debug** — use the debug binary for richer diagnostics
 6. **Monitor output** — capture and display all stdout/stderr for root cause analysis
-7. **Use `/creating-issues`** — invoke the existing skill for each defect found
+7. **File an issue for each defect** — use the repository's normal GitHub issue workflow
 
 ## Workflow
 
 ### Step 1: Read Spec Files for Command Inventory
 
-1. Use `Glob` for `.claude/specs/*/requirements.md` and read each spec to build an inventory of all CLI commands and subcommands
-2. Read `.claude/steering/product.md` for the product vision and feature list
-3. Read `.claude/steering/tech.md` for build instructions and test standards
+1. Search `specs/*/requirements.md` and read each relevant spec to build an inventory of all CLI commands and subcommands
+2. Read `steering/product.md` for the product vision and feature list
+3. Read `steering/tech.md` for build instructions and test standards
 4. Compile a complete list of command groups and their expected behaviors
 
 ### Step 2: Build Debug Binary
@@ -98,7 +97,7 @@ For each failure or unexpected behavior:
 
 ### Step 7: File Defect Issues
 
-For each finding from Step 5, invoke `/creating-issues` with:
+For each finding from Step 5, file a GitHub issue with:
 
 - A description of the defect
 - The root cause analysis from Step 5

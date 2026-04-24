@@ -1,9 +1,9 @@
-# Tasks: Claude Code Integration Guide
+# Tasks: Codex Integration Guide
 
 **Issue**: #31
 **Date**: 2026-02-14
 **Status**: Planning
-**Author**: Claude (nmg-sdlc)
+**Author**: Codex (nmg-sdlc)
 
 ---
 
@@ -13,7 +13,7 @@
 |-------|-------|--------|
 | Setup | 1 | [ ] |
 | Content — Integration Guide | 4 | [ ] |
-| Content — CLAUDE.md Template | 1 | [ ] |
+| Content — AGENTS.md Template | 1 | [ ] |
 | Integration — README Update | 1 | [ ] |
 | Testing | 2 | [ ] |
 | **Total** | **9** | |
@@ -60,11 +60,11 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ### T002: Write integration guide — Introduction and Discovery sections
 
-**File(s)**: `docs/claude-code.md`
+**File(s)**: `docs/codex.md`
 **Type**: Create
 **Depends**: T001
 **Acceptance**:
-- [ ] File exists at `docs/claude-code.md`
+- [ ] File exists at `docs/codex.md`
 - [ ] Contains Introduction section explaining agentchrome is built for AI agents
 - [ ] Contains Discovery & Setup section covering PATH, `--help`, `capabilities`, `examples`
 - [ ] Contains a step-by-step setup checklist
@@ -74,7 +74,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ### T003: Write integration guide — Workflow and Efficiency sections
 
-**File(s)**: `docs/claude-code.md`
+**File(s)**: `docs/codex.md`
 **Type**: Modify
 **Depends**: T002
 **Acceptance**:
@@ -86,7 +86,7 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ### T004: Write integration guide — Error Handling and Best Practices sections
 
-**File(s)**: `docs/claude-code.md`
+**File(s)**: `docs/codex.md`
 **Type**: Modify
 **Depends**: T002
 **Acceptance**:
@@ -97,11 +97,11 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ### T005: Write integration guide — Example Conversation and Reference sections
 
-**File(s)**: `docs/claude-code.md`
+**File(s)**: `docs/codex.md`
 **Type**: Modify
 **Depends**: T003, T004
 **Acceptance**:
-- [ ] Contains "Example Conversation" section showing a realistic multi-turn Claude Code session
+- [ ] Contains "Example Conversation" section showing a realistic multi-turn Codex session
 - [ ] Example demonstrates: connecting, navigating, taking snapshot, interacting with elements, verifying results
 - [ ] Example shows error handling and recovery
 - [ ] Contains "Reference" section linking to `agentchrome capabilities`, `agentchrome examples`, and man pages
@@ -109,15 +109,15 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ---
 
-## Phase 3: Content — CLAUDE.md Template
+## Phase 3: Content — AGENTS.md Template
 
-### T006: Create CLAUDE.md example template
+### T006: Create AGENTS.md example template
 
-**File(s)**: `examples/CLAUDE.md.example`
+**File(s)**: `examples/AGENTS.md.example`
 **Type**: Create
 **Depends**: T001
 **Acceptance**:
-- [ ] File exists at `examples/CLAUDE.md.example`
+- [ ] File exists at `examples/AGENTS.md.example`
 - [ ] Contains "Browser Automation" header with project intro
 - [ ] Contains Quick Start with: connect, navigate, snapshot, screenshot commands
 - [ ] Contains Key Commands section with: `capabilities`, `examples`, `page snapshot`, `interact click`, `form fill`
@@ -188,16 +188,16 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ## Phase 4: Integration — README Update
 
-### T007: Update README.md Claude Code Integration section
+### T007: Update README.md Codex Integration section
 
 **File(s)**: `README.md`
 **Type**: Modify
 **Depends**: T002, T006
 **Acceptance**:
-- [ ] Existing "Claude Code Integration" section (lines 265-288) is replaced
+- [ ] Existing "Codex Integration" section (lines 265-288) is replaced
 - [ ] New section contains a brief summary (2-3 sentences)
-- [ ] Links to `docs/claude-code.md` for the full guide
-- [ ] Links to `examples/CLAUDE.md.example` for the template
+- [ ] Links to `docs/codex.md` for the full guide
+- [ ] Links to `examples/AGENTS.md.example` for the template
 - [ ] No broken markdown links
 - [ ] Surrounding sections (Architecture above, Contributing below) are unaffected
 
@@ -239,7 +239,7 @@ T001 (setup dirs)
  │     ├──▶ T004 (guide: errors + best practices)
  │     │     └──▶ T005
  │     └──▶ T007 (README update)
- └──▶ T006 (CLAUDE.md template)
+ └──▶ T006 (AGENTS.md template)
        └──▶ T007
 
 T005, T006, T007 ──▶ T008 (BDD feature file) ──▶ T009 (step definitions)

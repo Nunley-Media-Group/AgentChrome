@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude
 **Severity**: Critical
-**Related Spec**: `.claude/specs/20-browser-dialog-handling/`
+**Related Spec**: `specs/20-browser-dialog-handling/`
 
 ---
 

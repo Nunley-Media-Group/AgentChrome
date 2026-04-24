@@ -11,9 +11,9 @@ target/
 # Test fixtures
 tests/fixtures/
 
-# Claude local settings
-.claude/settings.local.json
-.claude/sdlc-state.json
+# Codex local settings
+.codex/settings.local.json
+.codex/sdlc-state.json
 
 # SDLC runner config
 sdlc-config.json
@@ -21,7 +21,7 @@ sdlc-config.json
 # OS files
 .DS_Store
 Thumbs.db
-.claude/auto-mode
+.codex/auto-mode
 
 # SDLC runner artifacts
-.claude/unattended-mode
+.codex/unattended-mode

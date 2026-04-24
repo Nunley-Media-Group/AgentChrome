@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude
 **Severity**: High
-**Related Spec**: `.claude/specs/8-url-navigation/`
+**Related Spec**: `specs/8-url-navigation/`
 
 ---
 

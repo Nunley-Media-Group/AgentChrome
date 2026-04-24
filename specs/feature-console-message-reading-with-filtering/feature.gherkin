@@ -1,6 +1,6 @@
 # File: tests/features/console.feature
 #
-# Generated from: .claude/specs/18-console-message-reading-with-filtering/requirements.md
+# Generated from: specs/18-console-message-reading-with-filtering/requirements.md
 # Issue: #18
 
 Feature: Console Message Reading with Filtering

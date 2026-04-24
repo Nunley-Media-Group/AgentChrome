@@ -17,7 +17,7 @@
 
 ## Background
 
-The `dom` command is listed in `agentchrome --help` with a full description but returns `{"error":"dom: not yet implemented","code":1}` when invoked. The placeholder was originally defined in the CLI skeleton (spec `.claude/specs/3-cli-skeleton/`) and given help text in spec `.claude/specs/26-comprehensive-help-text/`. The closely related `page find` command (spec `.claude/specs/11-element-finding/`) provides accessibility-tree-based element finding but not raw DOM manipulation.
+The `dom` command is listed in `agentchrome --help` with a full description but returns `{"error":"dom: not yet implemented","code":1}` when invoked. The placeholder was originally defined in the CLI skeleton (spec `specs/3-cli-skeleton/`) and given help text in spec `specs/26-comprehensive-help-text/`. The closely related `page find` command (spec `specs/11-element-finding/`) provides accessibility-tree-based element finding but not raw DOM manipulation.
 
 During hands-on testing of https://www.saucedemo.com/, agents had to use `js exec "document.querySelector(...)"` for all DOM queries. The CDP protocol provides direct DOM methods (`DOM.querySelector`, `DOM.querySelectorAll`, `DOM.getAttributes`, `DOM.getOuterHTML`, `DOM.setAttributeValue`, `DOM.removeNode`, `CSS.getComputedStyleForNode`) that map naturally to CLI subcommands. Implementing the `dom` group fills the gap between the accessibility-tree-based `page find`/`page snapshot` commands and raw `js exec`, giving agents structured, type-safe DOM operations.
 
@@ -25,9 +25,9 @@ During hands-on testing of https://www.saucedemo.com/, agents had to use `js exe
 
 | Spec | Relationship |
 |------|-------------|
-| `.claude/specs/3-cli-skeleton/` | Originally defined the `Dom` command variant as a placeholder |
-| `.claude/specs/11-element-finding/` | Implements `page find` — accessibility-tree-based element finding; complementary to DOM queries |
-| `.claude/specs/26-comprehensive-help-text/` | Defined the `dom` command help text (to be updated by this spec) |
+| `specs/3-cli-skeleton/` | Originally defined the `Dom` command variant as a placeholder |
+| `specs/11-element-finding/` | Implements `page find` — accessibility-tree-based element finding; complementary to DOM queries |
+| `specs/26-comprehensive-help-text/` | Defined the `dom` command help text (to be updated by this spec) |
 
 ---
 

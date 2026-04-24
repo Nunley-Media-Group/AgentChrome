@@ -1,6 +1,6 @@
 # File: tests/features/134-fix-dialog-info-wrong-type-empty-message.feature
 #
-# Generated from: .claude/specs/134-fix-dialog-info-wrong-type-empty-message/requirements.md
+# Generated from: specs/134-fix-dialog-info-wrong-type-empty-message/requirements.md
 # Issue: #134
 # Type: Defect regression
 

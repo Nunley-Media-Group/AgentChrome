@@ -1,6 +1,6 @@
 # File: tests/features/media-control.feature
 #
-# Generated from: .claude/specs/feature-add-media-control-commands/requirements.md
+# Generated from: specs/feature-add-media-control-commands/requirements.md
 # Issue: #193
 
 Feature: Media Control Commands

@@ -3,7 +3,7 @@
 **Issue**: #28
 **Date**: 2026-02-14
 **Status**: Approved
-**Author**: Claude (writing-specs)
+**Author**: Codex (writing-specs)
 
 ---
 
@@ -28,7 +28,7 @@ README.md
 ├── Usage Examples (collapsible workflows)
 ├── Command Reference (table of all commands)
 ├── Architecture (CDP diagram, session model)
-├── Claude Code Integration (CLAUDE.md snippet)
+├── Codex Integration (AGENTS.md snippet)
 ├── Contributing (dev setup, testing, style)
 └── License (dual MIT/Apache-2.0)
 ```
@@ -135,10 +135,10 @@ Brief descriptions of:
 - Session management (connect, persistent session file)
 - Output model (JSON to stdout, errors to stderr, exit codes)
 
-### Claude Code Integration Section
+### Codex Integration Section
 
 - Brief explanation of agentchrome as a tool for AI agents
-- Example CLAUDE.md snippet showing how to configure agentchrome in a project
+- Example AGENTS.md snippet showing how to configure agentchrome in a project
 - Common AI agent workflows (screenshot → analyze, navigate → extract text)
 
 ### Contributing Section

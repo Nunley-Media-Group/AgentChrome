@@ -1,6 +1,6 @@
 # File: tests/features/101-fix-disconnect-process-not-killed.feature
 #
-# Generated from: .claude/specs/101-fix-disconnect-process-not-killed/requirements.md
+# Generated from: specs/101-fix-disconnect-process-not-killed/requirements.md
 # Issue: #101
 # Type: Defect regression
 

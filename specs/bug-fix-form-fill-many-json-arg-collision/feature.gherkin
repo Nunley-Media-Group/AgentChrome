@@ -1,6 +1,6 @@
 # File: tests/features/form.feature (append to existing)
 #
-# Generated from: .claude/specs/84-fix-form-fill-many-json-arg-collision/requirements.md
+# Generated from: specs/84-fix-form-fill-many-json-arg-collision/requirements.md
 # Issue: #84
 # Type: Defect regression
 

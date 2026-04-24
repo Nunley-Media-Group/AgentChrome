@@ -1,6 +1,6 @@
 # File: tests/features/help-text.feature
 #
-# Generated from: .claude/specs/26-comprehensive-help-text/requirements.md
+# Generated from: specs/26-comprehensive-help-text/requirements.md
 # Issue: #26
 
 Feature: Comprehensive help text

@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude
 **Severity**: Medium
-**Related Spec**: `.claude/specs/144-fix-spa-same-document-navigate-timeout/`
+**Related Spec**: `specs/144-fix-spa-same-document-navigate-timeout/`
 
 ---
 

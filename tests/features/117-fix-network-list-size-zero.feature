@@ -1,6 +1,6 @@
 # File: tests/features/117-fix-network-list-size-zero.feature
 #
-# Generated from: .claude/specs/117-fix-network-list-size-zero/requirements.md
+# Generated from: specs/117-fix-network-list-size-zero/requirements.md
 # Issue: #117
 # Type: Defect regression
 

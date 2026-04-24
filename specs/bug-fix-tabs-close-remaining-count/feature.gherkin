@@ -1,6 +1,6 @@
 # File: tests/features/120-fix-tabs-close-remaining-count.feature
 #
-# Generated from: .claude/specs/120-fix-tabs-close-remaining-count/requirements.md
+# Generated from: specs/120-fix-tabs-close-remaining-count/requirements.md
 # Issue: #120
 # Type: Defect regression
 

@@ -3,7 +3,7 @@
 **Issue**: #28
 **Date**: 2026-02-14
 **Status**: Approved
-**Author**: Claude (writing-specs)
+**Author**: Codex (writing-specs)
 
 ---
 
@@ -93,12 +93,12 @@ The agentchrome project has grown into a feature-rich CLI tool with 15+ major co
 **And** it describes the session management model
 **And** it mentions key performance characteristics (native Rust binary, fast startup)
 
-### AC8: Claude Code Integration section
+### AC8: Codex Integration section
 
 **Given** the README.md file exists
-**When** a user reads the Claude Code Integration section
-**Then** it explains how to use agentchrome with Claude Code for AI-assisted browser automation
-**And** it provides an example CLAUDE.md snippet
+**When** a user reads the Codex Integration section
+**Then** it explains how to use agentchrome with Codex for AI-assisted browser automation
+**And** it provides an example AGENTS.md snippet
 
 ### AC9: Contributing section with development setup
 
@@ -174,11 +174,11 @@ Feature: README documentation
     Then it contains a diagram showing CDP communication
     And it describes session management
 
-  Scenario: Claude Code integration guide
+  Scenario: Codex integration guide
     Given the README.md file exists
-    When I read the Claude Code Integration section
-    Then it explains usage with Claude Code
-    And it provides a CLAUDE.md example snippet
+    When I read the Codex Integration section
+    Then it explains usage with Codex
+    And it provides a AGENTS.md example snippet
 
   Scenario: Contributing guide
     Given the README.md file exists
@@ -211,7 +211,7 @@ Feature: README documentation
 | FR5 | Usage Examples with common workflows | Must | Screenshot, text, JS, forms, network |
 | FR6 | Command Reference table covering all 15+ commands | Must | |
 | FR7 | Architecture section with CDP diagram | Must | |
-| FR8 | Claude Code Integration section | Should | |
+| FR8 | Codex Integration section | Should | |
 | FR9 | Contributing section with dev setup | Should | |
 | FR10 | License section | Must | |
 | FR11 | Collapsible sections for lengthy content | Should | `<details>` tags |

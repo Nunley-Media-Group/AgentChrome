@@ -1,6 +1,6 @@
 # File: tests/features/config/config.feature
 #
-# Generated from: .claude/specs/24-configuration-file-support/requirements.md
+# Generated from: specs/24-configuration-file-support/requirements.md
 # Issue: #24
 
 Feature: Configuration file support

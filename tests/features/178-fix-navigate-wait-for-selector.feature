@@ -1,6 +1,6 @@
 # File: tests/features/178-fix-navigate-wait-for-selector.feature
 #
-# Generated from: .claude/specs/bug-navigate-returns-before-spa-email-list-renders/requirements.md
+# Generated from: specs/bug-navigate-returns-before-spa-email-list-renders/requirements.md
 # Issue: #178
 # Type: Defect regression
 

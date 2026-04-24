@@ -3734,24 +3734,24 @@ fn mentions_performance_context(world: &mut ReadmeWorld, term1: String, term2: S
     );
 }
 
-#[then("it explains how to use agentchrome with Claude Code")]
-fn explains_claude_code(world: &mut ReadmeWorld) {
+#[then("it explains how to use agentchrome with Codex")]
+fn explains_codex(world: &mut ReadmeWorld) {
     let lower = world.current_section.to_lowercase();
     assert!(
-        lower.contains("claude")
+        lower.contains("codex")
             && (lower.contains("agent")
                 || lower.contains("automation")
                 || lower.contains("browser")),
-        "Section does not explain Claude Code usage"
+        "Section does not explain Codex usage"
     );
 }
 
-#[then("it contains a CLAUDE.md example snippet in a code block")]
-fn has_claude_md_snippet(world: &mut ReadmeWorld) {
+#[then("it contains a AGENTS.md example snippet in a code block")]
+fn has_agents_md_snippet(world: &mut ReadmeWorld) {
     assert!(
         world.current_section.contains("```")
-            && world.current_section.to_lowercase().contains("claude"),
-        "Section does not contain a CLAUDE.md code block snippet"
+            && world.current_section.to_lowercase().contains("agents.md"),
+        "Section does not contain a AGENTS.md code block snippet"
     );
 }
 
@@ -3789,18 +3789,18 @@ fn links_to_file(world: &mut ReadmeWorld, filename: String) {
 }
 
 // =============================================================================
-// ClaudeCodeGuideWorld — Claude Code integration guide BDD tests
+// CodexGuideWorld — Codex integration guide BDD tests
 // =============================================================================
 
 #[derive(Debug, Default, World)]
-struct ClaudeCodeGuideWorld {
+struct CodexGuideWorld {
     guide_content: String,
     template_content: String,
     readme_guide_content: String,
     current_section: String,
 }
 
-impl ClaudeCodeGuideWorld {
+impl CodexGuideWorld {
     #[allow(clippy::unused_self)]
     fn load_file(&self, relative_path: &str) -> String {
         let path = project_root().join(relative_path);
@@ -3853,16 +3853,16 @@ impl ClaudeCodeGuideWorld {
 // --- Given steps ---
 
 #[given(expr = "the file {string} exists in the repository")]
-fn guide_file_exists(world: &mut ClaudeCodeGuideWorld, filename: String) {
+fn guide_file_exists(world: &mut CodexGuideWorld, filename: String) {
     let path = project_root().join(&filename);
     assert!(
         path.exists(),
         "{filename} does not exist at {}",
         path.display()
     );
-    if filename.contains("docs/claude-code.md") {
+    if filename.contains("docs/codex.md") {
         world.guide_content = world.load_file(&filename);
-    } else if filename.contains("CLAUDE.md.example") {
+    } else if filename.contains("AGENTS.md.example") {
         world.template_content = world.load_file(&filename);
     } else if filename == "README.md" {
         world.readme_guide_content = world.load_file(&filename);
@@ -3872,7 +3872,7 @@ fn guide_file_exists(world: &mut ClaudeCodeGuideWorld, filename: String) {
 // --- When steps ---
 
 #[when("I read the integration guide")]
-fn read_guide(world: &mut ClaudeCodeGuideWorld) {
+fn read_guide(world: &mut CodexGuideWorld) {
     assert!(
         !world.guide_content.is_empty(),
         "Integration guide not loaded"
@@ -3881,7 +3881,7 @@ fn read_guide(world: &mut ClaudeCodeGuideWorld) {
 }
 
 #[when("I read the template file")]
-fn read_template(world: &mut ClaudeCodeGuideWorld) {
+fn read_template(world: &mut CodexGuideWorld) {
     assert!(
         !world.template_content.is_empty(),
         "Template file not loaded"
@@ -3890,13 +3890,13 @@ fn read_template(world: &mut ClaudeCodeGuideWorld) {
 }
 
 #[when(expr = "I read the {string} section of the guide")]
-fn read_guide_section(world: &mut ClaudeCodeGuideWorld, section: String) {
+fn read_guide_section(world: &mut CodexGuideWorld, section: String) {
     let content = if world.guide_content.is_empty() {
-        world.load_file("docs/claude-code.md")
+        world.load_file("docs/codex.md")
     } else {
         world.guide_content.clone()
     };
-    world.current_section = ClaudeCodeGuideWorld::extract_section(&content, &section);
+    world.current_section = CodexGuideWorld::extract_section(&content, &section);
     assert!(
         !world.current_section.is_empty(),
         "Section '{section}' not found in integration guide"
@@ -3904,12 +3904,11 @@ fn read_guide_section(world: &mut ClaudeCodeGuideWorld, section: String) {
 }
 
 #[when(expr = "I read the {string} section of the README")]
-fn read_readme_guide_section(world: &mut ClaudeCodeGuideWorld, section: String) {
+fn read_readme_guide_section(world: &mut CodexGuideWorld, section: String) {
     if world.readme_guide_content.is_empty() {
         world.readme_guide_content = world.load_file("README.md");
     }
-    world.current_section =
-        ClaudeCodeGuideWorld::extract_section(&world.readme_guide_content, &section);
+    world.current_section = CodexGuideWorld::extract_section(&world.readme_guide_content, &section);
     assert!(
         !world.current_section.is_empty(),
         "Section '{section}' not found in README"
@@ -3919,7 +3918,7 @@ fn read_readme_guide_section(world: &mut ClaudeCodeGuideWorld, section: String) 
 // --- Then steps: Discovery ---
 
 #[then(expr = "it contains a {string} or {string} section")]
-fn contains_section_either(world: &mut ClaudeCodeGuideWorld, name1: String, name2: String) {
+fn contains_section_either(world: &mut CodexGuideWorld, name1: String, name2: String) {
     let lower = world.current_section.to_lowercase();
     assert!(
         lower.contains(&name1.to_lowercase()) || lower.contains(&name2.to_lowercase()),
@@ -3928,7 +3927,7 @@ fn contains_section_either(world: &mut ClaudeCodeGuideWorld, name1: String, name
 }
 
 #[then(expr = "it mentions {string} for machine-readable discovery")]
-fn mentions_capabilities(world: &mut ClaudeCodeGuideWorld, cmd: String) {
+fn mentions_capabilities(world: &mut CodexGuideWorld, cmd: String) {
     assert!(
         world.current_section.contains(&cmd),
         "Guide does not mention '{cmd}'"
@@ -3936,7 +3935,7 @@ fn mentions_capabilities(world: &mut ClaudeCodeGuideWorld, cmd: String) {
 }
 
 #[then(expr = "it mentions {string} for learning commands")]
-fn mentions_examples(world: &mut ClaudeCodeGuideWorld, cmd: String) {
+fn mentions_examples(world: &mut CodexGuideWorld, cmd: String) {
     assert!(
         world.current_section.contains(&cmd),
         "Guide does not mention '{cmd}'"
@@ -3944,7 +3943,7 @@ fn mentions_examples(world: &mut ClaudeCodeGuideWorld, cmd: String) {
 }
 
 #[then("it provides a setup checklist")]
-fn provides_setup_checklist(world: &mut ClaudeCodeGuideWorld) {
+fn provides_setup_checklist(world: &mut CodexGuideWorld) {
     let lower = world.current_section.to_lowercase();
     assert!(
         lower.contains("checklist") || lower.contains("setup"),
@@ -3955,7 +3954,7 @@ fn provides_setup_checklist(world: &mut ClaudeCodeGuideWorld) {
 // --- Then steps: Template ---
 
 #[then(expr = "it contains {string} for launching Chrome")]
-fn template_has_connect(world: &mut ClaudeCodeGuideWorld, cmd: String) {
+fn template_has_connect(world: &mut CodexGuideWorld, cmd: String) {
     assert!(
         world.current_section.contains(&cmd),
         "Template does not contain '{cmd}'"
@@ -3963,7 +3962,7 @@ fn template_has_connect(world: &mut ClaudeCodeGuideWorld, cmd: String) {
 }
 
 #[then(expr = "it contains {string} for page inspection")]
-fn template_has_snapshot(world: &mut ClaudeCodeGuideWorld, cmd: String) {
+fn template_has_snapshot(world: &mut CodexGuideWorld, cmd: String) {
     assert!(
         world.current_section.contains(&cmd),
         "Template does not contain '{cmd}'"
@@ -3971,7 +3970,7 @@ fn template_has_snapshot(world: &mut ClaudeCodeGuideWorld, cmd: String) {
 }
 
 #[then(expr = "it contains {string} or {string} for interaction")]
-fn template_has_interaction(world: &mut ClaudeCodeGuideWorld, cmd1: String, cmd2: String) {
+fn template_has_interaction(world: &mut CodexGuideWorld, cmd1: String, cmd2: String) {
     assert!(
         world.current_section.contains(&cmd1) || world.current_section.contains(&cmd2),
         "Template does not contain '{cmd1}' or '{cmd2}'"
@@ -3979,7 +3978,7 @@ fn template_has_interaction(world: &mut ClaudeCodeGuideWorld, cmd1: String, cmd2
 }
 
 #[then("it contains a workflow loop description")]
-fn template_has_workflow_loop(world: &mut ClaudeCodeGuideWorld) {
+fn template_has_workflow_loop(world: &mut CodexGuideWorld) {
     let lower = world.current_section.to_lowercase();
     assert!(
         lower.contains("workflow loop") || lower.contains("workflow"),
@@ -3990,7 +3989,7 @@ fn template_has_workflow_loop(world: &mut ClaudeCodeGuideWorld) {
 // --- Then steps: Workflows ---
 
 #[then(expr = "the guide documents a {string} workflow")]
-fn guide_documents_workflow(world: &mut ClaudeCodeGuideWorld, workflow: String) {
+fn guide_documents_workflow(world: &mut CodexGuideWorld, workflow: String) {
     let lower = world.current_section.to_lowercase();
     assert!(
         lower.contains(&workflow.to_lowercase()),
@@ -4001,7 +4000,7 @@ fn guide_documents_workflow(world: &mut ClaudeCodeGuideWorld, workflow: String) 
 // --- Then steps: Workflow Loops ---
 
 #[then(expr = "the guide mentions {string} in the workflow loop")]
-fn guide_mentions_in_loop(world: &mut ClaudeCodeGuideWorld, term: String) {
+fn guide_mentions_in_loop(world: &mut CodexGuideWorld, term: String) {
     let lower = world.current_section.to_lowercase();
     assert!(
         lower.contains(&term.to_lowercase()),
@@ -4012,7 +4011,7 @@ fn guide_mentions_in_loop(world: &mut ClaudeCodeGuideWorld, term: String) {
 // --- Then steps: Efficiency ---
 
 #[then(expr = "the guide mentions {string} for batch form filling")]
-fn guide_mentions_batch(world: &mut ClaudeCodeGuideWorld, cmd: String) {
+fn guide_mentions_batch(world: &mut CodexGuideWorld, cmd: String) {
     assert!(
         world.current_section.contains(&cmd),
         "Efficiency section does not mention '{cmd}'"
@@ -4020,7 +4019,7 @@ fn guide_mentions_batch(world: &mut ClaudeCodeGuideWorld, cmd: String) {
 }
 
 #[then(expr = "the guide mentions {string} to avoid race conditions")]
-fn guide_mentions_wait(world: &mut ClaudeCodeGuideWorld, flag: String) {
+fn guide_mentions_wait(world: &mut CodexGuideWorld, flag: String) {
     assert!(
         world.current_section.contains(&flag),
         "Efficiency section does not mention '{flag}'"
@@ -4028,7 +4027,7 @@ fn guide_mentions_wait(world: &mut ClaudeCodeGuideWorld, flag: String) {
 }
 
 #[then(expr = "the guide mentions {string} for content extraction")]
-fn guide_mentions_page_text(world: &mut ClaudeCodeGuideWorld, cmd: String) {
+fn guide_mentions_page_text(world: &mut CodexGuideWorld, cmd: String) {
     assert!(
         world.current_section.contains(&cmd),
         "Efficiency section does not mention '{cmd}'"
@@ -4036,7 +4035,7 @@ fn guide_mentions_page_text(world: &mut ClaudeCodeGuideWorld, cmd: String) {
 }
 
 #[then(expr = "the guide mentions {string} to prevent hangs")]
-fn guide_mentions_timeout(world: &mut ClaudeCodeGuideWorld, flag: String) {
+fn guide_mentions_timeout(world: &mut CodexGuideWorld, flag: String) {
     assert!(
         world.current_section.contains(&flag),
         "Efficiency section does not mention '{flag}'"
@@ -4046,7 +4045,7 @@ fn guide_mentions_timeout(world: &mut ClaudeCodeGuideWorld, flag: String) {
 // --- Then steps: Best Practices ---
 
 #[then(expr = "the guide recommends {string} before interaction commands")]
-fn guide_recommends_snapshot(world: &mut ClaudeCodeGuideWorld, cmd: String) {
+fn guide_recommends_snapshot(world: &mut CodexGuideWorld, cmd: String) {
     let lower = world.current_section.to_lowercase();
     assert!(
         lower.contains(&cmd.to_lowercase()),
@@ -4055,7 +4054,7 @@ fn guide_recommends_snapshot(world: &mut ClaudeCodeGuideWorld, cmd: String) {
 }
 
 #[then(expr = "the guide recommends {string} output for reliable parsing")]
-fn guide_recommends_json(world: &mut ClaudeCodeGuideWorld, format: String) {
+fn guide_recommends_json(world: &mut CodexGuideWorld, format: String) {
     let lower = world.current_section.to_lowercase();
     assert!(
         lower.contains(&format.to_lowercase()),
@@ -4064,7 +4063,7 @@ fn guide_recommends_json(world: &mut ClaudeCodeGuideWorld, format: String) {
 }
 
 #[then("the guide recommends checking exit codes")]
-fn guide_recommends_exit_codes(world: &mut ClaudeCodeGuideWorld) {
+fn guide_recommends_exit_codes(world: &mut CodexGuideWorld) {
     let lower = world.current_section.to_lowercase();
     assert!(
         lower.contains("exit code"),
@@ -4073,7 +4072,7 @@ fn guide_recommends_exit_codes(world: &mut ClaudeCodeGuideWorld) {
 }
 
 #[then(expr = "the guide recommends {string} over {string}")]
-fn guide_recommends_over(world: &mut ClaudeCodeGuideWorld, preferred: String, other: String) {
+fn guide_recommends_over(world: &mut CodexGuideWorld, preferred: String, other: String) {
     assert!(
         world.current_section.contains(&preferred) && world.current_section.contains(&other),
         "Best practices does not compare '{preferred}' over '{other}'"
@@ -4081,7 +4080,7 @@ fn guide_recommends_over(world: &mut ClaudeCodeGuideWorld, preferred: String, ot
 }
 
 #[then(expr = "the guide recommends {string} for debugging")]
-fn guide_recommends_for_debugging(world: &mut ClaudeCodeGuideWorld, cmd: String) {
+fn guide_recommends_for_debugging(world: &mut CodexGuideWorld, cmd: String) {
     assert!(
         world.current_section.contains(&cmd),
         "Best practices does not recommend '{cmd}' for debugging"
@@ -4091,7 +4090,7 @@ fn guide_recommends_for_debugging(world: &mut ClaudeCodeGuideWorld, cmd: String)
 // --- Then steps: Error Handling ---
 
 #[then("the guide documents exit code conventions")]
-fn guide_documents_exit_codes(world: &mut ClaudeCodeGuideWorld) {
+fn guide_documents_exit_codes(world: &mut CodexGuideWorld) {
     let lower = world.current_section.to_lowercase();
     assert!(
         lower.contains("exit code") && lower.contains('0'),
@@ -4100,7 +4099,7 @@ fn guide_documents_exit_codes(world: &mut ClaudeCodeGuideWorld) {
 }
 
 #[then(expr = "the guide documents {string} failure mode")]
-fn guide_documents_failure(world: &mut ClaudeCodeGuideWorld, failure: String) {
+fn guide_documents_failure(world: &mut CodexGuideWorld, failure: String) {
     let lower = world.current_section.to_lowercase();
     assert!(
         lower.contains(&failure.to_lowercase()),
@@ -4109,7 +4108,7 @@ fn guide_documents_failure(world: &mut ClaudeCodeGuideWorld, failure: String) {
 }
 
 #[then("the guide provides recovery strategies")]
-fn guide_provides_recovery(world: &mut ClaudeCodeGuideWorld) {
+fn guide_provides_recovery(world: &mut CodexGuideWorld) {
     let lower = world.current_section.to_lowercase();
     assert!(
         lower.contains("recovery") || lower.contains("retry") || lower.contains("re-snapshot"),
@@ -4120,7 +4119,7 @@ fn guide_provides_recovery(world: &mut ClaudeCodeGuideWorld) {
 // --- Then steps: Example Conversation ---
 
 #[then(expr = "the guide shows {string} in the example")]
-fn guide_shows_in_example(world: &mut ClaudeCodeGuideWorld, cmd: String) {
+fn guide_shows_in_example(world: &mut CodexGuideWorld, cmd: String) {
     assert!(
         world.current_section.contains(&cmd),
         "Example conversation does not show '{cmd}'"
@@ -4128,7 +4127,7 @@ fn guide_shows_in_example(world: &mut ClaudeCodeGuideWorld, cmd: String) {
 }
 
 #[then("the guide shows a form fill or interaction command in the example")]
-fn guide_shows_interaction_in_example(world: &mut ClaudeCodeGuideWorld) {
+fn guide_shows_interaction_in_example(world: &mut CodexGuideWorld) {
     assert!(
         world.current_section.contains("form fill")
             || world.current_section.contains("interact click"),
@@ -4137,7 +4136,7 @@ fn guide_shows_interaction_in_example(world: &mut ClaudeCodeGuideWorld) {
 }
 
 #[then("the guide shows verification of the result in the example")]
-fn guide_shows_verification(world: &mut ClaudeCodeGuideWorld) {
+fn guide_shows_verification(world: &mut CodexGuideWorld) {
     let lower = world.current_section.to_lowercase();
     assert!(
         lower.contains("verify") || lower.contains("verif") || lower.contains("page snapshot"),
@@ -4148,7 +4147,7 @@ fn guide_shows_verification(world: &mut ClaudeCodeGuideWorld) {
 // --- Then steps: README Integration ---
 
 #[then(expr = "the README contains a link to {string}")]
-fn readme_links_to_guide(world: &mut ClaudeCodeGuideWorld, target: String) {
+fn readme_links_to_guide(world: &mut CodexGuideWorld, target: String) {
     assert!(
         world.current_section.contains(&target),
         "README section does not link to '{target}'"
@@ -4820,7 +4819,7 @@ impl SkillWorld {
 // --- Skill Given steps ---
 
 #[given("an agentic coding tool environment is active with env var \"CLAUDE_CODE\" set")]
-fn skill_claude_code_env_set(world: &mut SkillWorld) {
+fn skill_codex_env_set(world: &mut SkillWorld) {
     let path = binary_path();
     assert!(path.exists(), "Binary not found at {}", path.display());
     world.binary_path = Some(path);
@@ -6170,8 +6169,8 @@ async fn main() {
     // README documentation — all scenarios are file-parsing tests (no Chrome needed).
     ReadmeWorld::run("tests/features/readme.feature").await;
 
-    // Claude Code integration guide — all scenarios are file-parsing tests (no Chrome needed).
-    ClaudeCodeGuideWorld::run("tests/features/claude-code-guide.feature").await;
+    // Codex integration guide — all scenarios are file-parsing tests (no Chrome needed).
+    CodexGuideWorld::run("tests/features/codex-guide.feature").await;
 
     // Page screenshot UID fix (issue #115) — all scenarios require a running Chrome instance
     // for page snapshot and screenshot/JS execution. The feature file documents regression

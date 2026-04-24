@@ -1,6 +1,6 @@
 # File: tests/features/iframe-frame-targeting.feature
 #
-# Generated from: .claude/specs/feature-add-iframe-frame-targeting-support/requirements.md
+# Generated from: specs/feature-add-iframe-frame-targeting-support/requirements.md
 # Issue: #189
 
 Feature: Iframe/Frame Targeting Support

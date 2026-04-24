@@ -35,7 +35,7 @@
 
 ### T002: Add Regression Test
 
-**File(s)**: `.claude/specs/102-fix-network-list-empty-array/feature.gherkin`, `tests/features/network.feature`
+**File(s)**: `specs/102-fix-network-list-empty-array/feature.gherkin`, `tests/features/network.feature`
 **Type**: Create / Modify
 **Depends**: T001
 **Acceptance**:

@@ -1,6 +1,6 @@
 # File: tests/features/cdp-websocket-client.feature
 #
-# Generated from: .claude/specs/4-cdp-websocket-client/requirements.md
+# Generated from: specs/4-cdp-websocket-client/requirements.md
 # Issue: #4
 
 Feature: CDP WebSocket Client

@@ -1,20 +1,20 @@
-Feature: Claude Code Integration Guide
-  As a developer using Claude Code for browser automation
-  I want a comprehensive integration guide and CLAUDE.md template
-  So that Claude Code can immediately discover and use agentchrome
+Feature: Codex Integration Guide
+  As a developer using Codex for browser automation
+  I want a comprehensive integration guide and AGENTS.md template
+  So that Codex can immediately discover and use agentchrome
 
   # --- File Existence ---
 
   Scenario: Integration guide exists and covers discovery mechanisms
-    Given the file "docs/claude-code.md" exists in the repository
+    Given the file "docs/codex.md" exists in the repository
     When I read the integration guide
     Then it contains a "Discovery" or "Setup" section
     And it mentions "agentchrome capabilities" for machine-readable discovery
     And it mentions "agentchrome examples" for learning commands
     And it provides a setup checklist
 
-  Scenario: CLAUDE.md template is provided as a drop-in example
-    Given the file "examples/CLAUDE.md.example" exists in the repository
+  Scenario: AGENTS.md template is provided as a drop-in example
+    Given the file "examples/AGENTS.md.example" exists in the repository
     When I read the template file
     Then it contains "agentchrome connect" for launching Chrome
     And it contains "agentchrome page snapshot" for page inspection
@@ -24,7 +24,7 @@ Feature: Claude Code Integration Guide
   # --- Workflow Documentation ---
 
   Scenario: Common workflow patterns are documented
-    Given the file "docs/claude-code.md" exists in the repository
+    Given the file "docs/codex.md" exists in the repository
     When I read the "Common Workflows" section of the guide
     Then the guide documents a "Testing Web Apps" workflow
     And the guide documents a "Scraping Data" workflow
@@ -32,7 +32,7 @@ Feature: Claude Code Integration Guide
     And the guide documents a "Form Automation" workflow
 
   Scenario: Recommended workflow loops are documented
-    Given the file "docs/claude-code.md" exists in the repository
+    Given the file "docs/codex.md" exists in the repository
     When I read the "Recommended Workflow Loops" section of the guide
     Then the guide mentions "snapshot" in the workflow loop
     And the guide mentions "interact" in the workflow loop
@@ -41,7 +41,7 @@ Feature: Claude Code Integration Guide
   # --- Efficiency and Best Practices ---
 
   Scenario: Efficient usage tips minimize round-trips
-    Given the file "docs/claude-code.md" exists in the repository
+    Given the file "docs/codex.md" exists in the repository
     When I read the "Efficiency Tips" section of the guide
     Then the guide mentions "form fill-many" for batch form filling
     And the guide mentions "--wait-until" to avoid race conditions
@@ -49,7 +49,7 @@ Feature: Claude Code Integration Guide
     And the guide mentions "--timeout" to prevent hangs
 
   Scenario: Best practices for AI agents are documented
-    Given the file "docs/claude-code.md" exists in the repository
+    Given the file "docs/codex.md" exists in the repository
     When I read the "Best Practices" section of the guide
     Then the guide recommends "page snapshot" before interaction commands
     And the guide recommends "json" output for reliable parsing
@@ -61,7 +61,7 @@ Feature: Claude Code Integration Guide
   # --- Error Handling ---
 
   Scenario: Error handling patterns for AI agents
-    Given the file "docs/claude-code.md" exists in the repository
+    Given the file "docs/codex.md" exists in the repository
     When I read the "Error Handling" section of the guide
     Then the guide documents exit code conventions
     And the guide documents "ConnectionError" failure mode
@@ -72,7 +72,7 @@ Feature: Claude Code Integration Guide
   # --- Example Conversation ---
 
   Scenario: Example conversation demonstrates real-world usage
-    Given the file "docs/claude-code.md" exists in the repository
+    Given the file "docs/codex.md" exists in the repository
     When I read the "Example Conversation" section of the guide
     Then the guide shows "agentchrome connect" in the example
     And the guide shows "agentchrome page snapshot" in the example
@@ -83,6 +83,6 @@ Feature: Claude Code Integration Guide
 
   Scenario: README links to the full integration guide
     Given the file "README.md" exists in the repository
-    When I read the "Claude Code Integration" section of the README
-    Then the README contains a link to "docs/claude-code.md"
-    And the README contains a link to "examples/CLAUDE.md.example"
+    When I read the "Codex Integration" section of the README
+    Then the README contains a link to "docs/codex.md"
+    And the README contains a link to "examples/AGENTS.md.example"

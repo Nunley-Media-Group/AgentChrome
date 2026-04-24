@@ -83,7 +83,7 @@ Do NOT modify these files during SDLC steps unless the issue explicitly requires
 
 - `.gitignore` — managed by the project owner
 - `Cargo.lock` — updated only by `cargo` commands, never edited directly
-- `.claude/` contents — managed by the SDLC runner
+- `.codex/` contents — managed by Codex and the SDLC runner
 
 ---
 
@@ -392,5 +392,5 @@ For a compact snapshot feature, the fixture might include:
 
 ## References
 
-- `.claude/steering/product.md` for product direction
-- `.claude/steering/structure.md` for code organization
+- `steering/product.md` for product direction
+- `steering/structure.md` for code organization

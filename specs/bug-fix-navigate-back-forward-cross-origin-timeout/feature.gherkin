@@ -1,6 +1,6 @@
 # File: tests/features/cross-origin-history-navigation.feature
 #
-# Generated from: .claude/specs/72-fix-navigate-back-forward-cross-origin-timeout/requirements.md
+# Generated from: specs/72-fix-navigate-back-forward-cross-origin-timeout/requirements.md
 # Issue: #72
 # Type: Defect regression
 

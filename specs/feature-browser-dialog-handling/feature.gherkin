@@ -1,6 +1,6 @@
 # File: tests/features/dialog.feature
 #
-# Generated from: .claude/specs/20-browser-dialog-handling/requirements.md
+# Generated from: specs/20-browser-dialog-handling/requirements.md
 # Issue: #20
 
 Feature: Browser Dialog Handling

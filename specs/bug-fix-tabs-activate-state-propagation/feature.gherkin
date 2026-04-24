@@ -1,6 +1,6 @@
 # File: tests/features/122-fix-tabs-activate-state-propagation.feature
 #
-# Generated from: .claude/specs/122-fix-tabs-activate-state-propagation/requirements.md
+# Generated from: specs/122-fix-tabs-activate-state-propagation/requirements.md
 # Issue: #122
 # Type: Defect regression
 

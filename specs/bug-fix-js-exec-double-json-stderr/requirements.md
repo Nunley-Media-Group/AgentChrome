@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude
 **Severity**: Medium
-**Related Spec**: `.claude/specs/13-javascript-execution/`
+**Related Spec**: `specs/13-javascript-execution/`
 
 ---
 

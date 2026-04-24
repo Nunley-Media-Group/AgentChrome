@@ -1,6 +1,6 @@
 # File: tests/features/capabilities.feature
 #
-# Generated from: .claude/specs/30-capabilities-manifest-subcommand/requirements.md
+# Generated from: specs/30-capabilities-manifest-subcommand/requirements.md
 # Issue: #30
 
 Feature: Machine-Readable Capabilities Manifest Subcommand

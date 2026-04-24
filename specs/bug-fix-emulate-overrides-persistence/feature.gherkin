@@ -1,6 +1,6 @@
 # File: tests/features/85-emulate-overrides-persistence.feature
 #
-# Generated from: .claude/specs/85-fix-emulate-overrides-persistence/requirements.md
+# Generated from: specs/85-fix-emulate-overrides-persistence/requirements.md
 # Issue: #85
 # Type: Defect regression
 

@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude
 **Severity**: High
-**Related Spec**: `.claude/specs/72-fix-navigate-back-forward-cross-origin-timeout/`
+**Related Spec**: `specs/72-fix-navigate-back-forward-cross-origin-timeout/`
 
 ---
 

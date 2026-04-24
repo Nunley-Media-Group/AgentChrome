@@ -33,7 +33,7 @@
 
 ### T002: Add Regression Test
 
-**File(s)**: `tests/features/element-finding.feature`, `.claude/specs/97-fix-page-find-role-standalone/feature.gherkin`
+**File(s)**: `tests/features/element-finding.feature`, `specs/97-fix-page-find-role-standalone/feature.gherkin`
 **Type**: Modify
 **Depends**: T001
 **Acceptance**:

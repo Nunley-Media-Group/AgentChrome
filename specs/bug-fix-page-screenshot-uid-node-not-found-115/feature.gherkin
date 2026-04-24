@@ -1,6 +1,6 @@
 # File: tests/features/115-fix-page-screenshot-uid-node-not-found.feature
 #
-# Generated from: .claude/specs/115-fix-page-screenshot-uid-node-not-found/requirements.md
+# Generated from: specs/115-fix-page-screenshot-uid-node-not-found/requirements.md
 # Issue: #115
 # Type: Defect regression
 

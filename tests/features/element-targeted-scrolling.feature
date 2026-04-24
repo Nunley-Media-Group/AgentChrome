@@ -1,6 +1,6 @@
 # File: tests/features/element-targeted-scrolling.feature
 #
-# Generated from: .claude/specs/feature-element-targeted-scrolling-inner-containers/requirements.md
+# Generated from: specs/feature-element-targeted-scrolling-inner-containers/requirements.md
 # Issue: #182
 
 Feature: Element-targeted scrolling for inner containers

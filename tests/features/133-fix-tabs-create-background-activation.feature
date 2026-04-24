@@ -1,6 +1,6 @@
 # File: tests/features/133-fix-tabs-create-background-activation.feature
 #
-# Generated from: .claude/specs/133-fix-tabs-create-background-activation/requirements.md
+# Generated from: specs/133-fix-tabs-create-background-activation/requirements.md
 # Issue: #133
 # Type: Defect regression
 

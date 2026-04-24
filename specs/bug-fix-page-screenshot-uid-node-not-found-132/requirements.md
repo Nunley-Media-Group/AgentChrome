@@ -5,7 +5,7 @@
 **Status**: Verified
 **Author**: Claude
 **Severity**: High
-**Related Spec**: `.claude/specs/115-fix-page-screenshot-uid-node-not-found/`
+**Related Spec**: `specs/115-fix-page-screenshot-uid-node-not-found/`
 
 ---
 

@@ -5,7 +5,7 @@
 **Status**: Approved
 **Author**: Claude (spec generation)
 **Severity**: High
-**Related Spec**: `.claude/specs/18-console-message-reading-with-filtering/`
+**Related Spec**: `specs/18-console-message-reading-with-filtering/`
 
 ---
 
@@ -79,7 +79,7 @@ No error — the command succeeds with exit code 0 but returns an empty array re
 **When** I run `console read` in a subsequent invocation
 **Then** the previously logged messages are available
 
-**Note**: This AC requires that the fix strategy replays console activity so that messages generated before the current CLI invocation are capturable. Per the retrospective learning on CDP session isolation (`.claude/steering/retrospective.md`), each CLI invocation creates a fresh CDP session with no event history — the fix must account for this.
+**Note**: This AC requires that the fix strategy replays console activity so that messages generated before the current CLI invocation are capturable. Per the retrospective learning on CDP session isolation (`steering/retrospective.md`), each CLI invocation creates a fresh CDP session with no event history — the fix must account for this.
 
 ### AC4: Console follow streaming still works
 

@@ -1,6 +1,6 @@
 # File: tests/features/diagnose.feature
 #
-# Generated from: .claude/specs/feature-add-diagnose-command-for-pre-automation-challenge-scanning/requirements.md
+# Generated from: specs/feature-add-diagnose-command-for-pre-automation-challenge-scanning/requirements.md
 # Issue: #200
 
 Feature: Diagnose Command for Pre-Automation Challenge Scanning

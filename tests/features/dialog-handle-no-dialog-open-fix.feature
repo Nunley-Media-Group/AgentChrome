@@ -1,6 +1,6 @@
 # File: tests/features/dialog-handle-no-dialog-open-fix.feature
 #
-# Generated from: .claude/specs/99-fix-dialog-handle-no-dialog-open/requirements.md
+# Generated from: specs/99-fix-dialog-handle-no-dialog-open/requirements.md
 # Issue: #99
 # Type: Defect regression
 
