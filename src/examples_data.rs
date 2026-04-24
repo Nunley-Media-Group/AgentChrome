@@ -287,6 +287,11 @@ pub fn all_examples() -> Vec<CommandGroupSummary> {
                     flags: Some(vec!["--depth".into()]),
                 },
                 ExampleEntry {
+                    cmd: "agentchrome dom tree css:table --depth 3".into(),
+                    description: "View the DOM subtree rooted at an element (positional)".into(),
+                    flags: Some(vec!["--depth".into()]),
+                },
+                ExampleEntry {
                     cmd: "agentchrome dom --frame 1 select \"css:button\"".into(),
                     description: "Query elements inside an iframe".into(),
                     flags: Some(vec!["--frame".into()]),

@@ -4,7 +4,7 @@
 .SH NAME
 tree \- Pretty\-print the DOM tree
 .SH SYNOPSIS
-\fBtree\fR [\fB\-\-depth\fR] [\fB\-\-root\fR] [\fB\-h\fR|\fB\-\-help\fR] 
+\fBtree\fR [\fB\-\-depth\fR] [\fB\-\-root\fR] [\fB\-h\fR|\fB\-\-help\fR] [\fIROOT\fR] 
 .SH DESCRIPTION
 Display the DOM tree as indented plain text. By default shows the full document tree. Use \-\-depth to limit traversal depth and \-\-root to start from a specific element.
 .SH OPTIONS
@@ -17,6 +17,9 @@ Start the tree from a specific element (node ID, UID, or CSS selector)
 .TP
 \fB\-h\fR, \fB\-\-help\fR
 Print help (see a summary with \*(Aq\-h\*(Aq)
+.TP
+[\fIROOT\fR]
+Optional target element (node ID, UID, or CSS selector). Positional form of `\-\-root`
 .SH EXTRA
 EXAMPLES:
   # Show the full DOM tree
@@ -25,7 +28,10 @@ EXAMPLES:
   # Limit depth to 3 levels
   agentchrome dom tree \-\-depth 3
 
-  # Show tree from a specific element
+  # Show tree from a specific element (positional form)
+  agentchrome dom tree css:div.content
+
+  # Show tree from a specific element (flag form)
   agentchrome dom tree \-\-root css:div.content
 .SH CAPABILITIES
 .PP
@@ -127,6 +133,9 @@ Target element (node ID, UID like 's1', or CSS selector like 'css:#el')
 .B dom tree
 Pretty-print the DOM tree
 .TP
+.B root_positional
+Optional target element (node ID, UID, or CSS selector). Positional form of `--root`
+.TP
 .B --depth
 Maximum tree depth to display
 .TP
@@ -156,6 +165,9 @@ Get the text content of an element
 .TP
 .B \`agentchrome dom tree --depth 3\`
 View the DOM tree with limited depth
+.TP
+.B \`agentchrome dom tree css:table --depth 3\`
+View the DOM subtree rooted at an element (positional)
 .TP
 .B \`agentchrome dom --frame 1 select "css:button"\`
 Query elements inside an iframe

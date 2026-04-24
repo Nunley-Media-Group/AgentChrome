@@ -5759,6 +5759,11 @@ async fn main() {
     // and a valid-parse regression case; none need a running Chrome.
     CliWorld::run("tests/features/bug-fix-dialog-handle-clap-error.feature").await;
 
+    // dom tree positional ROOT fix (issue #251) — CLI-only regression scenarios
+    // (positional parses past clap, conflict error, help text). AC1/AC2 runtime
+    // output against a real page is exercised via the manual smoke test.
+    CliWorld::run("tests/features/dom-tree-positional-root.feature").await;
+
     run_dialog_features().await;
 
     // Cookie management — only CLI-testable scenarios (argument validation) can run without Chrome.

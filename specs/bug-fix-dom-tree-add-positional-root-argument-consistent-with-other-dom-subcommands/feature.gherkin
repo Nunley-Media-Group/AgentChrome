@@ -1,0 +1,57 @@
+# File: tests/features/dom-tree-positional-root.feature
+#
+# Generated from: specs/bug-fix-dom-tree-add-positional-root-argument-consistent-with-other-dom-subcommands/requirements.md
+# Issue: #251
+# Type: Defect regression
+
+@regression
+Feature: dom tree accepts a positional ROOT argument
+  The `dom tree` subcommand previously rejected positional target arguments
+  (`agentchrome dom tree css:table` → "unexpected argument"), diverging from
+  every sibling `dom` subcommand. This was fixed by adding an optional
+  positional `ROOT` to `DomTreeArgs` that shares semantics with `--root` and
+  conflicts with it via clap's `conflicts_with`.
+
+  Background:
+    Given a headless Chrome instance is connected
+    And the browser is navigated to a fixture page containing a <table> element
+
+  # --- Bug Is Fixed ---
+
+  @regression
+  Scenario: AC1 — positional ROOT is accepted
+    When the user runs "agentchrome dom tree css:table --depth 3"
+    Then the command exits with code 0
+    And stdout contains a DOM tree rooted at a <table> element
+    And the tree traversal is limited to depth 3
+
+  # --- Related Behavior Still Works ---
+
+  @regression
+  Scenario: AC2 — --root flag still works
+    When the user runs "agentchrome dom tree --root css:table --depth 3"
+    Then the command exits with code 0
+    And stdout is identical to the output of "agentchrome dom tree css:table --depth 3"
+
+  @regression
+  Scenario: AC3 — no-argument form prints the full document tree
+    When the user runs "agentchrome dom tree"
+    Then the command exits with code 0
+    And stdout contains a DOM tree rooted at the document node
+
+  # --- Conflict Handling ---
+
+  @regression
+  Scenario: AC4 — positional and --root together produce a conflict error
+    When the user runs "agentchrome dom tree css:table --root css:div"
+    Then the command exits with a non-zero code
+    And stderr contains a clap conflict error mentioning "--root"
+
+  # --- Help Text ---
+
+  @regression
+  Scenario: AC5 — help text advertises the positional
+    When the user runs "agentchrome dom tree --help"
+    Then the command exits with code 0
+    And stdout contains "[ROOT]" in the usage line
+    And stdout contains an EXAMPLES entry that invokes "dom tree" with a positional target

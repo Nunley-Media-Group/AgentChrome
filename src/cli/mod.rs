@@ -3453,7 +3453,10 @@ EXAMPLES:
   # Limit depth to 3 levels
   agentchrome dom tree --depth 3
 
-  # Show tree from a specific element
+  # Show tree from a specific element (positional form)
+  agentchrome dom tree css:div.content
+
+  # Show tree from a specific element (flag form)
   agentchrome dom tree --root css:div.content"
     )]
     Tree(DomTreeArgs),
@@ -3561,6 +3564,10 @@ pub struct DomTreeArgs {
     /// Start the tree from a specific element (node ID, UID, or CSS selector)
     #[arg(long)]
     pub root: Option<String>,
+
+    /// Optional target element (node ID, UID, or CSS selector). Positional form of `--root`.
+    #[arg(value_name = "ROOT", conflicts_with = "root")]
+    pub root_positional: Option<String>,
 }
 
 /// Arguments for the `emulate` subcommand group.

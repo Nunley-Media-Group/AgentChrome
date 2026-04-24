@@ -127,6 +127,9 @@ Target element (node ID, UID like 's1', or CSS selector like 'css:#el')
 .B dom tree
 Pretty-print the DOM tree
 .TP
+.B root_positional
+Optional target element (node ID, UID, or CSS selector). Positional form of `--root`
+.TP
 .B --depth
 Maximum tree depth to display
 .TP
@@ -156,6 +159,9 @@ Get the text content of an element
 .TP
 .B \`agentchrome dom tree --depth 3\`
 View the DOM tree with limited depth
+.TP
+.B \`agentchrome dom tree css:table --depth 3\`
+View the DOM subtree rooted at an element (positional)
 .TP
 .B \`agentchrome dom --frame 1 select "css:button"\`
 Query elements inside an iframe
