@@ -2,7 +2,7 @@
 
 **Issue**: #265
 **Date**: 2026-04-24
-**Status**: Investigating
+**Status**: Complete
 **Author**: Codex
 **Related Spec**: `specs/feature-chrome-instance-discovery-and-launch/`
 
@@ -23,11 +23,17 @@
   - Run focused Rust tests for `chrome::launcher`.
   - Build the CLI and manually verify `connect --launch --headless` followed by a separate follow-up command succeeds.
 
-- [ ] **T004: Release and local install verification**
+- [x] **T004: Release and local install verification**
   - Bump from `1.51.1` to `1.51.2`.
   - Tag and push the release.
   - Monitor the GitHub release workflow through completion.
   - Reinstall the published crate locally and verify `agentchrome connect --launch` plus a follow-up command succeeds with the installed binary.
+
+## Verification Evidence
+
+- `v1.51.2` release workflow `24919873305` completed successfully, including crates.io publish.
+- `cargo install agentchrome --force` installed `agentchrome 1.51.2` from crates.io over local `1.51.1`.
+- Installed binary verification passed: `agentchrome connect --launch --headless` returned a live Chrome session, `agentchrome tabs list` succeeded in a separate process, DuckDuckGo navigation stayed connected, and `agentchrome console read --errors-only` returned `[]`.
 
 ---
 
@@ -46,3 +52,4 @@
 | Issue | Date | Summary |
 |-------|------|---------|
 | #265 | 2026-04-24 | Initial defect tasks |
+| #265 | 2026-04-24 | Marked release and local install verification complete |
