@@ -145,6 +145,8 @@ fn build_chrome_args(config: &LaunchConfig, data_dir: &Path) -> Vec<String> {
         "--enable-automation".to_string(),
     ];
 
+    append_platform_launch_defaults(&mut args);
+
     if config.headless {
         args.push("--headless=new".to_string());
     }
@@ -155,6 +157,19 @@ fn build_chrome_args(config: &LaunchConfig, data_dir: &Path) -> Vec<String> {
 
     args
 }
+
+fn append_platform_launch_defaults(args: &mut Vec<String>) {
+    append_macos_launch_defaults(args);
+}
+
+#[cfg(target_os = "macos")]
+fn append_macos_launch_defaults(args: &mut Vec<String>) {
+    args.push("--use-mock-keychain".to_string());
+    args.push("--password-store=basic".to_string());
+}
+
+#[cfg(not(target_os = "macos"))]
+fn append_macos_launch_defaults(_args: &mut Vec<String>) {}
 
 /// Configure Chrome so it is not tied to the launcher process group.
 ///
@@ -319,6 +334,51 @@ mod tests {
         assert!(
             args.iter().any(|a| a == "--enable-automation"),
             "Expected --enable-automation in args: {args:?}"
+        );
+    }
+
+    #[test]
+    fn explicit_extra_args_are_preserved_after_defaults() {
+        let mut config = default_launch_config(9222);
+        config.extra_args = vec!["--disable-gpu".to_string()];
+        let data_dir = PathBuf::from("/tmp/test-data");
+        let args = build_chrome_args(&config, &data_dir);
+        assert_eq!(
+            args.last().map(String::as_str),
+            Some("--disable-gpu"),
+            "Expected explicit extra arg to remain last in args: {args:?}"
+        );
+    }
+
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn macos_launch_defaults_avoid_keychain_prompts() {
+        let config = default_launch_config(9222);
+        let data_dir = PathBuf::from("/tmp/test-data");
+        let args = build_chrome_args(&config, &data_dir);
+        assert!(
+            args.iter().any(|a| a == "--use-mock-keychain"),
+            "Expected --use-mock-keychain in args: {args:?}"
+        );
+        assert!(
+            args.iter().any(|a| a == "--password-store=basic"),
+            "Expected --password-store=basic in args: {args:?}"
+        );
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    #[test]
+    fn non_macos_launch_defaults_do_not_add_keychain_flags() {
+        let config = default_launch_config(9222);
+        let data_dir = PathBuf::from("/tmp/test-data");
+        let args = build_chrome_args(&config, &data_dir);
+        assert!(
+            !args.iter().any(|a| a == "--use-mock-keychain"),
+            "Did not expect --use-mock-keychain in args: {args:?}"
+        );
+        assert!(
+            !args.iter().any(|a| a == "--password-store=basic"),
+            "Did not expect --password-store=basic in args: {args:?}"
         );
     }
 

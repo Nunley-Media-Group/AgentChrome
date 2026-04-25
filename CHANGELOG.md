@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.51.3] - 2026-04-25
+
+### Fixed
+
+- Fix macOS `connect --launch --headless` sessions timing out behind Chrome Keychain prompts by adding AgentChrome-managed launch defaults for `--use-mock-keychain` and `--password-store=basic` while preserving user-supplied `--chrome-arg` ordering. (#266)
+- Fix `interact click` and `interact click-at` on buttons that open native JavaScript dialogs so the click exits successfully, leaves `dialog info` / `dialog handle` usable, and keeps `--auto-dismiss-dialogs` behavior unchanged instead of surfacing renderer-blocked CDP timeouts. (#267)
+
 ## [1.51.2] - 2026-04-24
 
 ### Fixed

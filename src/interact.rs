@@ -1,7 +1,9 @@
 use std::time::Duration;
 
 use serde::Serialize;
+use tokio::sync::mpsc;
 
+use agentchrome::cdp::{CdpError, CdpEvent};
 use agentchrome::connection::ManagedSession;
 use agentchrome::error::AppError;
 
@@ -395,7 +397,10 @@ async fn dispatch_click(
     y: f64,
     button: &str,
     click_count: u8,
-) -> Result<(), AppError> {
+    mut dialog_open_rx: Option<&mut mpsc::Receiver<CdpEvent>>,
+) -> Result<bool, AppError> {
+    let mut opened_dialog = false;
+
     if click_count == 2 {
         // For double-click, send: press(1) → release(1) → press(2) → release(2)
         // First click
@@ -406,10 +411,13 @@ async fn dispatch_click(
             "button": button,
             "clickCount": 1,
         });
-        session
-            .send_command("Input.dispatchMouseEvent", Some(press_params))
-            .await
-            .map_err(|e| AppError::interaction_failed("mouse_press", &e.to_string()))?;
+        opened_dialog |= dispatch_mouse_event(
+            session,
+            press_params,
+            "mouse_press",
+            dialog_open_rx.as_deref_mut(),
+        )
+        .await?;
 
         let release_params = serde_json::json!({
             "type": "mouseReleased",
@@ -418,10 +426,13 @@ async fn dispatch_click(
             "button": button,
             "clickCount": 1,
         });
-        session
-            .send_command("Input.dispatchMouseEvent", Some(release_params))
-            .await
-            .map_err(|e| AppError::interaction_failed("mouse_release", &e.to_string()))?;
+        opened_dialog |= dispatch_mouse_event(
+            session,
+            release_params,
+            "mouse_release",
+            dialog_open_rx.as_deref_mut(),
+        )
+        .await?;
 
         // Second click
         let press_params = serde_json::json!({
@@ -431,10 +442,13 @@ async fn dispatch_click(
             "button": button,
             "clickCount": 2,
         });
-        session
-            .send_command("Input.dispatchMouseEvent", Some(press_params))
-            .await
-            .map_err(|e| AppError::interaction_failed("mouse_press", &e.to_string()))?;
+        opened_dialog |= dispatch_mouse_event(
+            session,
+            press_params,
+            "mouse_press",
+            dialog_open_rx.as_deref_mut(),
+        )
+        .await?;
 
         let release_params = serde_json::json!({
             "type": "mouseReleased",
@@ -443,10 +457,13 @@ async fn dispatch_click(
             "button": button,
             "clickCount": 2,
         });
-        session
-            .send_command("Input.dispatchMouseEvent", Some(release_params))
-            .await
-            .map_err(|e| AppError::interaction_failed("mouse_release", &e.to_string()))?;
+        opened_dialog |= dispatch_mouse_event(
+            session,
+            release_params,
+            "mouse_release",
+            dialog_open_rx.as_deref_mut(),
+        )
+        .await?;
     } else {
         // Single click
         let press_params = serde_json::json!({
@@ -456,10 +473,13 @@ async fn dispatch_click(
             "button": button,
             "clickCount": click_count,
         });
-        session
-            .send_command("Input.dispatchMouseEvent", Some(press_params))
-            .await
-            .map_err(|e| AppError::interaction_failed("mouse_press", &e.to_string()))?;
+        opened_dialog |= dispatch_mouse_event(
+            session,
+            press_params,
+            "mouse_press",
+            dialog_open_rx.as_deref_mut(),
+        )
+        .await?;
 
         let release_params = serde_json::json!({
             "type": "mouseReleased",
@@ -468,13 +488,82 @@ async fn dispatch_click(
             "button": button,
             "clickCount": click_count,
         });
-        session
-            .send_command("Input.dispatchMouseEvent", Some(release_params))
-            .await
-            .map_err(|e| AppError::interaction_failed("mouse_release", &e.to_string()))?;
+        opened_dialog |= dispatch_mouse_event(
+            session,
+            release_params,
+            "mouse_release",
+            dialog_open_rx.as_deref_mut(),
+        )
+        .await?;
     }
 
-    Ok(())
+    Ok(opened_dialog)
+}
+
+async fn dispatch_mouse_event(
+    session: &mut ManagedSession,
+    params: serde_json::Value,
+    action: &str,
+    dialog_open_rx: Option<&mut mpsc::Receiver<CdpEvent>>,
+) -> Result<bool, AppError> {
+    let Some(rx) = dialog_open_rx else {
+        session
+            .send_command("Input.dispatchMouseEvent", Some(params))
+            .await
+            .map_err(|e| AppError::interaction_failed(action, &e.to_string()))?;
+        return Ok(false);
+    };
+
+    let command = session.send_command("Input.dispatchMouseEvent", Some(params));
+    tokio::pin!(command);
+
+    tokio::select! {
+        result = &mut command => handle_mouse_dispatch_result(result, action, Some(rx)),
+        event = rx.recv() => {
+            if event.is_some() {
+                Ok(true)
+            } else {
+                handle_mouse_dispatch_result(command.await, action, None)
+            }
+        }
+    }
+}
+
+fn handle_mouse_dispatch_result(
+    result: Result<serde_json::Value, CdpError>,
+    action: &str,
+    dialog_open_rx: Option<&mut mpsc::Receiver<CdpEvent>>,
+) -> Result<bool, AppError> {
+    match result {
+        Ok(_) => Ok(false),
+        Err(e) => {
+            if is_input_dispatch_timeout(&e)
+                && dialog_open_rx.is_some_and(|rx| rx.try_recv().is_ok())
+            {
+                Ok(true)
+            } else {
+                Err(AppError::interaction_failed(action, &e.to_string()))
+            }
+        }
+    }
+}
+
+fn is_input_dispatch_timeout(error: &CdpError) -> bool {
+    matches!(error, CdpError::CommandTimeout { method } if method == "Input.dispatchMouseEvent")
+}
+
+async fn subscribe_dialog_opening_for_click(
+    global: &GlobalOpts,
+    managed: &mut ManagedSession,
+) -> Result<Option<mpsc::Receiver<CdpEvent>>, AppError> {
+    if global.auto_dismiss_dialogs {
+        Ok(None)
+    } else {
+        managed.ensure_domain("Page").await?;
+        Ok(Some(
+            managed.subscribe("Page.javascriptDialogOpening").await?,
+        ))
+    }
 }
 
 /// Dispatch a hover (mouse move) to the given coordinates.
@@ -1712,6 +1801,7 @@ async fn execute_click(
     }
 
     managed.ensure_domain("Page").await?;
+    let mut dialog_open_rx = subscribe_dialog_opening_for_click(global, &mut managed).await?;
 
     let effective = if let Some(ref ctx) = frame_ctx {
         agentchrome::frame::frame_session(ctx, &managed)
@@ -1730,44 +1820,101 @@ async fn execute_click(
     let pre_url = get_current_url(&managed).await?;
 
     let navigated;
+    let opened_dialog;
 
     match args.wait_until {
         Some(WaitUntil::None) => {
             // Dispatch and return immediately — no grace period, no navigation check
-            dispatch_click(&mut managed, x, y, button, click_count).await?;
+            opened_dialog = dispatch_click(
+                &mut managed,
+                x,
+                y,
+                button,
+                click_count,
+                dialog_open_rx.as_mut(),
+            )
+            .await?;
             navigated = false;
         }
         Some(WaitUntil::Load) => {
             let wait_rx = managed.subscribe("Page.loadEventFired").await?;
-            dispatch_click(&mut managed, x, y, button, click_count).await?;
-            let timeout_ms = global.timeout.unwrap_or(DEFAULT_NAVIGATE_TIMEOUT_MS);
-            wait_for_event(wait_rx, timeout_ms, "load").await?;
-            navigated = true;
+            opened_dialog = dispatch_click(
+                &mut managed,
+                x,
+                y,
+                button,
+                click_count,
+                dialog_open_rx.as_mut(),
+            )
+            .await?;
+            if opened_dialog {
+                navigated = false;
+            } else {
+                let timeout_ms = global.timeout.unwrap_or(DEFAULT_NAVIGATE_TIMEOUT_MS);
+                wait_for_event(wait_rx, timeout_ms, "load").await?;
+                navigated = true;
+            }
         }
         Some(WaitUntil::Domcontentloaded) => {
             let wait_rx = managed.subscribe("Page.domContentEventFired").await?;
-            dispatch_click(&mut managed, x, y, button, click_count).await?;
-            let timeout_ms = global.timeout.unwrap_or(DEFAULT_NAVIGATE_TIMEOUT_MS);
-            wait_for_event(wait_rx, timeout_ms, "domcontentloaded").await?;
-            navigated = true;
+            opened_dialog = dispatch_click(
+                &mut managed,
+                x,
+                y,
+                button,
+                click_count,
+                dialog_open_rx.as_mut(),
+            )
+            .await?;
+            if opened_dialog {
+                navigated = false;
+            } else {
+                let timeout_ms = global.timeout.unwrap_or(DEFAULT_NAVIGATE_TIMEOUT_MS);
+                wait_for_event(wait_rx, timeout_ms, "domcontentloaded").await?;
+                navigated = true;
+            }
         }
         Some(WaitUntil::Networkidle) => {
             managed.ensure_domain("Network").await?;
             let req_rx = managed.subscribe("Network.requestWillBeSent").await?;
             let fin_rx = managed.subscribe("Network.loadingFinished").await?;
             let fail_rx = managed.subscribe("Network.loadingFailed").await?;
-            dispatch_click(&mut managed, x, y, button, click_count).await?;
-            let timeout_ms = global.timeout.unwrap_or(DEFAULT_NAVIGATE_TIMEOUT_MS);
-            wait_for_network_idle(req_rx, fin_rx, fail_rx, timeout_ms).await?;
-            let post_url = get_current_url(&managed).await?;
-            navigated = post_url != pre_url;
+            opened_dialog = dispatch_click(
+                &mut managed,
+                x,
+                y,
+                button,
+                click_count,
+                dialog_open_rx.as_mut(),
+            )
+            .await?;
+            if opened_dialog {
+                navigated = false;
+            } else {
+                let timeout_ms = global.timeout.unwrap_or(DEFAULT_NAVIGATE_TIMEOUT_MS);
+                wait_for_network_idle(req_rx, fin_rx, fail_rx, timeout_ms).await?;
+                let post_url = get_current_url(&managed).await?;
+                navigated = post_url != pre_url;
+            }
         }
         None => {
             // Legacy behavior: 100ms grace period with non-blocking navigation check
             let mut nav_rx = managed.subscribe("Page.frameNavigated").await?;
-            dispatch_click(&mut managed, x, y, button, click_count).await?;
-            tokio::time::sleep(Duration::from_millis(100)).await;
-            navigated = nav_rx.try_recv().is_ok();
+            opened_dialog = dispatch_click(
+                &mut managed,
+                x,
+                y,
+                button,
+                click_count,
+                dialog_open_rx.as_mut(),
+            )
+            .await?;
+            if opened_dialog {
+                navigated = false;
+            } else {
+                tokio::time::sleep(Duration::from_millis(100)).await;
+                navigated = nav_rx.try_recv().is_ok();
+            }
         }
     }
 
@@ -1776,7 +1923,11 @@ async fn execute_click(
     }
 
     // Get current URL
-    let url = get_current_url(&managed).await?;
+    let url = if opened_dialog {
+        pre_url
+    } else {
+        get_current_url(&managed).await?
+    };
 
     // Take snapshot if requested
     let snapshot = if args.include_snapshot {
@@ -1882,33 +2033,68 @@ async fn execute_click_at(
     // Determine button and click count
     let button = if args.right { "right" } else { "left" };
     let click_count = if args.double { 2 } else { 1 };
+    let mut dialog_open_rx = subscribe_dialog_opening_for_click(global, &mut managed).await?;
+
+    let opened_dialog;
 
     let (url, navigated) = match args.wait_until {
         Some(WaitUntil::None) => {
-            dispatch_click(&mut managed, click_x, click_y, button, click_count).await?;
+            opened_dialog = dispatch_click(
+                &mut managed,
+                click_x,
+                click_y,
+                button,
+                click_count,
+                dialog_open_rx.as_mut(),
+            )
+            .await?;
             (None, None)
         }
         Some(WaitUntil::Load) => {
             managed.ensure_domain("Page").await?;
             let pre_url = get_current_url(&managed).await?;
             let wait_rx = managed.subscribe("Page.loadEventFired").await?;
-            dispatch_click(&mut managed, click_x, click_y, button, click_count).await?;
-            let timeout_ms = global.timeout.unwrap_or(DEFAULT_NAVIGATE_TIMEOUT_MS);
-            wait_for_event(wait_rx, timeout_ms, "load").await?;
-            let post_url = get_current_url(&managed).await?;
-            let nav = post_url != pre_url;
-            (Some(post_url), Some(nav))
+            opened_dialog = dispatch_click(
+                &mut managed,
+                click_x,
+                click_y,
+                button,
+                click_count,
+                dialog_open_rx.as_mut(),
+            )
+            .await?;
+            if opened_dialog {
+                (Some(pre_url), Some(false))
+            } else {
+                let timeout_ms = global.timeout.unwrap_or(DEFAULT_NAVIGATE_TIMEOUT_MS);
+                wait_for_event(wait_rx, timeout_ms, "load").await?;
+                let post_url = get_current_url(&managed).await?;
+                let nav = post_url != pre_url;
+                (Some(post_url), Some(nav))
+            }
         }
         Some(WaitUntil::Domcontentloaded) => {
             managed.ensure_domain("Page").await?;
             let pre_url = get_current_url(&managed).await?;
             let wait_rx = managed.subscribe("Page.domContentEventFired").await?;
-            dispatch_click(&mut managed, click_x, click_y, button, click_count).await?;
-            let timeout_ms = global.timeout.unwrap_or(DEFAULT_NAVIGATE_TIMEOUT_MS);
-            wait_for_event(wait_rx, timeout_ms, "domcontentloaded").await?;
-            let post_url = get_current_url(&managed).await?;
-            let nav = post_url != pre_url;
-            (Some(post_url), Some(nav))
+            opened_dialog = dispatch_click(
+                &mut managed,
+                click_x,
+                click_y,
+                button,
+                click_count,
+                dialog_open_rx.as_mut(),
+            )
+            .await?;
+            if opened_dialog {
+                (Some(pre_url), Some(false))
+            } else {
+                let timeout_ms = global.timeout.unwrap_or(DEFAULT_NAVIGATE_TIMEOUT_MS);
+                wait_for_event(wait_rx, timeout_ms, "domcontentloaded").await?;
+                let post_url = get_current_url(&managed).await?;
+                let nav = post_url != pre_url;
+                (Some(post_url), Some(nav))
+            }
         }
         Some(WaitUntil::Networkidle) => {
             managed.ensure_domain("Network").await?;
@@ -1916,16 +2102,36 @@ async fn execute_click_at(
             let req_rx = managed.subscribe("Network.requestWillBeSent").await?;
             let fin_rx = managed.subscribe("Network.loadingFinished").await?;
             let fail_rx = managed.subscribe("Network.loadingFailed").await?;
-            dispatch_click(&mut managed, click_x, click_y, button, click_count).await?;
-            let timeout_ms = global.timeout.unwrap_or(DEFAULT_NAVIGATE_TIMEOUT_MS);
-            wait_for_network_idle(req_rx, fin_rx, fail_rx, timeout_ms).await?;
-            let post_url = get_current_url(&managed).await?;
-            let nav = post_url != pre_url;
-            (Some(post_url), Some(nav))
+            opened_dialog = dispatch_click(
+                &mut managed,
+                click_x,
+                click_y,
+                button,
+                click_count,
+                dialog_open_rx.as_mut(),
+            )
+            .await?;
+            if opened_dialog {
+                (Some(pre_url), Some(false))
+            } else {
+                let timeout_ms = global.timeout.unwrap_or(DEFAULT_NAVIGATE_TIMEOUT_MS);
+                wait_for_network_idle(req_rx, fin_rx, fail_rx, timeout_ms).await?;
+                let post_url = get_current_url(&managed).await?;
+                let nav = post_url != pre_url;
+                (Some(post_url), Some(nav))
+            }
         }
         None => {
             // Legacy behavior: dispatch click, no navigation check
-            dispatch_click(&mut managed, click_x, click_y, button, click_count).await?;
+            opened_dialog = dispatch_click(
+                &mut managed,
+                click_x,
+                click_y,
+                button,
+                click_count,
+                dialog_open_rx.as_mut(),
+            )
+            .await?;
             (None, None)
         }
     };
@@ -1936,12 +2142,18 @@ async fn execute_click_at(
 
     // Take snapshot if requested
     let snapshot = if args.include_snapshot {
-        let snap_url = if let Some(ref u) = url {
-            u.clone()
+        let snap_url = if opened_dialog {
+            None
+        } else if let Some(ref u) = url {
+            Some(u.clone())
         } else {
-            get_current_url(&managed).await?
+            Some(get_current_url(&managed).await?)
         };
-        Some(take_snapshot(&mut managed, &snap_url, args.compact).await?)
+        if let Some(snap_url) = snap_url {
+            Some(take_snapshot(&mut managed, &snap_url, args.compact).await?)
+        } else {
+            None
+        }
     } else {
         None
     };

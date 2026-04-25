@@ -1,0 +1,27 @@
+# File: tests/features/266-fix-macos-headless-launch-keychain-prompt-timeout.feature
+#
+# Generated from: specs/bug-fix-macos-headless-launch-keychain-prompt-timeout/requirements.md
+# Issue: #266
+# Type: Defect regression
+
+@regression
+Feature: macOS headless launch avoids Keychain prompts
+  AgentChrome-managed Chrome launches must stay non-interactive for AI agents and CI.
+
+  @regression
+  Scenario: macOS managed profiles avoid Keychain prompts
+    Given AgentChrome launches Chrome with an internally managed temporary user data directory on macOS
+    When the Chrome argument list is built
+    Then the launch arguments include keychain-avoidance flags
+
+  @regression
+  Scenario: Headless launch succeeds without workaround flags
+    Given no AgentChrome session exists
+    When the user runs "agentchrome connect --launch --headless"
+    Then AgentChrome returns "ws_url", "port", and "pid" with exit code 0
+
+  @regression
+  Scenario: Explicit Chrome args are preserved
+    Given the user supplies additional "--chrome-arg" values
+    When AgentChrome launches Chrome
+    Then the user-supplied arguments are still present in the final Chrome argument list

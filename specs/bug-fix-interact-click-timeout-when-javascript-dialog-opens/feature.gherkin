@@ -1,0 +1,30 @@
+# File: tests/features/267-fix-interact-click-timeout-when-javascript-dialog-opens.feature
+#
+# Generated from: specs/bug-fix-interact-click-timeout-when-javascript-dialog-opens/requirements.md
+# Issue: #267
+# Type: Defect regression
+
+@regression
+Feature: interact click handles native JavaScript dialog openings
+  A click that opens a native JavaScript dialog has succeeded and must not be
+  reported as a generic mouse-release protocol timeout.
+
+  @regression
+  Scenario: Dialog-opening click does not report generic protocol timeout
+    Given a page button synchronously opens a JavaScript alert
+    When the user runs "agentchrome interact click" on that button without "--auto-dismiss-dialogs"
+    Then AgentChrome does not return a generic "Input.dispatchMouseEvent" timeout
+    And the user can proceed to "agentchrome dialog info" and "agentchrome dialog handle"
+
+  @regression
+  Scenario: Auto-dismiss path remains successful
+    Given the same JavaScript alert button
+    When the user runs "agentchrome --auto-dismiss-dialogs interact click" on that button
+    Then the command exits 0 with the existing clicked JSON shape
+    And no dialog remains open afterward
+
+  @regression
+  Scenario: Prompt dialogs are covered
+    Given a page button synchronously opens a JavaScript prompt
+    When the user clicks it through "agentchrome interact click"
+    Then the prompt can still be accepted with "agentchrome dialog handle accept --text <value>"
