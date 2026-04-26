@@ -17,9 +17,9 @@ pub(crate) type Version = (u32, u32, u32);
 
 /// A tool whose installed skill file carries an older version marker than the
 /// currently running binary.
-struct StaleTool {
-    name: &'static str,
-    installed_version: Version,
+pub(crate) struct StaleTool {
+    pub(crate) tool: &'static crate::skill::ToolInfo,
+    pub(crate) installed_version: Version,
 }
 
 // =============================================================================
@@ -111,7 +111,7 @@ fn binary_version() -> Version {
 ///
 /// I/O errors (missing file, unreadable) are silently skipped for that tool —
 /// a missing install is not a stale install.
-fn stale_tools() -> Vec<StaleTool> {
+pub(crate) fn stale_tools() -> Vec<StaleTool> {
     let bin_ver = binary_version();
     let mut result = Vec::with_capacity(crate::skill::TOOLS.len());
 
@@ -125,7 +125,7 @@ fn stale_tools() -> Vec<StaleTool> {
         };
         if installed_ver < bin_ver {
             result.push(StaleTool {
-                name: tool.name,
+                tool,
                 installed_version: installed_ver,
             });
         }
@@ -151,13 +151,13 @@ fn format_notice(stale: &[StaleTool]) -> Option<String> {
     if stale.len() == 1 {
         let tool = &stale[0];
         let installed_ver = format_version(tool.installed_version);
-        let name = tool.name;
+        let name = tool.tool.name;
         Some(format!(
             "note: installed agentchrome skill for {name} is v{installed_ver} but binary is v{bin_ver} \
              — run 'agentchrome skill update' to refresh"
         ))
     } else {
-        let names: Vec<&str> = stale.iter().map(|t| t.name).collect();
+        let names: Vec<&str> = stale.iter().map(|t| t.tool.name).collect();
         let name_list = names.join(", ");
         let oldest_ver = stale
             .iter()
@@ -295,7 +295,7 @@ mod tests {
     #[test]
     fn format_notice_single_tool() {
         let stale = vec![StaleTool {
-            name: "claude-code",
+            tool: crate::skill::find_tool("claude-code").unwrap(),
             installed_version: (1, 40, 0),
         }];
         let bin_ver = format_version(binary_version());
@@ -322,11 +322,11 @@ mod tests {
     fn format_notice_multi_tool() {
         let stale = vec![
             StaleTool {
-                name: "claude-code",
+                tool: crate::skill::find_tool("claude-code").unwrap(),
                 installed_version: (1, 40, 0),
             },
             StaleTool {
-                name: "cursor",
+                tool: crate::skill::find_tool("cursor").unwrap(),
                 installed_version: (1, 38, 0),
             },
         ];
