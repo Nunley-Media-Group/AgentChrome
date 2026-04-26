@@ -289,6 +289,14 @@ Feature: Skill command group for agentic tool integration
     And each batch result has status "ok" and action "updated"
     And a subsequent AgentChrome invocation with the same temp home emits no staleness notice
 
+  Scenario: Bare update refreshes stale append-section skills in shared files (AC25)
+    Given installed AgentChrome skills for "windsurf" and "codex" have stale versions in a temp home
+    When I run "agentchrome skill update" without a --tool flag
+    Then the exit code is 0
+    And stdout contains batch JSON results for "windsurf" and "codex"
+    And each batch result has status "ok" and action "updated"
+    And a subsequent AgentChrome invocation with the same temp home emits no staleness notice
+
   Scenario: Bare update does not stop at the first detected tool (AC26)
     Given a higher-priority Claude Code detection signal is present
     And a stale Codex AgentChrome skill is installed in the same temp home

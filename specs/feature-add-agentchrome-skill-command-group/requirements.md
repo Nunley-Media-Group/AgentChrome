@@ -227,6 +227,7 @@ agentchrome is an AI-native CLI tool with rich built-in help (`--help`, `capabil
 **And** more than one installed skill has an embedded version older than the running AgentChrome binary
 **When** the user runs `agentchrome skill update` without `--tool`
 **Then** AgentChrome scans all supported skill locations for outdated AgentChrome skills
+**And** append-section installs are discovered by scanning the AgentChrome section markers even when shared-file content places that section after the first 20 lines
 **And** every stale installed skill whose path can be resolved and written is updated to the current version
 **And** stdout returns structured JSON naming every target touched, with each target's tool name, path, action, and version
 **And** a subsequent AgentChrome invocation no longer emits stale notices for those updated targets
@@ -308,6 +309,7 @@ agentchrome is an AI-native CLI tool with rich built-in help (`--help`, `capabil
 | FR30 | Add focused BDD and/or unit coverage for Codex install, listing, auto-detection, lifecycle commands, and stale-skill notice behavior. | Must | Issue #263 |
 | FR31 | Bare `skill install` discovers all currently detected supported agent targets instead of selecting only the first detected target. | Must | Issue #268; applies only when `--tool` is omitted |
 | FR32 | Bare `skill update` scans all supported AgentChrome skill locations for outdated installed skills instead of selecting only the first detected target. | Must | Issue #268; align with existing staleness scan behavior |
+| FR32a | Stale-skill scanning discovers version markers inside append-section installs wherever the AgentChrome section appears in a shared instructions file. | Must | Issue #268 review amendment; prevents stale Windsurf/Copilot sections from being skipped after long preambles |
 | FR33 | Explicit `--tool` commands keep existing single-target behavior for install, update, and uninstall. | Must | Issue #268; preserve script compatibility |
 | FR34 | Multi-target success output is structured JSON with per-target tool, path, action, and version details. | Must | Issue #268; preserve machine readability for AI agents |
 | FR35 | Multi-target partial failure output identifies which targets succeeded and failed. | Must | Issue #268; preserve typed exit-code behavior and actionable errors |

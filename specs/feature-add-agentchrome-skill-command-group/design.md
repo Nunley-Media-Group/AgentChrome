@@ -229,6 +229,7 @@ Parent process inspection uses `std::env::var("_")` on Unix (which contains the 
 3. If agentchrome section markers already present, replace the section content
 4. If no markers present, append section with markers
 5. Section delimiters: `<!-- agentchrome:start -->` / `<!-- agentchrome:end -->`
+6. The section includes `<!-- agentchrome-version: X.Y.Z -->` immediately after the start marker so stale-skill detection can find append-section installs inside shared files.
 
 **Standalone with config** (Aider):
 1. Write standalone skill file to `~/.aider/agentchrome.md`
@@ -357,6 +358,12 @@ Resolution rules:
 | `CODEX_HOME=/custom/codex` | `/custom/codex/skills/agentchrome/SKILL.md` |
 | `CODEX_HOME` unset | `~/.codex/skills/agentchrome/SKILL.md` |
 | `CODEX_HOME` set to empty string | Treat as unset and use `~/.codex/skills/agentchrome/SKILL.md` |
+
+### Stale Scan Amendment (#268 Review)
+
+`src/skill_check.rs::read_version_marker()` keeps the 20-line bounded scan for standalone files, where YAML frontmatter and legacy headings belong near the top of the file. For append-section targets, shared instruction files may already contain arbitrary user content before the AgentChrome section. After the initial bounded scan, the parser must search for `<!-- agentchrome:start -->`, restrict parsing to the matching AgentChrome section, and accept the `<!-- agentchrome-version: X.Y.Z -->` marker from that section even when the section starts after line 20.
+
+This keeps bare `agentchrome skill update` aligned with AC25/AC30: it can refresh every stale installed skill named by the staleness notice, including Windsurf and Copilot installs appended to existing shared files.
 
 This resolver is shared by `install`, `update`, `uninstall`, `list`, and `skill_check`, so one implementation point keeps lifecycle behavior and staleness checks aligned.
 

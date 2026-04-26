@@ -2817,6 +2817,7 @@ fn examples_run_command(world: &mut ExamplesWorld, command_line: String) {
 
     let output = std::process::Command::new(binary)
         .args(args)
+        .env("AGENTCHROME_NO_SKILL_CHECK", "1")
         .output()
         .unwrap_or_else(|e| panic!("Failed to run {}: {e}", binary.display()));
 
@@ -4818,6 +4819,7 @@ fn skill_world_path_for_tool(world: &mut SkillWorld, tool: &str) -> PathBuf {
     let temp_home = world.ensure_temp_home();
     match tool {
         "claude-code" => temp_home.join(".claude/skills/agentchrome/SKILL.md"),
+        "windsurf" => temp_home.join(".codeium/windsurf/memories/global_rules.md"),
         "codex" => temp_home.join(".codex/skills/agentchrome/SKILL.md"),
         "gemini" => temp_home.join(".gemini/instructions/agentchrome.md"),
         "cursor" => temp_home.join(".cursor/rules/agentchrome.mdc"),
@@ -4828,8 +4830,17 @@ fn skill_world_path_for_tool(world: &mut SkillWorld, tool: &str) -> PathBuf {
 fn plant_skill_in_skill_world(world: &mut SkillWorld, tool: &str, version: &str) {
     let skill_path = skill_world_path_for_tool(world, tool);
     std::fs::create_dir_all(skill_path.parent().unwrap()).unwrap();
-    let content =
-        format!("---\nname: agentchrome\nversion: \"{version}\"\n---\n\n# agentchrome skill\n");
+    let content = if tool == "windsurf" {
+        let preamble = (0..25)
+            .map(|i| format!("existing shared instruction line {i}"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        format!(
+            "{preamble}\n<!-- agentchrome:start -->\n<!-- agentchrome-version: {version} -->\n\n# stale agentchrome skill\n<!-- agentchrome:end -->\n"
+        )
+    } else {
+        format!("---\nname: agentchrome\nversion: \"{version}\"\n---\n\n# agentchrome skill\n")
+    };
     std::fs::write(&skill_path, content).unwrap();
 }
 

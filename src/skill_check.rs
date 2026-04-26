@@ -29,8 +29,12 @@ pub(crate) struct StaleTool {
 /// Line budget for scanning the version marker out of a skill file.
 ///
 /// Version markers live in the YAML frontmatter or the first few lines of
-/// the skill body; reading past this bounds the hot-path work.
+/// standalone skill files. Append-section installs may live deeper in shared
+/// instruction files, so they are also scanned inside `AgentChrome` section
+/// markers wherever the section appears.
 const VERSION_SCAN_LINES: usize = 20;
+const SECTION_START: &str = "<!-- agentchrome:start -->";
+const SECTION_END: &str = "<!-- agentchrome:end -->";
 
 /// Try to parse a version triple out of the first few lines of a skill file.
 ///
@@ -46,7 +50,18 @@ pub(crate) fn read_version_marker(path: &Path) -> Option<Version> {
 }
 
 fn parse_version_from_content(content: &str) -> Option<Version> {
-    for line in content.lines().take(VERSION_SCAN_LINES) {
+    parse_version_from_lines(content.lines().take(VERSION_SCAN_LINES)).or_else(|| {
+        let start = content.find(SECTION_START)?;
+        let after_start = start + SECTION_START.len();
+        let end = content[after_start..]
+            .find(SECTION_END)
+            .map_or(content.len(), |offset| after_start + offset);
+        parse_version_from_lines(content[after_start..end].lines())
+    })
+}
+
+fn parse_version_from_lines<'a>(lines: impl Iterator<Item = &'a str>) -> Option<Version> {
+    for line in lines {
         let trimmed = line.trim();
 
         // YAML frontmatter: version: "X.Y.Z"  or  version: X.Y.Z
@@ -255,6 +270,19 @@ mod tests {
         let content = lines.join("\n");
         // Line 26 is past the 20-line limit
         assert_eq!(parse_version_from_content(&content), None);
+    }
+
+    #[test]
+    fn parses_append_section_marker_after_long_shared_file_preamble() {
+        let preamble = (0..25)
+            .map(|i| format!("shared instruction line {i}"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let content = format!(
+            "{preamble}\n{SECTION_START}\n<!-- agentchrome-version: 1.39.4 -->\n\n# agentchrome\n{SECTION_END}\n"
+        );
+
+        assert_eq!(parse_version_from_content(&content), Some((1, 39, 4)));
     }
 
     #[test]
