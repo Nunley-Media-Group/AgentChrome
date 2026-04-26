@@ -537,19 +537,7 @@ fn uninstall_skill(tool: &ToolInfo) -> Result<SkillResult, AppError> {
 
 fn update_skill(tool: &ToolInfo) -> Result<SkillResult, AppError> {
     // Check that the skill is currently installed
-    let template = path_template(tool);
-    let path = resolve_path(template)?;
-    let installed = match &tool.install_mode {
-        InstallMode::Standalone { .. } | InstallMode::StandaloneWithConfig { .. } => path.exists(),
-        InstallMode::AppendSection { .. } => {
-            path.exists()
-                && std::fs::read_to_string(&path)
-                    .map(|c| c.contains(SECTION_START))
-                    .unwrap_or(false)
-        }
-    };
-
-    if !installed {
+    if !skill_install_exists(tool)? {
         return Err(AppError {
             message: format!(
                 "no skill currently installed for {}. Run 'agentchrome skill install' first.",
@@ -668,6 +656,20 @@ fn batch_path(tool: &ToolInfo) -> String {
     )
 }
 
+fn skill_install_exists(tool: &ToolInfo) -> Result<bool, AppError> {
+    let path = resolve_path(path_template(tool))?;
+    let installed = match &tool.install_mode {
+        InstallMode::Standalone { .. } | InstallMode::StandaloneWithConfig { .. } => path.exists(),
+        InstallMode::AppendSection { .. } => {
+            path.exists()
+                && std::fs::read_to_string(&path)
+                    .map(|content| content.contains(SECTION_START))
+                    .unwrap_or(false)
+        }
+    };
+    Ok(installed)
+}
+
 // =============================================================================
 // List logic
 // =============================================================================
@@ -677,23 +679,11 @@ fn list_tools() -> Result<SkillListOutput, AppError> {
 
     for tool in TOOLS {
         let template = path_template(tool);
-        let path = resolve_path(template)?;
-        let installed = match &tool.install_mode {
-            InstallMode::Standalone { .. } | InstallMode::StandaloneWithConfig { .. } => {
-                path.exists()
-            }
-            InstallMode::AppendSection { .. } => {
-                path.exists()
-                    && std::fs::read_to_string(&path)
-                        .map(|c| c.contains(SECTION_START))
-                        .unwrap_or(false)
-            }
-        };
         entries.push(ToolListEntry {
             name: tool.name.into(),
             detection: tool.detection.into(),
             path: template.into(),
-            installed,
+            installed: skill_install_exists(tool)?,
         });
     }
 

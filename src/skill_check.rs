@@ -147,26 +147,13 @@ fn binary_version() -> Version {
 /// version marker; stale/current classification is based on that marker.
 pub(crate) fn installed_skill_inventory() -> Vec<InstalledSkill> {
     let bin_ver = binary_version();
-    let mut result = Vec::with_capacity(crate::skill::TOOLS.len());
-
-    for tool in crate::skill::TOOLS {
-        let template = crate::skill::path_template(tool);
-        let status = if let Ok(path) = crate::skill::resolve_path(template) {
-            match read_version_marker(&path) {
-                Some(installed_version) if installed_version < bin_ver => {
-                    InstalledSkillStatus::Stale { installed_version }
-                }
-                Some(_) => InstalledSkillStatus::Current,
-                None => InstalledSkillStatus::Missing,
-            }
-        } else {
-            InstalledSkillStatus::Missing
-        };
-
-        result.push(InstalledSkill { tool, status });
-    }
-
-    result
+    crate::skill::TOOLS
+        .iter()
+        .map(|tool| InstalledSkill {
+            tool,
+            status: installed_skill_status(tool, bin_ver),
+        })
+        .collect()
 }
 
 /// Collect all tools whose installed skill file reports an older version than
@@ -182,6 +169,24 @@ pub(crate) fn stale_tools() -> Vec<StaleTool> {
             InstalledSkillStatus::Missing | InstalledSkillStatus::Current => None,
         })
         .collect()
+}
+
+fn installed_skill_status(
+    tool: &'static crate::skill::ToolInfo,
+    bin_ver: Version,
+) -> InstalledSkillStatus {
+    let template = crate::skill::path_template(tool);
+    let Ok(path) = crate::skill::resolve_path(template) else {
+        return InstalledSkillStatus::Missing;
+    };
+
+    match read_version_marker(&path) {
+        Some(installed_version) if installed_version < bin_ver => {
+            InstalledSkillStatus::Stale { installed_version }
+        }
+        Some(_) => InstalledSkillStatus::Current,
+        None => InstalledSkillStatus::Missing,
+    }
 }
 
 // =============================================================================

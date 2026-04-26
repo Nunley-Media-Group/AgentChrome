@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.54.0] - 2026-04-26
+
+### Fixed
+
+- Fix bare `agentchrome skill update` so it scans all supported install locations for installed skills even without an active tool environment, updates every stale installed target in one pass, and treats all-current or no-installed cases as successful informational no-ops. (#254)
+
 ## [1.53.0] - 2026-04-26
 
 ### Fixed
