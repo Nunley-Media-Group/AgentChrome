@@ -64,6 +64,16 @@ The fix is three single-line changes — one per affected function. No new types
 
 ---
 
+## Alternatives Considered
+
+| Option | Description | Why Not Selected |
+|--------|-------------|------------------|
+| [Alternative fix] | [approach] | [why the chosen approach is better] |
+
+*Omit this section if only one reasonable fix approach exists.*
+
+---
+
 ## Validation Checklist
 
 Before moving to TASKS phase:

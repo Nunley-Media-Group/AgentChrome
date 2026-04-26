@@ -1,6 +1,6 @@
 # Design: Cargo Workspace Setup
 
-**Issue**: #1
+**Issues**: #1
 **Date**: 2026-02-10
 **Status**: Draft
 **Author**: Claude (spec-driven)
@@ -279,6 +279,12 @@ For this scaffolding issue, the "tests" are the build/lint/format verification c
 - None
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #1 | 2026-02-10 | Initial feature spec |
 
 ## Validation Checklist
 

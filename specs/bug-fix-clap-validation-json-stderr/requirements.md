@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude
 **Severity**: High
-**Related Spec**: `specs/3-cli-skeleton/`
+**Related Spec**: specs/feature-cli-skeleton/
 
 ---
 

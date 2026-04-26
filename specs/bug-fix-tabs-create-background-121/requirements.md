@@ -5,7 +5,7 @@
 **Status**: Approved
 **Author**: Claude
 **Severity**: Medium
-**Related Spec**: `specs/82-fix-tabs-create-background/` — regression of the same fix; `specs/7-tab-management/` — AC6
+**Related Spec**: specs/feature-tab-management/
 
 ---
 

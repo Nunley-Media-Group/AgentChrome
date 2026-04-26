@@ -1,6 +1,6 @@
 # Tasks: Codex Integration Guide
 
-**Issue**: #31
+**Issues**: #31
 **Date**: 2026-02-14
 **Status**: Planning
 **Author**: Codex (nmg-sdlc)
@@ -246,6 +246,12 @@ T005, T006, T007 ──▶ T008 (BDD feature file) ──▶ T009 (step definiti
 ```
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #31 | 2026-02-14 | Initial feature spec |
 
 ## Validation Checklist
 

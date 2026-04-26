@@ -73,6 +73,16 @@ The existing cleanup behavior remains for non-detached handles because `ChromePr
 
 ---
 
+## Alternatives Considered
+
+| Option | Description | Why Not Selected |
+|--------|-------------|------------------|
+| [Alternative fix] | [approach] | [why the chosen approach is better] |
+
+*Omit this section if only one reasonable fix approach exists.*
+
+---
+
 ## Validation Checklist
 
 - [x] Root cause is identified with specific code references.

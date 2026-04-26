@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude
 **Severity**: Medium
-**Related Spec**: `specs/11-element-finding/`
+**Related Spec**: specs/feature-element-finding/
 
 ---
 

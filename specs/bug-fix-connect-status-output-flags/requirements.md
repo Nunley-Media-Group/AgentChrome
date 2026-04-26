@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude
 **Severity**: Medium
-**Related Spec**: `specs/6-session-and-connection-management/`
+**Related Spec**: specs/feature-session-and-connection-management/
 
 ---
 

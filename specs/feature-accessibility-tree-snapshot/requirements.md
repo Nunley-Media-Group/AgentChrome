@@ -1,6 +1,6 @@
 # Requirements: Accessibility Tree Snapshot
 
-**Issue**: #10
+**Issues**: #10
 **Date**: 2026-02-12
 **Status**: Draft
 **Author**: Claude (writing-specs)
@@ -350,6 +350,12 @@ Hierarchical text with indentation:
 - [ ] Max tree size before truncation: what's a reasonable default? (Suggest 10,000 nodes)
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #10 | 2026-02-12 | Initial feature spec |
 
 ## Validation Checklist
 

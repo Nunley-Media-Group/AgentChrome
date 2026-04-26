@@ -1,6 +1,6 @@
 # Design: Comprehensive Help Text
 
-**Issue**: #26
+**Issues**: #26
 **Date**: 2026-02-14
 **Status**: Approved
 **Author**: Claude (automated)
@@ -238,6 +238,12 @@ The BDD tests will verify:
 None.
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #26 | 2026-02-14 | Initial feature spec |
 
 ## Validation Checklist
 

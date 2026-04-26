@@ -1,6 +1,6 @@
 # Tasks: URL Navigation
 
-**Issue**: #8
+**Issues**: #8
 **Date**: 2026-02-11
 **Status**: Planning
 **Author**: Claude (spec-driven development)
@@ -287,6 +287,12 @@ T002 ──┘           ├──▶ T006
 ```
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #8 | 2026-02-11 | Initial feature spec |
 
 ## Validation Checklist
 

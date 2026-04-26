@@ -1,6 +1,6 @@
 # Tasks: Performance Tracing
 
-**Issue**: #22
+**Issues**: #22
 **Date**: 2026-02-12
 **Status**: Planning
 **Author**: Claude (writing-specs)
@@ -303,6 +303,12 @@ T006, T007 ──▶ T011
 ```
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #22 | 2026-02-12 | Initial feature spec |
 
 ## Validation Checklist
 

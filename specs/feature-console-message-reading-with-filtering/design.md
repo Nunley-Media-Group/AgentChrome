@@ -1,6 +1,6 @@
 # Design: Console Message Reading with Filtering
 
-**Issue**: #18
+**Issues**: #18
 **Date**: 2026-02-14
 **Status**: Approved
 **Author**: Claude (writing-specs)
@@ -363,6 +363,12 @@ When `console follow` exits (via timeout or signal):
 - [ ] [Integration question]
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #18 | 2026-02-14 | Initial feature spec |
 
 ## Validation Checklist
 

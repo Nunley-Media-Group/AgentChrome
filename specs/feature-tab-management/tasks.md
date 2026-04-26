@@ -1,6 +1,6 @@
 # Tasks: Tab Management Commands
 
-**Issue**: #7
+**Issues**: #7
 **Date**: 2026-02-11
 **Status**: Planning
 **Author**: Claude (spec-driven development)
@@ -263,6 +263,12 @@ T002 ──┘           └──┬──▶ T007 ──▶ T008
 ```
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #7 | 2026-02-11 | Initial feature spec |
 
 ## Validation Checklist
 

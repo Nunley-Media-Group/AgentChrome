@@ -1,6 +1,6 @@
 # Requirements: Built-in Examples Subcommand
 
-**Issue**: #29
+**Issues**: #29
 **Date**: 2026-02-14
 **Status**: Draft
 **Author**: Claude (spec generation)
@@ -231,6 +231,12 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - None — requirements are clear from the issue.
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #29 | 2026-02-14 | Initial feature spec |
 
 ## Validation Checklist
 

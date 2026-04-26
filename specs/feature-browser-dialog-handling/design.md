@@ -1,6 +1,6 @@
 # Design: Browser Dialog Handling
 
-**Issue**: #20
+**Issues**: #20
 **Date**: 2026-02-13
 **Status**: Draft
 **Author**: Claude (writing-specs)
@@ -281,6 +281,12 @@ For `dialog info`, we enable the Page domain, subscribe to the event, and then u
 - (None)
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #20 | 2026-02-13 | Initial feature spec |
 
 ## Validation Checklist
 

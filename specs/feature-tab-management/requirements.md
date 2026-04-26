@@ -1,6 +1,6 @@
 # Requirements: Tab Management Commands
 
-**Issue**: #7
+**Issues**: #7
 **Date**: 2026-02-11
 **Status**: Draft
 **Author**: Claude (spec-driven development)
@@ -273,6 +273,12 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - [x] How to determine the "active" tab? → The first target returned by `/json/list` is typically the active one; confirm via CDP `Target.getTargets` which includes an `attached` field
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #7 | 2026-02-11 | Initial feature spec |
 
 ## Validation Checklist
 

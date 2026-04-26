@@ -1,6 +1,6 @@
 # Design: Shell Completions Generation
 
-**Issue**: #25
+**Issues**: #25
 **Date**: 2026-02-14
 **Status**: Draft
 **Author**: Claude (writing-specs)
@@ -150,6 +150,12 @@ None — CLI-only, stdout output.
 - None
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #25 | 2026-02-14 | Initial feature spec |
 
 ## Validation Checklist
 

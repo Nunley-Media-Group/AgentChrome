@@ -1,6 +1,6 @@
 # Tasks: CDP WebSocket Client
 
-**Issue**: #4
+**Issues**: #4
 **Date**: 2026-02-10
 **Status**: Planning
 **Author**: Claude (spec-driven)
@@ -329,6 +329,12 @@ T009 ─────────────────┘
 - T010 can be done at any time (derived from requirements, not code)
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #4 | 2026-02-10 | Initial feature spec |
 
 ## Validation Checklist
 

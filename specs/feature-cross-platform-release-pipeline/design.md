@@ -1,6 +1,6 @@
 # Design: Cross-Platform Release Pipeline
 
-**Issue**: #2
+**Issues**: #2
 **Date**: 2026-02-10
 **Status**: Draft
 **Author**: Claude (spec-driven)
@@ -366,6 +366,12 @@ All actions will be pinned by tag with a comment indicating the version. For thi
 - [ ] [Integration question]
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #2 | 2026-02-10 | Initial feature spec |
 
 ## Validation Checklist
 

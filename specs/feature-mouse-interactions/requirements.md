@@ -1,6 +1,6 @@
 # Requirements: Mouse Interactions
 
-**Issue**: #14
+**Issues**: #14
 **Date**: 2026-02-13
 **Status**: Draft
 **Author**: Claude (writing-specs)
@@ -452,6 +452,12 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - (None — all requirements are clear from the issue and CDP documentation)
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #14 | 2026-02-13 | Initial feature spec |
 
 ## Validation Checklist
 

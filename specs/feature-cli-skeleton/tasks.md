@@ -1,6 +1,6 @@
 # Tasks: CLI Skeleton with Clap Derive Macros
 
-**Issue**: #3
+**Issues**: #3
 **Date**: 2026-02-10
 **Status**: Planning
 **Author**: Claude (spec-driven)
@@ -239,6 +239,12 @@ T001 ──┬──▶ T002 ──┐
 ```
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #3 | 2026-02-10 | Initial feature spec |
 
 ## Validation Checklist
 

@@ -1,6 +1,6 @@
 # Tasks: Element Finding
 
-**Issue**: #11
+**Issues**: #11
 **Date**: 2026-02-12
 **Status**: Planning
 **Author**: Claude (writing-specs)
@@ -242,6 +242,12 @@ T002 (types)   ──┤                          ├──▶ T006 (wire up) �
 ```
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #11 | 2026-02-12 | Initial feature spec |
 
 ## Validation Checklist
 

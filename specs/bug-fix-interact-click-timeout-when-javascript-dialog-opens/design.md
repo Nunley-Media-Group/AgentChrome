@@ -8,6 +8,17 @@
 
 ---
 
+## Overview
+
+[2-3 paragraph technical summary: what will be built, key architectural decisions, integration points. Reference the requirements spec for context.]
+
+---
+
+## Architecture
+
+### Component Diagram
+
+Reference `structure.md` for the project's layer architecture.
 ## Root Cause Analysis
 
 `src/interact.rs::dispatch_click` sends `Input.dispatchMouseEvent` for mouse press and mouse release, then waits for each CDP command response. When the release event synchronously opens a native JavaScript dialog, Chrome blocks the renderer before the release response reaches AgentChrome. The transport eventually returns `CdpError::CommandTimeout { method: "Input.dispatchMouseEvent" }`, which `dispatch_click` maps to `AppError::interaction_failed("mouse_release", ...)` and exit code 5.

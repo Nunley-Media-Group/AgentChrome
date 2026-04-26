@@ -1,6 +1,6 @@
 # Requirements: Shell Completions Generation
 
-**Issue**: #25
+**Issues**: #25
 **Date**: 2026-02-14
 **Status**: Draft
 **Author**: Claude (writing-specs)
@@ -227,6 +227,12 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - None — the approach is well-defined via `clap_complete`
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #25 | 2026-02-14 | Initial feature spec |
 
 ## Validation Checklist
 

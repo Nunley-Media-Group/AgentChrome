@@ -1,6 +1,6 @@
 # Tasks: Machine-Readable Capabilities Manifest Subcommand
 
-**Issue**: #30
+**Issues**: #30
 **Date**: 2026-02-14
 **Status**: Planning
 **Author**: Claude (spec generation)
@@ -247,6 +247,12 @@ T002 (types) ─┬──┘
 ```
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #30 | 2026-02-14 | Initial feature spec |
 
 ## Validation Checklist
 

@@ -1,6 +1,6 @@
 # Design: Tab Management Commands
 
-**Issue**: #7
+**Issues**: #7
 **Date**: 2026-02-11
 **Status**: Draft
 **Author**: Claude (spec-driven development)
@@ -354,6 +354,12 @@ FeatureScreen
 - [ ] [Integration question]
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #7 | 2026-02-11 | Initial feature spec |
 
 ## Validation Checklist
 

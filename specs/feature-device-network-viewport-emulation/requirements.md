@@ -1,6 +1,6 @@
 # Requirements: Device, Network, and Viewport Emulation
 
-**Issue**: #21
+**Issues**: #21
 **Date**: 2026-02-14
 **Status**: Draft
 **Author**: Claude (SDLC)
@@ -324,6 +324,12 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - None — all requirements are clear from the issue specification.
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #21 | 2026-02-14 | Initial feature spec |
 
 ## Validation Checklist
 

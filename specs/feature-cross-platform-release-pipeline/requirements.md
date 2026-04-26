@@ -1,6 +1,6 @@
 # Requirements: Cross-Platform Release Pipeline
 
-**Issue**: #2
+**Issues**: #2
 **Date**: 2026-02-10
 **Status**: Draft
 **Author**: Claude (spec-driven)
@@ -240,6 +240,12 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - None — the issue is well-specified with clear acceptance criteria
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #2 | 2026-02-10 | Initial feature spec |
 
 ## Validation Checklist
 

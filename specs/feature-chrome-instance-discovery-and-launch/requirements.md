@@ -1,6 +1,6 @@
 # Requirements: Chrome Instance Discovery and Launch
 
-**Issue**: #5
+**Issues**: #5
 **Date**: 2026-02-10
 **Status**: Draft
 **Author**: Claude (spec-driven)
@@ -298,6 +298,12 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - [ ] Should we add a `--no-cleanup` flag to preserve temp user data directories for debugging? — Nice to have
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #5 | 2026-02-10 | Initial feature spec |
 
 ## Validation Checklist
 

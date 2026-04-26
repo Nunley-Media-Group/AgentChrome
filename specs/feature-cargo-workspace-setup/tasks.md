@@ -1,6 +1,6 @@
 # Tasks: Cargo Workspace Setup
 
-**Issue**: #1
+**Issues**: #1
 **Date**: 2026-02-10
 **Status**: Planning
 **Author**: Claude (spec-driven)
@@ -258,6 +258,12 @@ T007 (README)       ───┘
 ```
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #1 | 2026-02-10 | Initial feature spec |
 
 ## Validation Checklist
 

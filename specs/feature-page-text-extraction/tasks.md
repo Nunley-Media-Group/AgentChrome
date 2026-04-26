@@ -1,6 +1,6 @@
 # Tasks: Page Text Extraction
 
-**Issue**: #9
+**Issues**: #9
 **Date**: 2026-02-11
 **Status**: Planning
 **Author**: Claude (writing-specs)
@@ -230,6 +230,12 @@ T006 and T007 can proceed once T004 is complete.
 T005 is a verification gate before merging.
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #9 | 2026-02-11 | Initial feature spec |
 
 ## Validation Checklist
 

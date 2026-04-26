@@ -1,6 +1,6 @@
 # Design: Console Read Runtime Messages
 
-**Issue**: #146
+**Issues**: #146
 **Date**: 2026-02-18
 **Status**: Draft
 **Author**: Claude (writing-specs)
@@ -236,6 +236,12 @@ The smoke test during `/verifying-specs` validates actual CDP behavior against a
 - (none -- approach validated per issue #146 comments)
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #146 | 2026-02-18 | Initial feature spec |
 
 ## Validation Checklist
 

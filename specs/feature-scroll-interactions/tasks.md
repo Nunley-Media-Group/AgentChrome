@@ -1,6 +1,6 @@
 # Tasks: Scroll Interactions
 
-**Issue**: #17
+**Issues**: #17
 **Date**: 2026-02-14
 **Status**: Planning
 **Author**: Claude (writing-specs)
@@ -261,6 +261,12 @@ T002 (output types) ────────────────────
 ```
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #17 | 2026-02-14 | Initial feature spec |
 
 ## Validation Checklist
 

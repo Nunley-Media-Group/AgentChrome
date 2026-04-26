@@ -8,6 +8,28 @@
 
 ---
 
+## Summary
+
+| Task | Description | Status |
+|------|-------------|--------|
+| T001 | Fix the defect | [ ] |
+| T002 | Add regression test | [ ] |
+| T003 | Verify no regressions | [ ] |
+
+---
+
+## Validation Checklist
+
+Before moving to IMPLEMENT phase:
+
+- [ ] Tasks are focused on the fix — no feature work
+- [ ] Regression test is included (T002)
+- [ ] Each task has verifiable acceptance criteria
+- [ ] No scope creep beyond the defect
+- [ ] File paths reference actual project structure (per `structure.md`)
+
+---
+
 ## Implementation Tasks
 
 - [x] **T001: Fix detach process and temporary profile lifetime**

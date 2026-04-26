@@ -1,6 +1,6 @@
 # Requirements: Console Message Reading with Filtering
 
-**Issue**: #18
+**Issues**: #18
 **Date**: 2026-02-14
 **Status**: Approved
 **Author**: Claude (writing-specs)
@@ -312,6 +312,12 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - (none — all resolved from issue context)
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #18 | 2026-02-14 | Initial feature spec |
 
 ## Validation Checklist
 

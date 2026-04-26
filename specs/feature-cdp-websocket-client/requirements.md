@@ -1,6 +1,6 @@
 # Requirements: CDP WebSocket Client
 
-**Issue**: #4
+**Issues**: #4
 **Date**: 2026-02-10
 **Status**: Draft
 **Author**: Claude (spec-driven)
@@ -347,6 +347,12 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - [x] Channel capacity for event subscriptions — start with bounded channel (capacity 256), caller can configure
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #4 | 2026-02-10 | Initial feature spec |
 
 ## Validation Checklist
 

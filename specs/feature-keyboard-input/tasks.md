@@ -1,6 +1,6 @@
 # Tasks: Keyboard Input
 
-**Issue**: #15
+**Issues**: #15
 **Date**: 2026-02-13
 **Status**: Planning
 **Author**: Claude (writing-specs)
@@ -294,6 +294,12 @@ T001 (CLI args) ──▶ T002 (key validation) ──▶ T003 (key mapping)
 ```
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #15 | 2026-02-13 | Initial feature spec |
 
 ## Validation Checklist
 

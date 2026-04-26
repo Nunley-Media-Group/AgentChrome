@@ -1,6 +1,6 @@
 # Design: CLI Skeleton with Clap Derive Macros
 
-**Issue**: #3
+**Issues**: #3
 **Date**: 2026-02-10
 **Status**: Draft
 **Author**: Claude (spec-driven)
@@ -404,6 +404,12 @@ BDD tests will invoke the compiled binary via `std::process::Command` and assert
 - [ ] [Integration question]
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #3 | 2026-02-10 | Initial feature spec |
 
 ## Validation Checklist
 

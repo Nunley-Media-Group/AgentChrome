@@ -20,6 +20,27 @@
 
 ---
 
+## Task Format
+
+Each task follows this structure:
+
+```
+### T[NNN]: [Task Title]
+
+**File(s)**: `{layer}/path/to/file`
+**Type**: Create | Modify | Delete
+**Depends**: T[NNN], T[NNN] (or None)
+**Acceptance**:
+- [ ] [Verifiable criterion 1]
+- [ ] [Verifiable criterion 2]
+
+**Notes**: [Optional implementation hints]
+```
+
+Map `{layer}/` placeholders to actual project paths using `structure.md`.
+
+---
+
 ## Phase 1: Setup
 
 ### T001: Define CLI argument types for page hittest

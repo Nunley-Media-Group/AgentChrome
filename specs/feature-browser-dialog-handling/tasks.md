@@ -1,6 +1,6 @@
 # Tasks: Browser Dialog Handling
 
-**Issue**: #20
+**Issues**: #20
 **Date**: 2026-02-13
 **Status**: Planning
 **Author**: Claude (writing-specs)
@@ -248,6 +248,12 @@ T002 (errors) ────┘                          ──▶ T005 (info) ─
 ```
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #20 | 2026-02-13 | Initial feature spec |
 
 ## Validation Checklist
 

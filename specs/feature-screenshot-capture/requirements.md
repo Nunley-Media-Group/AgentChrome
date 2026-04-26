@@ -1,6 +1,6 @@
 # Requirements: Screenshot Capture
 
-**Issue**: #12
+**Issues**: #12
 **Date**: 2026-02-12
 **Status**: Approved
 **Author**: Claude
@@ -359,6 +359,12 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - [x] ~~Binary stdout vs base64 JSON?~~ — Base64 JSON for scripting; `--file` for binary output
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #12 | 2026-02-12 | Initial feature spec |
 
 ## Validation Checklist
 

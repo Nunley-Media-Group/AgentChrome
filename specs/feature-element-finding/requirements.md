@@ -1,6 +1,6 @@
 # Requirements: Element Finding
 
-**Issue**: #11
+**Issues**: #11
 **Date**: 2026-02-12
 **Status**: Draft
 **Author**: Claude (writing-specs)
@@ -212,6 +212,12 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - (none — resolved via issue and codebase analysis)
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #11 | 2026-02-12 | Initial feature spec |
 
 ## Validation Checklist
 

@@ -23,6 +23,27 @@ Reference `steering/structure.md` — command modules live at `src/<name>.rs` or
 
 ---
 
+## Task Format
+
+Each task follows this structure:
+
+```
+### T[NNN]: [Task Title]
+
+**File(s)**: `{layer}/path/to/file`
+**Type**: Create | Modify | Delete
+**Depends**: T[NNN], T[NNN] (or None)
+**Acceptance**:
+- [ ] [Verifiable criterion 1]
+- [ ] [Verifiable criterion 2]
+
+**Notes**: [Optional implementation hints]
+```
+
+Map `{layer}/` placeholders to actual project paths using `structure.md`.
+
+---
+
 ## Phase 1: Setup
 
 ### T001: Create `src/script/` module skeleton
@@ -225,8 +246,6 @@ Reference `steering/structure.md` — command modules live at `src/<name>.rs` or
 - [ ] `./target/debug/agentchrome connect disconnect` cleanly shuts down
 - [ ] `pkill -f 'chrome.*--remote-debugging' || true` leaves no orphaned Chrome
 - [ ] Results recorded in the `/verify-code` report per `steering/tech.md`
-
----
 
 ---
 

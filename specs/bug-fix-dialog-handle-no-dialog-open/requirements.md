@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude
 **Severity**: High
-**Related Spec**: `specs/20-browser-dialog-handling/` and `specs/86-fix-dialog-commands-timeout-with-open-dialog/`
+**Related Spec**: specs/feature-browser-dialog-handling/
 
 ---
 

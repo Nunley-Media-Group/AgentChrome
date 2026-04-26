@@ -1,6 +1,6 @@
 # Design: Mouse Interactions
 
-**Issue**: #14
+**Issues**: #14
 **Date**: 2026-02-13
 **Status**: Draft
 **Author**: Claude (writing-specs)
@@ -390,6 +390,12 @@ N/A — this is a CLI tool, no UI components.
 - (None)
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #14 | 2026-02-13 | Initial feature spec |
 
 ## Validation Checklist
 

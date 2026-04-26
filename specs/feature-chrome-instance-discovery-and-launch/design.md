@@ -1,6 +1,6 @@
 # Design: Chrome Instance Discovery and Launch
 
-**Issue**: #5
+**Issues**: #5
 **Date**: 2026-02-10
 **Status**: Draft
 **Author**: Claude (spec-driven)
@@ -540,6 +540,12 @@ Integration tests requiring a real Chrome browser will be gated by an environmen
 - [x] Where should `ChromeProcess` ownership live for long-running sessions? — For `connect`, it prints info and exits. Process cleanup happens when `ChromeProcess` is dropped. Future commands that need a persistent connection will need a different ownership model (future issue).
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #5 | 2026-02-10 | Initial feature spec |
 
 ## Validation Checklist
 

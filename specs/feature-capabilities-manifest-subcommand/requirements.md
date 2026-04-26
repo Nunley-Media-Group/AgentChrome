@@ -1,6 +1,6 @@
 # Requirements: Machine-Readable Capabilities Manifest Subcommand
 
-**Issue**: #30
+**Issues**: #30
 **Date**: 2026-02-14
 **Status**: Draft
 **Author**: Codex (spec generation)
@@ -270,6 +270,12 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - None — requirements are clear from the issue.
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #30 | 2026-02-14 | Initial feature spec |
 
 ## Validation Checklist
 

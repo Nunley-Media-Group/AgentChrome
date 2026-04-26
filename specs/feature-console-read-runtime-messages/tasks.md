@@ -1,6 +1,6 @@
 # Tasks: Console Read Runtime Messages
 
-**Issue**: #146
+**Issues**: #146
 **Date**: 2026-02-18
 **Status**: Planning
 **Author**: Claude (writing-specs)
@@ -16,6 +16,27 @@
 | Integration | 0 | N/A |
 | Testing | 3 | [ ] |
 | **Total** | **6** | |
+
+---
+
+## Task Format
+
+Each task follows this structure:
+
+```
+### T[NNN]: [Task Title]
+
+**File(s)**: `{layer}/path/to/file`
+**Type**: Create | Modify | Delete
+**Depends**: T[NNN], T[NNN] (or None)
+**Acceptance**:
+- [ ] [Verifiable criterion 1]
+- [ ] [Verifiable criterion 2]
+
+**Notes**: [Optional implementation hints]
+```
+
+Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ---
 
@@ -134,6 +155,12 @@ T001 ──▶ T002 ──┬──▶ T003
 ```
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #146 | 2026-02-18 | Initial feature spec |
 
 ## Validation Checklist
 

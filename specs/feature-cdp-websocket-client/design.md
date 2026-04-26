@@ -1,6 +1,6 @@
 # Design: CDP WebSocket Client
 
-**Issue**: #4
+**Issues**: #4
 **Date**: 2026-02-10
 **Status**: Draft
 **Author**: Claude (spec-driven)
@@ -666,6 +666,12 @@ async fn start_mock_server() -> (SocketAddr, JoinHandle<()>) {
 None — design decisions are resolved.
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #4 | 2026-02-10 | Initial feature spec |
 
 ## Validation Checklist
 

@@ -1,6 +1,6 @@
 # Design: Scroll Interactions
 
-**Issue**: #17
+**Issues**: #17
 **Date**: 2026-02-14
 **Status**: Approved
 **Author**: Claude (writing-specs)
@@ -262,6 +262,12 @@ For `--smooth`, after dispatching the scroll:
 - [ ] [Integration question]
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #17 | 2026-02-14 | Initial feature spec |
 
 ## Validation Checklist
 

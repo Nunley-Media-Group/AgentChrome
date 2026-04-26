@@ -1,6 +1,6 @@
 # Requirements: URL Navigation
 
-**Issue**: #8
+**Issues**: #8
 **Date**: 2026-02-11
 **Status**: Draft
 **Author**: Claude (spec-driven development)
@@ -310,6 +310,12 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - [x] Should `--wait-until` apply to back/forward/reload? — Not as a flag (they use default load wait), but the implementation should wait for the page to settle
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #8 | 2026-02-11 | Initial feature spec |
 
 ## Validation Checklist
 

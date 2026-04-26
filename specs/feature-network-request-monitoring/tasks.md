@@ -1,6 +1,6 @@
 # Tasks: Network Request Monitoring
 
-**Issue**: #19
+**Issues**: #19
 **Date**: 2026-02-14
 **Status**: Planning
 **Author**: Claude (spec generation)
@@ -274,6 +274,12 @@ T002 (output types) ──▶ T003 (event correlation) ──▶ T004 (list)  �
 ```
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #19 | 2026-02-14 | Initial feature spec |
 
 ## Validation Checklist
 

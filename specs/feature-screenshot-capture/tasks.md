@@ -1,6 +1,6 @@
 # Tasks: Screenshot Capture
 
-**Issue**: #12
+**Issues**: #12
 **Date**: 2026-02-12
 **Status**: Approved
 **Author**: Claude
@@ -285,6 +285,12 @@ T007 is a verification gate.
 T008 and T009 can proceed once T006 is complete.
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #12 | 2026-02-12 | Initial feature spec |
 
 ## Validation Checklist
 

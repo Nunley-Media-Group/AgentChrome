@@ -5,7 +5,7 @@
 **Status**: Approved
 **Author**: Claude (spec generation)
 **Severity**: High
-**Related Spec**: `specs/18-console-message-reading-with-filtering/`
+**Related Spec**: specs/feature-console-message-reading-with-filtering/
 
 ---
 

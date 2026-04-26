@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude
 **Severity**: High
-**Related Spec**: `specs/16-form-input-and-filling/`
+**Related Spec**: specs/feature-form-input-and-filling/
 
 ---
 

@@ -5,7 +5,7 @@
 **Status**: Implemented
 **Author**: Claude
 **Severity**: Medium
-**Related Spec**: `specs/121-fix-tabs-create-background/` — third attempt at the same fix; `specs/82-fix-tabs-create-background/` — original fix; `specs/7-tab-management/` — AC6
+**Related Spec**: specs/feature-tab-management/
 
 ---
 

@@ -1,6 +1,6 @@
 # Design: Configuration File Support
 
-**Issue**: #24
+**Issues**: #24
 **Date**: 2026-02-14
 **Status**: Draft
 **Author**: Claude (writing-specs)
@@ -346,6 +346,12 @@ N/A — this is a CLI tool. Output follows the existing JSON/plain output patter
 - (none — all resolved)
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #24 | 2026-02-14 | Initial feature spec |
 
 ## Validation Checklist
 

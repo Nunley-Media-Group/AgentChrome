@@ -1,6 +1,6 @@
 # Requirements: Cargo Workspace Setup
 
-**Issue**: #1
+**Issues**: #1
 **Date**: 2026-02-10
 **Status**: Draft
 **Author**: Claude (spec-driven)
@@ -186,6 +186,12 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - None — requirements are straightforward for project scaffolding
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #1 | 2026-02-10 | Initial feature spec |
 
 ## Validation Checklist
 

@@ -1,6 +1,6 @@
 # Requirements: Codex Integration Guide
 
-**Issue**: #31
+**Issues**: #31
 **Date**: 2026-02-14
 **Status**: Draft
 **Author**: Codex (nmg-sdlc)
@@ -232,6 +232,12 @@ Not applicable — no data storage or API changes.
 - None — issue #31 is well-defined with clear acceptance criteria
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #31 | 2026-02-14 | Initial feature spec |
 
 ## Validation Checklist
 

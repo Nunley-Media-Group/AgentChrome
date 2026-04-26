@@ -1,6 +1,6 @@
 # Requirements: Performance Tracing
 
-**Issue**: #22
+**Issues**: #22
 **Date**: 2026-02-12
 **Status**: Draft
 **Author**: Claude (writing-specs)
@@ -271,6 +271,12 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - [x] Rust-native trace parsing vs shelling out? → Rust-native; parse Chrome Trace Event Format JSON for CWV extraction
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #22 | 2026-02-12 | Initial feature spec |
 
 ## Validation Checklist
 

@@ -1,6 +1,6 @@
 # Design: Machine-Readable Capabilities Manifest Subcommand
 
-**Issue**: #30
+**Issues**: #30
 **Date**: 2026-02-14
 **Status**: Draft
 **Author**: Claude (spec generation)
@@ -487,6 +487,12 @@ fn manifest_covers_all_commands() {
 - [ ] [Integration question]
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #30 | 2026-02-14 | Initial feature spec |
 
 ## Validation Checklist
 

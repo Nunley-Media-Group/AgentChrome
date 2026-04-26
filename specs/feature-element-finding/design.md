@@ -1,6 +1,6 @@
 # Design: Element Finding
 
-**Issue**: #11
+**Issues**: #11
 **Date**: 2026-02-12
 **Status**: Draft
 **Author**: Claude (writing-specs)
@@ -290,6 +290,12 @@ FeatureScreen
 - [ ] [Integration question]
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #11 | 2026-02-12 | Initial feature spec |
 
 ## Validation Checklist
 

@@ -1,6 +1,6 @@
 # Requirements: Console Read Runtime Messages
 
-**Issue**: #146
+**Issues**: #146
 **Date**: 2026-02-18
 **Status**: Draft
 **Author**: Claude (writing-specs)
@@ -237,6 +237,12 @@ Feature: Console Read Runtime Messages
 - (none -- solution validated per issue #146 comments)
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #146 | 2026-02-18 | Initial feature spec |
 
 ## Validation Checklist
 

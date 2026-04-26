@@ -1,6 +1,6 @@
 # Requirements: Configuration File Support
 
-**Issue**: #24
+**Issues**: #24
 **Date**: 2026-02-14
 **Status**: Draft
 **Author**: Claude (writing-specs)
@@ -309,6 +309,12 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - (none — all resolved from issue description)
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #24 | 2026-02-14 | Initial feature spec |
 
 ## Validation Checklist
 

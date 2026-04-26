@@ -8,6 +8,17 @@
 
 ---
 
+## Overview
+
+[2-3 paragraph technical summary: what will be built, key architectural decisions, integration points. Reference the requirements spec for context.]
+
+---
+
+## Architecture
+
+### Component Diagram
+
+Reference `structure.md` for the project's layer architecture.
 ## Root Cause Analysis
 
 `src/chrome/launcher.rs::build_chrome_args` constructs the managed Chrome launch argument list with remote debugging, temporary profile, first-run suppression, default-browser suppression, automation, and optional headless flags. On macOS, that default set can still allow Chrome to touch system credential storage during startup, producing a Keychain prompt that blocks a non-interactive headless launch until AgentChrome reports `Chrome startup timed out on port <port>`.

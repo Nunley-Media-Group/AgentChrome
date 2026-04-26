@@ -1,6 +1,6 @@
 # Design: URL Navigation
 
-**Issue**: #8
+**Issues**: #8
 **Date**: 2026-02-11
 **Status**: Draft
 **Author**: Claude (spec-driven development)
@@ -470,6 +470,12 @@ FeatureScreen
 - [ ] [Integration question]
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #8 | 2026-02-11 | Initial feature spec |
 
 ## Validation Checklist
 

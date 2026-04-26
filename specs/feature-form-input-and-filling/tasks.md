@@ -1,6 +1,6 @@
 # Tasks: Form Input and Filling
 
-**Issue**: #16
+**Issues**: #16
 **Date**: 2026-02-13
 **Status**: Planning
 **Author**: Claude (nmg-sdlc)
@@ -238,6 +238,12 @@ T001 ──▶ T002 ──┬──▶ T003 ──┬──▶ T004
 ```
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #16 | 2026-02-13 | Initial feature spec |
 
 ## Validation Checklist
 

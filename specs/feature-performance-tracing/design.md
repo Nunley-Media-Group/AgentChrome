@@ -1,6 +1,6 @@
 # Design: Performance Tracing
 
-**Issue**: #22
+**Issues**: #22
 **Date**: 2026-02-12
 **Status**: Draft
 **Author**: Claude (writing-specs)
@@ -427,6 +427,12 @@ FeatureScreen
 - [x] Should `perf vitals` clean up the temp trace file? → No, keep it for potential follow-up `perf analyze`
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #22 | 2026-02-12 | Initial feature spec |
 
 ## Validation Checklist
 

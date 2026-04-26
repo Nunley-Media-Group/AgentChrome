@@ -5,7 +5,7 @@
 **Status**: Approved
 **Author**: Claude
 **Severity**: Medium
-**Related Spec**: `specs/22-performance-tracing/`
+**Related Spec**: specs/feature-performance-tracing/
 
 ---
 

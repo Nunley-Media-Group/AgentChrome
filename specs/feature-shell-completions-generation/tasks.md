@@ -1,6 +1,6 @@
 # Tasks: Shell Completions Generation
 
-**Issue**: #25
+**Issues**: #25
 **Date**: 2026-02-14
 **Status**: Planning
 **Author**: Claude (writing-specs)
@@ -203,6 +203,12 @@ T001 ──▶ T002 ──▶ T003 ──▶ T004 ──┬──▶ T005
 ```
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #25 | 2026-02-14 | Initial feature spec |
 
 ## Validation Checklist
 

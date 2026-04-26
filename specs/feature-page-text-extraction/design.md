@@ -1,6 +1,6 @@
 # Design: Page Text Extraction
 
-**Issue**: #9
+**Issues**: #9
 **Date**: 2026-02-11
 **Status**: Draft
 **Author**: Claude (writing-specs)
@@ -304,6 +304,12 @@ FeatureScreen
 - [ ] [Integration question]
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #9 | 2026-02-11 | Initial feature spec |
 
 ## Validation Checklist
 

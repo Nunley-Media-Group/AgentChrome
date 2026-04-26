@@ -7,6 +7,17 @@
 
 ---
 
+## Overview
+
+[2-3 paragraph technical summary: what will be built, key architectural decisions, integration points. Reference the requirements spec for context.]
+
+---
+
+## Architecture
+
+### Component Diagram
+
+Reference `structure.md` for the project's layer architecture.
 ## Architecture Overview
 
 The `audit lighthouse` command follows the established command-group pattern used by `perf`, `tabs`, `cookie`, etc. It adds a new `audit` command group with a `lighthouse` subcommand that shells out to the external `lighthouse` CLI binary rather than using CDP directly.

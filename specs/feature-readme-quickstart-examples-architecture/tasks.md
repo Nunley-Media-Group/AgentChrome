@@ -1,6 +1,6 @@
 # Tasks: README with Quick-Start, Examples, and Architecture Overview
 
-**Issue**: #28
+**Issues**: #28
 **Date**: 2026-02-14
 **Status**: Planning
 **Author**: Codex (writing-specs)
@@ -256,6 +256,12 @@ T003, T004, T005, T006, T007, T008, T009 ──▶ T010 ──▶ T011
 - T006 depends on T005; T007 depends on T001
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #28 | 2026-02-14 | Initial feature spec |
 
 ## Validation Checklist
 

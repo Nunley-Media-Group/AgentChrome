@@ -1,6 +1,6 @@
 # Requirements: Comprehensive Help Text
 
-**Issue**: #26
+**Issues**: #26
 **Date**: 2026-02-14
 **Status**: Approved
 **Author**: Codex (automated)
@@ -221,6 +221,12 @@ N/A — this is a documentation-only change to compile-time string literals.
 - None — the issue is well-specified and the codebase is fully explored.
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #26 | 2026-02-14 | Initial feature spec |
 
 ## Validation Checklist
 

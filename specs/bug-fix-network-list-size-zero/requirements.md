@@ -5,7 +5,7 @@
 **Status**: Approved
 **Author**: Claude
 **Severity**: Medium
-**Related Spec**: `specs/19-network-request-monitoring/`
+**Related Spec**: specs/feature-network-request-monitoring/
 
 ---
 

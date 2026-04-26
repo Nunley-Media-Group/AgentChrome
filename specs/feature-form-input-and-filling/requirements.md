@@ -1,6 +1,6 @@
 # Requirements: Form Input and Filling
 
-**Issue**: #16
+**Issues**: #16
 **Date**: 2026-02-13
 **Status**: Approved
 **Author**: Claude (nmg-sdlc)
@@ -242,6 +242,12 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 None — all requirements are clear from the issue specification.
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #16 | 2026-02-13 | Initial feature spec |
 
 ## Validation Checklist
 

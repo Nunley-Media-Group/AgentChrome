@@ -1,6 +1,6 @@
 # Design: Codex Integration Guide
 
-**Issue**: #31
+**Issues**: #31
 **Date**: 2026-02-14
 **Status**: Draft
 **Author**: Codex (nmg-sdlc)
@@ -198,6 +198,12 @@ Since this is a documentation feature, BDD tests will verify:
 - None
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #31 | 2026-02-14 | Initial feature spec |
 
 ## Validation Checklist
 

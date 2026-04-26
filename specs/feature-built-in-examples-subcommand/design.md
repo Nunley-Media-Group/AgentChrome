@@ -1,6 +1,6 @@
 # Design: Built-in Examples Subcommand
 
-**Issue**: #29
+**Issues**: #29
 **Date**: 2026-02-14
 **Status**: Draft
 **Author**: Claude (spec generation)
@@ -325,6 +325,12 @@ FeatureScreen
 - [ ] [Integration question]
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #29 | 2026-02-14 | Initial feature spec |
 
 ## Validation Checklist
 

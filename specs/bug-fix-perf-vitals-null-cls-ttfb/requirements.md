@@ -5,7 +5,7 @@
 **Status**: Approved
 **Author**: Claude
 **Severity**: High
-**Related Spec**: `specs/22-performance-tracing/` and `specs/75-fix-perf-vitals-missing-metrics/`
+**Related Spec**: specs/feature-performance-tracing/
 
 ---
 

@@ -1,6 +1,6 @@
 # Requirements: Keyboard Input
 
-**Issue**: #15
+**Issues**: #15
 **Date**: 2026-02-13
 **Status**: Approved
 **Author**: Claude (writing-specs)
@@ -338,6 +338,12 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - (None — all requirements are clear from the issue and CDP documentation)
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #15 | 2026-02-13 | Initial feature spec |
 
 ## Validation Checklist
 

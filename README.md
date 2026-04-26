@@ -382,6 +382,8 @@ Available strategies: `iframes`, `overlays`, `scorm`, `drag-and-drop`, `shadow-d
 
 ## Contributing
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for project-specific issue, spec, steering, implementation, and verification expectations.
+
 All contributions must follow the [NMG-SDLC](https://github.com/Nunley-Media-Group/nmg-plugins) workflow without deviation. NMG-SDLC is a BDD spec-driven development toolkit that enforces a structured delivery lifecycle: issue creation, specification writing, implementation, verification, and PR creation. Contributions that bypass the SDLC process will not be accepted.
 
 ### Prerequisites

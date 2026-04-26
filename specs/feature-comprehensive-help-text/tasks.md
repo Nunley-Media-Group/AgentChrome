@@ -1,6 +1,6 @@
 # Tasks: Comprehensive Help Text
 
-**Issue**: #26
+**Issues**: #26
 **Date**: 2026-02-14
 **Status**: Planning
 **Author**: Claude (automated)
@@ -241,6 +241,12 @@ T001 ──▶ T002 ──┬──▶ T003 ──┐
 T003, T004, T005 can be done in parallel after T002.
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #26 | 2026-02-14 | Initial feature spec |
 
 ## Validation Checklist
 

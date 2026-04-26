@@ -1,6 +1,6 @@
 # Tasks: DOM Command Group
 
-**Issue**: #149
+**Issues**: #149
 **Date**: 2026-02-19
 **Status**: Planning
 **Author**: Claude (writing-specs)
@@ -16,6 +16,27 @@
 | Integration | 3 | [ ] |
 | Testing | 3 | [ ] |
 | **Total** | **15** | |
+
+---
+
+## Task Format
+
+Each task follows this structure:
+
+```
+### T[NNN]: [Task Title]
+
+**File(s)**: `{layer}/path/to/file`
+**Type**: Create | Modify | Delete
+**Depends**: T[NNN], T[NNN] (or None)
+**Acceptance**:
+- [ ] [Verifiable criterion 1]
+- [ ] [Verifiable criterion 2]
+
+**Notes**: [Optional implementation hints]
+```
+
+Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ---
 
@@ -266,6 +287,12 @@ T002 ──┘                     ├──▶ T006 ──┤
 ```
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #149 | 2026-02-19 | Initial feature spec |
 
 ## Validation Checklist
 

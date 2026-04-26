@@ -1,6 +1,6 @@
 # Tasks: Accessibility Tree Snapshot
 
-**Issue**: #10
+**Issues**: #10
 **Date**: 2026-02-12
 **Status**: Planning
 **Author**: Claude (writing-specs)
@@ -271,6 +271,12 @@ T006 is a verification gate.
 T007 and T008 can proceed once T005 is complete.
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #10 | 2026-02-12 | Initial feature spec |
 
 ## Validation Checklist
 

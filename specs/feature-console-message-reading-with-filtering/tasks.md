@@ -1,6 +1,6 @@
 # Tasks: Console Message Reading with Filtering
 
-**Issue**: #18
+**Issues**: #18
 **Date**: 2026-02-14
 **Status**: Planning
 **Author**: Claude (writing-specs)
@@ -294,6 +294,12 @@ T002 (types) ─────┼──▶ T003 (helpers) ──▶ T004          
 ```
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #18 | 2026-02-14 | Initial feature spec |
 
 ## Validation Checklist
 

@@ -1,6 +1,6 @@
 # Tasks: Cross-Platform Release Pipeline
 
-**Issue**: #2
+**Issues**: #2
 **Date**: 2026-02-10
 **Status**: Planning
 **Author**: Claude (spec-driven)
@@ -232,6 +232,12 @@ T002 + T005 ──▶ T007
 ```
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #2 | 2026-02-10 | Initial feature spec |
 
 ## Validation Checklist
 

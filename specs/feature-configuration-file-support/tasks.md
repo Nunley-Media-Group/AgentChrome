@@ -1,6 +1,6 @@
 # Tasks: Configuration File Support
 
-**Issue**: #24
+**Issues**: #24
 **Date**: 2026-02-14
 **Status**: Planning
 **Author**: Claude (writing-specs)
@@ -297,6 +297,12 @@ T001 ──▶ T002 ──┬──▶ T003 ──▶ T004 ──┐
 ```
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #24 | 2026-02-14 | Initial feature spec |
 
 ## Validation Checklist
 

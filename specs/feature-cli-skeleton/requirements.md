@@ -1,6 +1,6 @@
 # Requirements: CLI Skeleton with Clap Derive Macros
 
-**Issue**: #3
+**Issues**: #3
 **Date**: 2026-02-10
 **Status**: Draft
 **Author**: Codex (spec-driven)
@@ -214,6 +214,12 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 None — all requirements are clear from the issue.
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #3 | 2026-02-10 | Initial feature spec |
 
 ## Validation Checklist
 

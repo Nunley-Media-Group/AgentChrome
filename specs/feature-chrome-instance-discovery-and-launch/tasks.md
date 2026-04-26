@@ -1,6 +1,6 @@
 # Tasks: Chrome Instance Discovery and Launch
 
-**Issue**: #5
+**Issues**: #5
 **Date**: 2026-02-10
 **Status**: Planning
 **Author**: Claude (spec-driven)
@@ -353,6 +353,12 @@ T007 ──┼───────────┼──────────
 **Critical path:** T001 → T003 → T005 → T006 → T008 → T009 → T010 → T011
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #5 | 2026-02-10 | Initial feature spec |
 
 ## Validation Checklist
 

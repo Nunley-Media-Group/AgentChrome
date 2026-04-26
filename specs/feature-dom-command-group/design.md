@@ -1,6 +1,6 @@
 # Design: DOM Command Group
 
-**Issue**: #149
+**Issues**: #149
 **Date**: 2026-02-19
 **Status**: Draft
 **Author**: Claude (writing-specs)
@@ -319,6 +319,12 @@ Add error constructors:
 | Large DOM trees cause slow/huge `dom tree` output | Medium | Low | `--depth` flag limits traversal; text content truncated to 60 chars per node |
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #149 | 2026-02-19 | Initial feature spec |
 
 ## Validation Checklist
 

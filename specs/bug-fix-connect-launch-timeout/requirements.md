@@ -5,7 +5,7 @@
 **Status**: Draft
 **Author**: Claude
 **Severity**: Critical
-**Related Spec**: `specs/5-chrome-instance-discovery-and-launch/`
+**Related Spec**: specs/feature-chrome-instance-discovery-and-launch/
 
 ---
 

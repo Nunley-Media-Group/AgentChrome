@@ -1,6 +1,6 @@
 # Design: Accessibility Tree Snapshot
 
-**Issue**: #10
+**Issues**: #10
 **Date**: 2026-02-12
 **Status**: Draft
 **Author**: Claude (writing-specs)
@@ -554,6 +554,12 @@ FeatureScreen
 - [ ] [Integration question]
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #10 | 2026-02-12 | Initial feature spec |
 
 ## Validation Checklist
 

@@ -1,6 +1,6 @@
 # Design: File Upload to Page Elements
 
-**Issue**: #23
+**Issues**: #23
 **Date**: 2026-02-14
 **Status**: Approved
 **Author**: Claude (nmg-sdlc)
@@ -290,6 +290,12 @@ FeatureScreen
 - [ ] [Integration question]
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #23 | 2026-02-14 | Initial feature spec |
 
 ## Validation Checklist
 

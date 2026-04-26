@@ -1,6 +1,6 @@
 # Tasks: Built-in Examples Subcommand
 
-**Issue**: #29
+**Issues**: #29
 **Date**: 2026-02-14
 **Status**: Planning
 **Author**: Claude (spec generation)
@@ -224,6 +224,12 @@ T002 (types) ─┬──┘
 ```
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #29 | 2026-02-14 | Initial feature spec |
 
 ## Validation Checklist
 

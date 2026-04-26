@@ -1,6 +1,6 @@
 # Design: Keyboard Input
 
-**Issue**: #15
+**Issues**: #15
 **Date**: 2026-02-13
 **Status**: Approved
 **Author**: Claude (writing-specs)
@@ -391,6 +391,12 @@ N/A — this is a CLI tool, no UI components.
 - (None)
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #15 | 2026-02-13 | Initial feature spec |
 
 ## Validation Checklist
 

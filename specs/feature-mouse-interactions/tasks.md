@@ -1,6 +1,6 @@
 # Tasks: Mouse Interactions
 
-**Issue**: #14
+**Issues**: #14
 **Date**: 2026-02-13
 **Status**: Planning
 **Author**: Claude (writing-specs)
@@ -314,6 +314,12 @@ T002 (errors) ────┘                                          │
 ```
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #14 | 2026-02-13 | Initial feature spec |
 
 ## Validation Checklist
 

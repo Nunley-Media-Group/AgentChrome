@@ -1,6 +1,6 @@
 # Requirements: Network Request Monitoring
 
-**Issue**: #19
+**Issues**: #19
 **Date**: 2026-02-14
 **Status**: Approved
 **Author**: Claude (spec generation)
@@ -321,6 +321,12 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - None; requirements are well-defined from the GitHub issue and MCP reference.
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #19 | 2026-02-14 | Initial feature spec |
 
 ## Validation Checklist
 

@@ -1,6 +1,6 @@
 # Requirements: README with Quick-Start, Examples, and Architecture Overview
 
-**Issue**: #28
+**Issues**: #28
 **Date**: 2026-02-14
 **Status**: Approved
 **Author**: Codex (writing-specs)
@@ -302,6 +302,12 @@ This feature has no runtime input data — it is a static documentation file.
 - None — requirements are well-defined by the issue.
 
 ---
+
+## Change History
+
+| Issue | Date | Summary |
+|-------|------|---------|
+| #28 | 2026-02-14 | Initial feature spec |
 
 ## Validation Checklist
 
