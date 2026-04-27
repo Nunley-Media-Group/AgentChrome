@@ -174,16 +174,16 @@ pub(crate) async fn navigate_and_wait(
     let response_rx = managed.subscribe("Network.responseReceived").await?;
 
     // Subscribe for wait strategy
-    let wait_rx = match wait_until {
-        WaitUntil::Load => Some(managed.subscribe("Page.loadEventFired").await?),
-        WaitUntil::Domcontentloaded => Some(managed.subscribe("Page.domContentEventFired").await?),
-        WaitUntil::Networkidle | WaitUntil::None => None,
-    };
-    let within_doc_rx = match wait_until {
-        WaitUntil::Load | WaitUntil::Domcontentloaded => {
-            Some(managed.subscribe("Page.navigatedWithinDocument").await?)
-        }
-        WaitUntil::Networkidle | WaitUntil::None => None,
+    let (wait_rx, within_doc_rx) = match wait_until {
+        WaitUntil::Load => (
+            Some(managed.subscribe("Page.loadEventFired").await?),
+            Some(managed.subscribe("Page.navigatedWithinDocument").await?),
+        ),
+        WaitUntil::Domcontentloaded => (
+            Some(managed.subscribe("Page.domContentEventFired").await?),
+            Some(managed.subscribe("Page.navigatedWithinDocument").await?),
+        ),
+        WaitUntil::Networkidle | WaitUntil::None => (None, None),
     };
 
     // For network idle, we need request tracking subscriptions
@@ -450,6 +450,7 @@ async fn wait_for_url_navigation(
     target_url: &str,
 ) -> Result<(), AppError> {
     let deadline = tokio::time::Instant::now() + Duration::from_millis(timeout_ms);
+    let parsed_target_url = url::Url::parse(target_url).ok();
     let mut wait_closed = false;
     let mut within_doc_closed = false;
 
@@ -471,7 +472,13 @@ async fn wait_for_url_navigation(
             }
             event = within_doc_rx.recv(), if !within_doc_closed => {
                 match event {
-                    Some(event) if within_document_event_matches(&event, target_url) => {
+                    Some(event)
+                        if within_document_event_matches(
+                            &event,
+                            target_url,
+                            parsed_target_url.as_ref(),
+                        ) =>
+                    {
                         return Ok(());
                     }
                     Some(_) => {}
@@ -485,9 +492,13 @@ async fn wait_for_url_navigation(
     }
 }
 
-fn within_document_event_matches(event: &CdpEvent, target_url: &str) -> bool {
+fn within_document_event_matches(
+    event: &CdpEvent,
+    target_url: &str,
+    parsed_target_url: Option<&url::Url>,
+) -> bool {
     let Some(event_url) = event.params["url"].as_str() else {
-        return true;
+        return false;
     };
 
     if event_url == target_url {
@@ -497,11 +508,11 @@ fn within_document_event_matches(event: &CdpEvent, target_url: &str) -> bool {
     let Ok(event_url) = url::Url::parse(event_url) else {
         return false;
     };
-    let Ok(target_url) = url::Url::parse(target_url) else {
+    let Some(target_url) = parsed_target_url else {
         return false;
     };
 
-    event_url == target_url
+    event_url == *target_url
 }
 
 /// Wait for either `Page.frameNavigated` (cross-document) or
@@ -896,6 +907,24 @@ mod tests {
 
         within_tx
             .send(mock_within_document_event("https://example.com/#other"))
+            .await
+            .unwrap();
+
+        let result =
+            wait_for_url_navigation(wait_rx, within_rx, 50, "Load", "https://example.com/#S06")
+                .await;
+
+        assert!(result.is_err());
+        assert!(result.unwrap_err().message.contains("timed out"));
+    }
+
+    #[tokio::test]
+    async fn url_navigation_ignores_within_document_event_without_url() {
+        let (_wait_tx, wait_rx) = tokio::sync::mpsc::channel(1);
+        let (within_tx, within_rx) = tokio::sync::mpsc::channel(1);
+
+        within_tx
+            .send(mock_cdp_event("Page.navigatedWithinDocument"))
             .await
             .unwrap();
 
