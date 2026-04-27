@@ -22,6 +22,25 @@ pub(crate) struct StaleTool {
     pub(crate) installed_version: Version,
 }
 
+/// Installed-skill state discovered for one supported tool.
+pub(crate) enum InstalledSkillStatus {
+    Missing,
+    Current,
+    Stale { installed_version: Version },
+}
+
+impl InstalledSkillStatus {
+    pub(crate) fn is_installed(&self) -> bool {
+        !matches!(self, Self::Missing)
+    }
+}
+
+/// Inventory row for a supported tool's canonical `AgentChrome` skill path.
+pub(crate) struct InstalledSkill {
+    pub(crate) tool: &'static crate::skill::ToolInfo,
+    pub(crate) status: InstalledSkillStatus,
+}
+
 // =============================================================================
 // Version marker parsing
 // =============================================================================
@@ -118,35 +137,56 @@ fn binary_version() -> Version {
 }
 
 // =============================================================================
-// Stale tool scan
+// Installed / stale tool scan
 // =============================================================================
+
+/// Classify every supported tool by its canonical `AgentChrome` skill path.
+///
+/// I/O errors, missing files, and unversioned files are treated as missing for
+/// inventory purposes. Installed `AgentChrome` skill files carry a parseable
+/// version marker; stale/current classification is based on that marker.
+pub(crate) fn installed_skill_inventory() -> Vec<InstalledSkill> {
+    let bin_ver = binary_version();
+    crate::skill::TOOLS
+        .iter()
+        .map(|tool| InstalledSkill {
+            tool,
+            status: installed_skill_status(tool, bin_ver),
+        })
+        .collect()
+}
 
 /// Collect all tools whose installed skill file reports an older version than
 /// the running binary.
-///
-/// I/O errors (missing file, unreadable) are silently skipped for that tool —
-/// a missing install is not a stale install.
 pub(crate) fn stale_tools() -> Vec<StaleTool> {
-    let bin_ver = binary_version();
-    let mut result = Vec::with_capacity(crate::skill::TOOLS.len());
+    installed_skill_inventory()
+        .into_iter()
+        .filter_map(|entry| match entry.status {
+            InstalledSkillStatus::Stale { installed_version } => Some(StaleTool {
+                tool: entry.tool,
+                installed_version,
+            }),
+            InstalledSkillStatus::Missing | InstalledSkillStatus::Current => None,
+        })
+        .collect()
+}
 
-    for tool in crate::skill::TOOLS {
-        let template = crate::skill::path_template(tool);
-        let Ok(path) = crate::skill::resolve_path(template) else {
-            continue;
-        };
-        let Some(installed_ver) = read_version_marker(&path) else {
-            continue;
-        };
-        if installed_ver < bin_ver {
-            result.push(StaleTool {
-                tool,
-                installed_version: installed_ver,
-            });
+fn installed_skill_status(
+    tool: &'static crate::skill::ToolInfo,
+    bin_ver: Version,
+) -> InstalledSkillStatus {
+    let template = crate::skill::path_template(tool);
+    let Ok(path) = crate::skill::resolve_path(template) else {
+        return InstalledSkillStatus::Missing;
+    };
+
+    match read_version_marker(&path) {
+        Some(installed_version) if installed_version < bin_ver => {
+            InstalledSkillStatus::Stale { installed_version }
         }
+        Some(_) => InstalledSkillStatus::Current,
+        None => InstalledSkillStatus::Missing,
     }
-
-    result
 }
 
 // =============================================================================

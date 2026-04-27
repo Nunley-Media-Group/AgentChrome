@@ -50,6 +50,14 @@ struct SkillBatchOutput {
 }
 
 #[derive(Serialize)]
+struct SkillUpdateNoopOutput {
+    results: Vec<SkillBatchResult>,
+    status: String,
+    action: String,
+    message: String,
+}
+
+#[derive(Serialize)]
 struct SkillBatchResult {
     tool: String,
     path: String,
@@ -430,17 +438,6 @@ fn no_supported_agentic_tool_detected() -> AppError {
     }
 }
 
-fn no_stale_installed_skills_found() -> AppError {
-    let custom = serde_json::json!({
-        "error": "no stale installed AgentChrome skills found",
-    });
-    AppError {
-        message: "no stale installed AgentChrome skills found".into(),
-        code: ExitCode::GeneralError,
-        custom_json: Some(custom.to_string()),
-    }
-}
-
 // =============================================================================
 // Install logic
 // =============================================================================
@@ -540,19 +537,7 @@ fn uninstall_skill(tool: &ToolInfo) -> Result<SkillResult, AppError> {
 
 fn update_skill(tool: &ToolInfo) -> Result<SkillResult, AppError> {
     // Check that the skill is currently installed
-    let template = path_template(tool);
-    let path = resolve_path(template)?;
-    let installed = match &tool.install_mode {
-        InstallMode::Standalone { .. } | InstallMode::StandaloneWithConfig { .. } => path.exists(),
-        InstallMode::AppendSection { .. } => {
-            path.exists()
-                && std::fs::read_to_string(&path)
-                    .map(|c| c.contains(SECTION_START))
-                    .unwrap_or(false)
-        }
-    };
-
-    if !installed {
+    if !skill_install_exists(tool)? {
         return Err(AppError {
             message: format!(
                 "no skill currently installed for {}. Run 'agentchrome skill install' first.",
@@ -584,16 +569,37 @@ fn install_detected_skills(global: &GlobalOpts) -> Result<(), AppError> {
 }
 
 fn update_stale_skills(global: &GlobalOpts) -> Result<(), AppError> {
-    let tools: Vec<&'static ToolInfo> = crate::skill_check::stale_tools()
-        .into_iter()
-        .map(|stale| stale.tool)
+    let inventory = crate::skill_check::installed_skill_inventory();
+    let tools: Vec<&'static ToolInfo> = inventory
+        .iter()
+        .filter_map(|entry| match entry.status {
+            crate::skill_check::InstalledSkillStatus::Stale { .. } => Some(entry.tool),
+            crate::skill_check::InstalledSkillStatus::Missing
+            | crate::skill_check::InstalledSkillStatus::Current => None,
+        })
         .collect();
+
     if tools.is_empty() {
-        return Err(no_stale_installed_skills_found());
+        let message = if inventory.iter().any(|entry| entry.status.is_installed()) {
+            "all installed AgentChrome skills are up to date"
+        } else {
+            "no AgentChrome skills are installed"
+        };
+        return print_update_noop_output(global, message);
     }
 
     let batch = run_skill_batch(tools, "updated", update_skill);
     print_batch_output(global, &batch)
+}
+
+fn print_update_noop_output(global: &GlobalOpts, message: &str) -> Result<(), AppError> {
+    let output = SkillUpdateNoopOutput {
+        results: Vec::new(),
+        status: "ok".into(),
+        action: "noop".into(),
+        message: message.into(),
+    };
+    print_output(&output, &global.output)
 }
 
 fn run_skill_batch(
@@ -650,6 +656,20 @@ fn batch_path(tool: &ToolInfo) -> String {
     )
 }
 
+fn skill_install_exists(tool: &ToolInfo) -> Result<bool, AppError> {
+    let path = resolve_path(path_template(tool))?;
+    let installed = match &tool.install_mode {
+        InstallMode::Standalone { .. } | InstallMode::StandaloneWithConfig { .. } => path.exists(),
+        InstallMode::AppendSection { .. } => {
+            path.exists()
+                && std::fs::read_to_string(&path)
+                    .map(|content| content.contains(SECTION_START))
+                    .unwrap_or(false)
+        }
+    };
+    Ok(installed)
+}
+
 // =============================================================================
 // List logic
 // =============================================================================
@@ -659,23 +679,11 @@ fn list_tools() -> Result<SkillListOutput, AppError> {
 
     for tool in TOOLS {
         let template = path_template(tool);
-        let path = resolve_path(template)?;
-        let installed = match &tool.install_mode {
-            InstallMode::Standalone { .. } | InstallMode::StandaloneWithConfig { .. } => {
-                path.exists()
-            }
-            InstallMode::AppendSection { .. } => {
-                path.exists()
-                    && std::fs::read_to_string(&path)
-                        .map(|c| c.contains(SECTION_START))
-                        .unwrap_or(false)
-            }
-        };
         entries.push(ToolListEntry {
             name: tool.name.into(),
             detection: tool.detection.into(),
             path: template.into(),
-            installed,
+            installed: skill_install_exists(tool)?,
         });
     }
 
