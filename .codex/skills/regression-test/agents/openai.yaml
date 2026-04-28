@@ -1,0 +1,4 @@
+interface:
+  display_name: "Regression Test"
+  short_description: "Run AgentChrome live CLI regression and file SDLC-ready defects."
+  default_prompt: "Regression test the AgentChrome debug build against the specs and file current-milestone automatable defects for findings."
