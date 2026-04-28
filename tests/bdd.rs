@@ -2447,14 +2447,18 @@ struct JsWorld {
     exit_code: Option<i32>,
 }
 
+fn set_js_binary_path(world: &mut JsWorld) {
+    let path = binary_path();
+    assert!(path.exists(), "Binary not found at {}", path.display());
+    world.binary_path = Some(path);
+}
+
 // Background step — for CLI-testable scenarios, we don't need a running Chrome.
 // The binary will fail at connection time for scenarios that need Chrome,
 // but error-path scenarios fail before connection is attempted.
 #[given("Chrome is running with CDP enabled")]
 fn js_chrome_running(world: &mut JsWorld) {
-    let path = binary_path();
-    assert!(path.exists(), "Binary not found at {}", path.display());
-    world.binary_path = Some(path);
+    set_js_binary_path(world);
 }
 
 #[given(expr = "a page is loaded at {string}")]
@@ -2466,9 +2470,7 @@ fn js_page_loaded(_world: &mut JsWorld, url: String) {
 
 #[given("Chrome is connected and a page is loaded")]
 fn js_chrome_connected_and_page_loaded(world: &mut JsWorld) {
-    let path = binary_path();
-    assert!(path.exists(), "Binary not found at {}", path.display());
-    world.binary_path = Some(path);
+    set_js_binary_path(world);
 }
 
 #[when(expr = "I run {string}")]

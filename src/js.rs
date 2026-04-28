@@ -338,11 +338,7 @@ async fn execute_exec(
     // Check for exception
     if let Some(exception_details) = result.get("exceptionDetails") {
         let exception = &exception_details["exception"];
-        let error_desc = exception["description"]
-            .as_str()
-            .or_else(|| exception_details["text"].as_str())
-            .unwrap_or("unknown error")
-            .to_string();
+        let error_desc = exception_description(exception_details).to_string();
 
         // Build stack trace string
         let stack = exception["description"]
@@ -494,14 +490,18 @@ async fn send_runtime_evaluate(
         })
 }
 
+fn exception_description(exception_details: &serde_json::Value) -> &str {
+    exception_details["exception"]["description"]
+        .as_str()
+        .or_else(|| exception_details["text"].as_str())
+        .unwrap_or("unknown error")
+}
+
 fn is_top_level_await_syntax_error(result: &serde_json::Value) -> bool {
     let Some(exception_details) = result.get("exceptionDetails") else {
         return false;
     };
-    let message = exception_details["exception"]["description"]
-        .as_str()
-        .or_else(|| exception_details["text"].as_str())
-        .unwrap_or_default();
+    let message = exception_description(exception_details);
 
     message.contains("await is only valid") && message.contains("top level")
 }
@@ -588,12 +588,7 @@ async fn execute_in_worker(
 
     // Check for exception
     if let Some(exception_details) = result.get("exceptionDetails") {
-        let exception = &exception_details["exception"];
-        let error_desc = exception["description"]
-            .as_str()
-            .or_else(|| exception_details["text"].as_str())
-            .unwrap_or("unknown error")
-            .to_string();
+        let error_desc = exception_description(exception_details).to_string();
         let js_error = JsExecError {
             error: error_desc.clone(),
             stack: None,
@@ -662,12 +657,7 @@ pub async fn run_from_session(
 
     // Check for exception
     if let Some(exception_details) = result.get("exceptionDetails") {
-        let exception = &exception_details["exception"];
-        let error_desc = exception["description"]
-            .as_str()
-            .or_else(|| exception_details["text"].as_str())
-            .unwrap_or("unknown error")
-            .to_string();
+        let error_desc = exception_description(exception_details).to_string();
         return Err(AppError {
             message: format!("js exec failed: {error_desc}"),
             code: agentchrome::error::ExitCode::GeneralError,
