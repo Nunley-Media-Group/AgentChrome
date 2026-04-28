@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.62.0] - 2026-04-28
+
+### Fixed
+
+- Fix iframe/frame guidance so strategy examples, diagnose suggestions, generated help/man surfaces, and parser-backed regression coverage all advertise only `--frame` command shapes the current CLI parser accepts. (#286)
+
 ## [1.61.0] - 2026-04-28
 
 ### Fixed
