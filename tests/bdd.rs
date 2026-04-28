@@ -2464,6 +2464,13 @@ fn js_page_loaded(_world: &mut JsWorld, url: String) {
     let _ = url;
 }
 
+#[given("Chrome is connected and a page is loaded")]
+fn js_chrome_connected_and_page_loaded(world: &mut JsWorld) {
+    let path = binary_path();
+    assert!(path.exists(), "Binary not found at {}", path.display());
+    world.binary_path = Some(path);
+}
+
 #[when(expr = "I run {string}")]
 fn js_run_command(world: &mut JsWorld, command_line: String) {
     let binary = world
@@ -2480,6 +2487,7 @@ fn js_run_command(world: &mut JsWorld, command_line: String) {
 
     let output = std::process::Command::new(binary)
         .args(args)
+        .env("AGENTCHROME_NO_SKILL_CHECK", "1")
         .output()
         .unwrap_or_else(|e| panic!("Failed to run {}: {e}", binary.display()));
 
@@ -2495,6 +2503,33 @@ fn js_exit_code_nonzero(world: &mut JsWorld) {
         actual, 0,
         "Expected non-zero exit code, got 0\nstdout: {}\nstderr: {}",
         world.stdout, world.stderr
+    );
+}
+
+#[then(expr = "the command exits with code {int}")]
+fn js_command_exits_with_code(world: &mut JsWorld, expected: i32) {
+    let actual = world.exit_code.expect("No exit code captured");
+    assert_eq!(
+        actual, expected,
+        "Expected exit code {expected}, got {actual}\nstdout: {}\nstderr: {}",
+        world.stdout, world.stderr
+    );
+}
+
+#[then(expr = "stdout is valid JSON containing {string}")]
+fn js_stdout_valid_json_containing(world: &mut JsWorld, expected: String) {
+    let json: serde_json::Value = serde_json::from_str(world.stdout.trim()).unwrap_or_else(|e| {
+        panic!("stdout is not valid JSON: {e}\nstdout: {}", world.stdout);
+    });
+    let compact = serde_json::to_string(&json).expect("stdout JSON should serialize");
+    let expected_unescaped = expected.replace("\\\"", "\"");
+    let expected_compact = expected_unescaped
+        .chars()
+        .filter(|ch| !ch.is_whitespace())
+        .collect::<String>();
+    assert!(
+        compact.contains(&expected_compact),
+        "stdout JSON does not contain '{expected}'\nstdout JSON: {compact}"
     );
 }
 
@@ -7229,6 +7264,16 @@ async fn main() {
     JsWorld::cucumber()
         .filter_run_and_exit(
             "tests/features/229-fix-js-exec-plain-zero-byte-output-for-empty-strings.feature",
+            |_feature, _rule, _scenario| false, // All scenarios require running Chrome
+        )
+        .await;
+
+    // JS exec top-level await fix (issue #279) — all scenarios require a running Chrome
+    // instance with an active page. The feature file documents regression scenarios; the fix
+    // is validated by `runtime_evaluate_params_*` unit tests in js.rs and manual smoke tests.
+    JsWorld::cucumber()
+        .filter_run_and_exit(
+            "tests/features/279-support-top-level-await-in-js-exec-expressions.feature",
             |_feature, _rule, _scenario| false, // All scenarios require running Chrome
         )
         .await;
