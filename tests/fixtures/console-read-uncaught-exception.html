@@ -1,0 +1,26 @@
+<!--
+  AC1: explicit console error and uncaught exception are both visible.
+  AC2: log/warn/error filtering and limit behavior can be exercised.
+  AC3: exception stack/source context is available for detail mode.
+-->
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Console Read Uncaught Exception Fixture</title>
+  </head>
+  <body>
+    <main>
+      <h1>Console Read Uncaught Exception Fixture</h1>
+      <p>This page emits mixed console events during load.</p>
+    </main>
+    <script>
+      console.log("console-read-fixture: log");
+      console.warn("console-read-fixture: warn");
+      console.error("Login validation setup failed: selector #missing-password returned null");
+
+      const missingPassword = null;
+      missingPassword.addEventListener("input", () => {});
+    </script>
+  </body>
+</html>

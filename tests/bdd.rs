@@ -8334,6 +8334,17 @@ async fn main() {
         )
         .await;
 
+    // Console read uncaught exception regression (issue #290) — all scenarios require
+    // a running Chrome instance and the local exception fixture. The feature file
+    // documents the regression scenarios; parser and filtering behavior are covered
+    // by focused unit tests in console.rs.
+    CliWorld::cucumber()
+        .filter_run_and_exit(
+            "tests/features/290-fix-console-read-missing-uncaught-page-exceptions.feature",
+            |_feature, _rule, _scenario| false, // All scenarios require running Chrome
+        )
+        .await;
+
     // SPA same-document navigate back/forward timeout fix (issue #144) — all scenarios require
     // a running Chrome instance with SPA history state. The feature file documents acceptance
     // scenarios; the fix is validated by the code change in navigate.rs.
