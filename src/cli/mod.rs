@@ -2327,7 +2327,8 @@ pub enum InteractCommand {
         long_about = "Click an element identified by UID (from 'page snapshot', e.g., 's5') or \
             CSS selector (prefixed with 'css:', e.g., 'css:#submit'). By default, performs a \
             left single-click at the element's center. Use --double for double-click or --right \
-            for right-click (context menu). These flags are mutually exclusive.",
+            for right-click (context menu). These flags are mutually exclusive. Use --hold to \
+            hold one or more keys while dispatching the click.",
         after_long_help = "\
 EXAMPLES:
   # Click by UID
@@ -2340,7 +2341,10 @@ EXAMPLES:
   agentchrome interact click s5 --double
 
   # Right-click (context menu)
-  agentchrome interact click s5 --right"
+  agentchrome interact click s5 --right
+
+  # Shift-click an element
+  agentchrome interact click s5 --hold Shift"
     )]
     Click(ClickArgs),
 
@@ -2348,14 +2352,18 @@ EXAMPLES:
     #[command(
         long_about = "Click at specific viewport coordinates (X, Y in pixels). Useful when \
             targeting elements that are not in the accessibility tree or for precise coordinate-\
-            based interactions. Use --double for double-click or --right for right-click.",
+            based interactions. Use --double for double-click or --right for right-click. Use \
+            --hold to hold one or more keys while dispatching the click.",
         after_long_help = "\
 EXAMPLES:
   # Click at coordinates
   agentchrome interact click-at 100 200
 
   # Double-click at coordinates
-  agentchrome interact click-at 100 200 --double"
+  agentchrome interact click-at 100 200 --double
+
+  # Hold Space and Alt while clicking coordinates
+  agentchrome interact click-at 100 200 --hold Space --hold Alt"
     )]
     ClickAt(ClickAtArgs),
 
@@ -2534,6 +2542,11 @@ pub struct ClickArgs {
     #[arg(long, conflicts_with = "double")]
     pub right: bool,
 
+    /// Hold a key while dispatching the click. Uses the same key names as `interact key`.
+    /// Can be repeated.
+    #[arg(long = "hold", value_name = "KEY")]
+    pub hold: Vec<String>,
+
     /// Include updated accessibility snapshot in output
     #[arg(long)]
     pub include_snapshot: bool,
@@ -2572,6 +2585,11 @@ pub struct ClickAtArgs {
     /// Perform a right-click (context menu) instead of left click (conflicts with --double)
     #[arg(long, conflicts_with = "double")]
     pub right: bool,
+
+    /// Hold a key while dispatching the click. Uses the same key names as `interact key`.
+    /// Can be repeated.
+    #[arg(long = "hold", value_name = "KEY")]
+    pub hold: Vec<String>,
 
     /// Include updated accessibility snapshot in output
     #[arg(long)]

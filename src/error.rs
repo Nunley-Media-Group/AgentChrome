@@ -394,6 +394,15 @@ impl AppError {
     }
 
     #[must_use]
+    pub fn duplicate_held_key(key: &str) -> Self {
+        Self {
+            message: format!("Duplicate held key: '{key}'"),
+            code: ExitCode::GeneralError,
+            custom_json: None,
+        }
+    }
+
+    #[must_use]
     pub fn interaction_failed(action: &str, reason: &str) -> Self {
         Self {
             message: format!("Interaction failed ({action}): {reason}"),
@@ -943,6 +952,14 @@ mod tests {
         let err = AppError::duplicate_modifier("Control");
         assert!(err.message.contains("Duplicate modifier"));
         assert!(err.message.contains("Control"));
+        assert!(matches!(err.code, ExitCode::GeneralError));
+    }
+
+    #[test]
+    fn duplicate_held_key_error() {
+        let err = AppError::duplicate_held_key("Space");
+        assert!(err.message.contains("Duplicate held key"));
+        assert!(err.message.contains("Space"));
         assert!(matches!(err.code, ExitCode::GeneralError));
     }
 

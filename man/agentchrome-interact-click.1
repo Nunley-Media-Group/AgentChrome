@@ -4,9 +4,9 @@
 .SH NAME
 click \- Click an element by UID or CSS selector
 .SH SYNOPSIS
-\fBclick\fR [\fB\-\-double\fR] [\fB\-\-right\fR] [\fB\-\-include\-snapshot\fR] [\fB\-\-compact\fR] [\fB\-\-wait\-until\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fITARGET\fR>
+\fBclick\fR [\fB\-\-double\fR] [\fB\-\-right\fR] [\fB\-\-hold\fR] [\fB\-\-include\-snapshot\fR] [\fB\-\-compact\fR] [\fB\-\-wait\-until\fR] [\fB\-h\fR|\fB\-\-help\fR] <\fITARGET\fR>
 .SH DESCRIPTION
-Click an element identified by UID (from \*(Aqpage snapshot\*(Aq, e.g., \*(Aqs5\*(Aq) or CSS selector (prefixed with \*(Aqcss:\*(Aq, e.g., \*(Aqcss:#submit\*(Aq). By default, performs a left single\-click at the element\*(Aqs center. Use \-\-double for double\-click or \-\-right for right\-click (context menu). These flags are mutually exclusive.
+Click an element identified by UID (from \*(Aqpage snapshot\*(Aq, e.g., \*(Aqs5\*(Aq) or CSS selector (prefixed with \*(Aqcss:\*(Aq, e.g., \*(Aqcss:#submit\*(Aq). By default, performs a left single\-click at the element\*(Aqs center. Use \-\-double for double\-click or \-\-right for right\-click (context menu). These flags are mutually exclusive. Use \-\-hold to hold one or more keys while dispatching the click.
 .SH OPTIONS
 .TP
 \fB\-\-double\fR
@@ -14,6 +14,9 @@ Perform a double\-click instead of single click (conflicts with \-\-right)
 .TP
 \fB\-\-right\fR
 Perform a right\-click (context menu) instead of left click (conflicts with \-\-double)
+.TP
+\fB\-\-hold\fR \fI<KEY>\fR
+Hold a key while dispatching the click. Uses the same key names as `interact key`. Can be repeated
 .TP
 \fB\-\-include\-snapshot\fR
 Include updated accessibility snapshot in output
@@ -56,6 +59,9 @@ EXAMPLES:
 
   # Right\-click (context menu)
   agentchrome interact click s5 \-\-right
+
+  # Shift\-click an element
+  agentchrome interact click s5 \-\-hold Shift
 .SH CAPABILITIES
 .PP
 Mouse, keyboard, and scroll interactions
@@ -71,6 +77,9 @@ Perform a double-click instead of single click (conflicts with --right)
 .TP
 .B --right
 Perform a right-click (context menu) instead of left click (conflicts with --double)
+.TP
+.B --hold
+Hold a key while dispatching the click. Uses the same key names as `interact key`. Can be repeated
 .TP
 .B --include-snapshot
 Include updated accessibility snapshot in output
@@ -98,6 +107,9 @@ Perform a double-click instead of single click (conflicts with --right)
 .TP
 .B --right
 Perform a right-click (context menu) instead of left click (conflicts with --double)
+.TP
+.B --hold
+Hold a key while dispatching the click. Uses the same key names as `interact key`. Can be repeated
 .TP
 .B --include-snapshot
 Include updated accessibility snapshot in output
@@ -281,6 +293,12 @@ Click an element by CSS selector
 .TP
 .B \`agentchrome interact click s12 --wait-until networkidle\`
 Click and wait for network idle (for SPA navigation)
+.TP
+.B \`agentchrome interact click s5 --hold Shift\`
+Hold Shift while clicking an element
+.TP
+.B \`agentchrome interact click-at 100 200 --hold Space --hold Alt\`
+Hold multiple keys while clicking coordinates
 .TP
 .B \`agentchrome interact type "Hello, world!"\`
 Type text into the focused element

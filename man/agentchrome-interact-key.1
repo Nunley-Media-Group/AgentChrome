@@ -52,6 +52,9 @@ Perform a double-click instead of single click (conflicts with --right)
 .B --right
 Perform a right-click (context menu) instead of left click (conflicts with --double)
 .TP
+.B --hold
+Hold a key while dispatching the click. Uses the same key names as `interact key`. Can be repeated
+.TP
 .B --include-snapshot
 Include updated accessibility snapshot in output
 .TP
@@ -78,6 +81,9 @@ Perform a double-click instead of single click (conflicts with --right)
 .TP
 .B --right
 Perform a right-click (context menu) instead of left click (conflicts with --double)
+.TP
+.B --hold
+Hold a key while dispatching the click. Uses the same key names as `interact key`. Can be repeated
 .TP
 .B --include-snapshot
 Include updated accessibility snapshot in output
@@ -261,6 +267,12 @@ Click an element by CSS selector
 .TP
 .B \`agentchrome interact click s12 --wait-until networkidle\`
 Click and wait for network idle (for SPA navigation)
+.TP
+.B \`agentchrome interact click s5 --hold Shift\`
+Hold Shift while clicking an element
+.TP
+.B \`agentchrome interact click-at 100 200 --hold Space --hold Alt\`
+Hold multiple keys while clicking coordinates
 .TP
 .B \`agentchrome interact type "Hello, world!"\`
 Type text into the focused element

@@ -397,6 +397,7 @@ async fn dispatch_click(
     y: f64,
     button: &str,
     click_count: u8,
+    modifiers: u8,
     mut dialog_open_rx: Option<&mut mpsc::Receiver<CdpEvent>>,
 ) -> Result<bool, AppError> {
     let mut opened_dialog = false;
@@ -409,7 +410,9 @@ async fn dispatch_click(
             "x": x,
             "y": y,
             "button": button,
+            "buttons": mouse_buttons_bitfield(button),
             "clickCount": 1,
+            "modifiers": modifiers,
         });
         opened_dialog |= dispatch_mouse_event(
             session,
@@ -424,7 +427,9 @@ async fn dispatch_click(
             "x": x,
             "y": y,
             "button": button,
+            "buttons": 0,
             "clickCount": 1,
+            "modifiers": modifiers,
         });
         opened_dialog |= dispatch_mouse_event(
             session,
@@ -440,7 +445,9 @@ async fn dispatch_click(
             "x": x,
             "y": y,
             "button": button,
+            "buttons": mouse_buttons_bitfield(button),
             "clickCount": 2,
+            "modifiers": modifiers,
         });
         opened_dialog |= dispatch_mouse_event(
             session,
@@ -455,7 +462,9 @@ async fn dispatch_click(
             "x": x,
             "y": y,
             "button": button,
+            "buttons": 0,
             "clickCount": 2,
+            "modifiers": modifiers,
         });
         opened_dialog |= dispatch_mouse_event(
             session,
@@ -471,7 +480,9 @@ async fn dispatch_click(
             "x": x,
             "y": y,
             "button": button,
+            "buttons": mouse_buttons_bitfield(button),
             "clickCount": click_count,
+            "modifiers": modifiers,
         });
         opened_dialog |= dispatch_mouse_event(
             session,
@@ -486,13 +497,24 @@ async fn dispatch_click(
             "x": x,
             "y": y,
             "button": button,
+            "buttons": 0,
             "clickCount": click_count,
+            "modifiers": modifiers,
         });
         opened_dialog |=
             dispatch_mouse_event(session, release_params, "mouse_release", dialog_open_rx).await?;
     }
 
     Ok(opened_dialog)
+}
+
+fn mouse_buttons_bitfield(button: &str) -> u8 {
+    match button {
+        "left" => 1,
+        "right" => 2,
+        "middle" => 4,
+        _ => 0,
+    }
 }
 
 async fn dispatch_mouse_event(
@@ -1249,6 +1271,144 @@ const MODIFIER_MAP: &[(u8, &str, &str)] = &[
     (8, "Shift", "ShiftLeft"),
 ];
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct HeldKey {
+    name: String,
+    key: String,
+    code: String,
+    windows_virtual_key_code: i64,
+    modifier_bit: Option<u8>,
+}
+
+fn modifier_bit_for_key(key: &str) -> Option<u8> {
+    MODIFIER_MAP
+        .iter()
+        .find_map(|(bit, modifier_key, _code)| (*modifier_key == key).then_some(*bit))
+}
+
+fn validate_held_keys(keys: &[String]) -> Result<Vec<HeldKey>, AppError> {
+    let mut held_keys = Vec::with_capacity(keys.len());
+
+    for key in keys {
+        if !is_valid_key(key) {
+            return Err(AppError::invalid_key(key));
+        }
+        if held_keys
+            .iter()
+            .any(|held_key: &HeldKey| held_key.name == *key)
+        {
+            return Err(AppError::duplicate_held_key(key));
+        }
+
+        held_keys.push(HeldKey {
+            name: key.clone(),
+            key: cdp_key_value(key).to_string(),
+            code: cdp_key_code(key),
+            windows_virtual_key_code: windows_virtual_key_code(key),
+            modifier_bit: modifier_bit_for_key(key),
+        });
+    }
+
+    Ok(held_keys)
+}
+
+fn held_key_modifier_mask(held_keys: &[HeldKey]) -> u8 {
+    held_keys
+        .iter()
+        .filter_map(|held_key| held_key.modifier_bit)
+        .fold(0, |mask, bit| mask | bit)
+}
+
+async fn dispatch_held_key_event(
+    session: &mut ManagedSession,
+    event_type: &str,
+    held_key: &HeldKey,
+    modifiers: u8,
+) -> Result<(), AppError> {
+    let params = serde_json::json!({
+        "type": event_type,
+        "key": held_key.key,
+        "code": held_key.code,
+        "modifiers": modifiers,
+        "windowsVirtualKeyCode": held_key.windows_virtual_key_code,
+    });
+    let action = if event_type == "keyDown" {
+        "held_key_down"
+    } else {
+        "held_key_up"
+    };
+    session
+        .send_command("Input.dispatchKeyEvent", Some(params))
+        .await
+        .map_err(|e| AppError::interaction_failed(action, &e.to_string()))?;
+    Ok(())
+}
+
+async fn press_held_keys(
+    session: &mut ManagedSession,
+    held_keys: &[HeldKey],
+) -> Result<u8, AppError> {
+    let mut active_modifiers = 0;
+
+    for held_key in held_keys {
+        if let Some(bit) = held_key.modifier_bit {
+            active_modifiers |= bit;
+        }
+        dispatch_held_key_event(session, "keyDown", held_key, active_modifiers).await?;
+    }
+
+    Ok(active_modifiers)
+}
+
+async fn release_held_keys(
+    session: &mut ManagedSession,
+    held_keys: &[HeldKey],
+    mut active_modifiers: u8,
+) -> Result<(), AppError> {
+    for held_key in held_keys.iter().rev() {
+        if let Some(bit) = held_key.modifier_bit {
+            active_modifiers &= !bit;
+        }
+        dispatch_held_key_event(session, "keyUp", held_key, active_modifiers).await?;
+    }
+
+    Ok(())
+}
+
+async fn dispatch_click_with_held_keys(
+    session: &mut ManagedSession,
+    held_keys: &[HeldKey],
+    x: f64,
+    y: f64,
+    button: &str,
+    click_count: u8,
+    dialog_open_rx: Option<&mut mpsc::Receiver<CdpEvent>>,
+) -> Result<bool, AppError> {
+    if held_keys.is_empty() {
+        return dispatch_click(session, x, y, button, click_count, 0, dialog_open_rx).await;
+    }
+
+    let click_modifiers = held_key_modifier_mask(held_keys);
+    let active_modifiers = press_held_keys(session, held_keys).await?;
+    let click_result = dispatch_click(
+        session,
+        x,
+        y,
+        button,
+        click_count,
+        click_modifiers,
+        dialog_open_rx,
+    )
+    .await;
+    let release_result = release_held_keys(session, held_keys, active_modifiers).await;
+
+    match (click_result, release_result) {
+        (Err(click_error), _) => Err(click_error),
+        (Ok(_), Err(release_error)) => Err(release_error),
+        (Ok(opened_dialog), Ok(())) => Ok(opened_dialog),
+    }
+}
+
 /// Dispatch a key combination: press modifiers, press key, release key, release modifiers.
 async fn dispatch_key_combination(
     session: &mut ManagedSession,
@@ -1774,6 +1934,7 @@ async fn execute_click(
     args: &ClickArgs,
     frame: Option<&str>,
 ) -> Result<(), AppError> {
+    let held_keys = validate_held_keys(&args.hold)?;
     let (client, mut managed) = setup_session_with_interceptors(global).await?;
     let (_dismiss, dialog_settle_rx) = if global.auto_dismiss_dialogs {
         let (handle, rx) = managed.spawn_auto_dismiss_with_settle().await?;
@@ -1821,8 +1982,9 @@ async fn execute_click(
     match args.wait_until {
         Some(WaitUntil::None) => {
             // Dispatch and return immediately — no grace period, no navigation check
-            opened_dialog = dispatch_click(
+            opened_dialog = dispatch_click_with_held_keys(
                 &mut managed,
+                &held_keys,
                 x,
                 y,
                 button,
@@ -1834,8 +1996,9 @@ async fn execute_click(
         }
         Some(WaitUntil::Load) => {
             let wait_rx = managed.subscribe("Page.loadEventFired").await?;
-            opened_dialog = dispatch_click(
+            opened_dialog = dispatch_click_with_held_keys(
                 &mut managed,
+                &held_keys,
                 x,
                 y,
                 button,
@@ -1853,8 +2016,9 @@ async fn execute_click(
         }
         Some(WaitUntil::Domcontentloaded) => {
             let wait_rx = managed.subscribe("Page.domContentEventFired").await?;
-            opened_dialog = dispatch_click(
+            opened_dialog = dispatch_click_with_held_keys(
                 &mut managed,
+                &held_keys,
                 x,
                 y,
                 button,
@@ -1875,8 +2039,9 @@ async fn execute_click(
             let req_rx = managed.subscribe("Network.requestWillBeSent").await?;
             let fin_rx = managed.subscribe("Network.loadingFinished").await?;
             let fail_rx = managed.subscribe("Network.loadingFailed").await?;
-            opened_dialog = dispatch_click(
+            opened_dialog = dispatch_click_with_held_keys(
                 &mut managed,
+                &held_keys,
                 x,
                 y,
                 button,
@@ -1896,8 +2061,9 @@ async fn execute_click(
         None => {
             // Legacy behavior: 100ms grace period with non-blocking navigation check
             let mut nav_rx = managed.subscribe("Page.frameNavigated").await?;
-            opened_dialog = dispatch_click(
+            opened_dialog = dispatch_click_with_held_keys(
                 &mut managed,
+                &held_keys,
                 x,
                 y,
                 button,
@@ -1976,6 +2142,7 @@ async fn execute_click_at(
     args: &ClickAtArgs,
     frame: Option<&str>,
 ) -> Result<(), AppError> {
+    let held_keys = validate_held_keys(&args.hold)?;
     // Validate percentage coordinates before establishing a session so that the error message
     // references --relative-to even when Chrome is not reachable.
     if args.relative_to.is_none() {
@@ -2035,8 +2202,9 @@ async fn execute_click_at(
 
     let (url, navigated) = match args.wait_until {
         Some(WaitUntil::None) => {
-            opened_dialog = dispatch_click(
+            opened_dialog = dispatch_click_with_held_keys(
                 &mut managed,
+                &held_keys,
                 click_x,
                 click_y,
                 button,
@@ -2050,8 +2218,9 @@ async fn execute_click_at(
             managed.ensure_domain("Page").await?;
             let pre_url = get_current_url(&managed).await?;
             let wait_rx = managed.subscribe("Page.loadEventFired").await?;
-            opened_dialog = dispatch_click(
+            opened_dialog = dispatch_click_with_held_keys(
                 &mut managed,
+                &held_keys,
                 click_x,
                 click_y,
                 button,
@@ -2073,8 +2242,9 @@ async fn execute_click_at(
             managed.ensure_domain("Page").await?;
             let pre_url = get_current_url(&managed).await?;
             let wait_rx = managed.subscribe("Page.domContentEventFired").await?;
-            opened_dialog = dispatch_click(
+            opened_dialog = dispatch_click_with_held_keys(
                 &mut managed,
+                &held_keys,
                 click_x,
                 click_y,
                 button,
@@ -2098,8 +2268,9 @@ async fn execute_click_at(
             let req_rx = managed.subscribe("Network.requestWillBeSent").await?;
             let fin_rx = managed.subscribe("Network.loadingFinished").await?;
             let fail_rx = managed.subscribe("Network.loadingFailed").await?;
-            opened_dialog = dispatch_click(
+            opened_dialog = dispatch_click_with_held_keys(
                 &mut managed,
+                &held_keys,
                 click_x,
                 click_y,
                 button,
@@ -2119,8 +2290,9 @@ async fn execute_click_at(
         }
         None => {
             // Legacy behavior: dispatch click, no navigation check
-            opened_dialog = dispatch_click(
+            opened_dialog = dispatch_click_with_held_keys(
                 &mut managed,
+                &held_keys,
                 click_x,
                 click_y,
                 button,
@@ -3013,6 +3185,14 @@ mod tests {
         );
     }
 
+    #[test]
+    fn mouse_buttons_bitfield_matches_cdp_values() {
+        assert_eq!(mouse_buttons_bitfield("left"), 1);
+        assert_eq!(mouse_buttons_bitfield("right"), 2);
+        assert_eq!(mouse_buttons_bitfield("middle"), 4);
+        assert_eq!(mouse_buttons_bitfield("unknown"), 0);
+    }
+
     // =========================================================================
     // Key validation and parsing tests
     // =========================================================================
@@ -3060,6 +3240,41 @@ mod tests {
         let err = parse_key_combination("Control+Control+A").unwrap_err();
         assert!(
             err.message.contains("Duplicate modifier: 'Control'"),
+            "got: {}",
+            err.message
+        );
+    }
+
+    #[test]
+    fn validate_held_keys_accepts_modifier_and_arbitrary_key() {
+        let held = validate_held_keys(&["Space".to_string(), "Control".to_string()]).unwrap();
+
+        assert_eq!(
+            held.iter()
+                .map(|held_key| held_key.name.as_str())
+                .collect::<Vec<_>>(),
+            vec!["Space", "Control"]
+        );
+        assert_eq!(held_key_modifier_mask(&held), 2);
+    }
+
+    #[test]
+    fn validate_held_keys_rejects_invalid_key() {
+        let err = validate_held_keys(&["FooBar".to_string()]).unwrap_err();
+
+        assert!(
+            err.message.contains("Invalid key: 'FooBar'"),
+            "got: {}",
+            err.message
+        );
+    }
+
+    #[test]
+    fn validate_held_keys_rejects_duplicate_key() {
+        let err = validate_held_keys(&["Space".to_string(), "Space".to_string()]).unwrap_err();
+
+        assert!(
+            err.message.contains("Duplicate held key: 'Space'"),
             "got: {}",
             err.message
         );

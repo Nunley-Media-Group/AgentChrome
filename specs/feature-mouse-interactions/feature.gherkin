@@ -163,3 +163,40 @@ Feature: Mouse Interactions
     Given the page has draggable elements with UIDs "s1" and "s2"
     When I run "agentchrome interact drag s1 s2 --plain"
     Then the output should be plain text "Dragged s1 to s2"
+
+  # Added by issue #291
+  Scenario: Hold Shift while clicking an element
+    Given a connected browser session is on the click held-keys fixture
+    And the fixture has a clickable element with snapshot UID "s1"
+    When I run "agentchrome interact click s1 --hold Shift"
+    Then the fixture should record "Shift" keydown before the click
+    And the click event should have "shiftKey" equal to true
+    And the fixture should record "Shift" keyup after the click
+    And the output JSON should contain "clicked" equal to "s1"
+
+  # Added by issue #291
+  Scenario: Hold any supported key during coordinate clicks
+    Given a connected browser session is on the click held-keys fixture
+    When I run "agentchrome interact click-at 100 200 --hold Space --hold Alt"
+    Then the fixture should record "Space" and "Alt" keydown events before the click
+    And the click event should have "altKey" equal to true
+    And the fixture should record "Alt" and "Space" keyup events after the click
+    And the output JSON should contain "clicked_at.x" equal to 100
+    And the output JSON should contain "clicked_at.y" equal to 200
+
+  # Added by issue #291
+  Scenario: Existing click behavior is preserved without held keys
+    Given a connected browser session is on the click held-keys fixture
+    And the fixture has a clickable element with snapshot UID "s1"
+    When I run "agentchrome interact click s1"
+    Then the output JSON should contain "clicked" equal to "s1"
+    And the output JSON should contain "navigated" equal to false
+    And the fixture should record no held key events for the click
+
+  # Added by issue #291
+  Scenario: Invalid or duplicate held keys are rejected before browser dispatch
+    Given a connected browser session is on the click held-keys fixture
+    When I run "agentchrome interact click s1 --hold Space --hold Space"
+    Then the exit code should be nonzero
+    And stderr should contain "Duplicate"
+    And the fixture should record no click event

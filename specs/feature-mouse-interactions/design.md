@@ -1,7 +1,7 @@
 # Design: Mouse Interactions
 
-**Issues**: #14
-**Date**: 2026-02-13
+**Issues**: #14, #291
+**Date**: 2026-05-26
 **Status**: Draft
 **Author**: Claude (writing-specs)
 
@@ -110,6 +110,40 @@ The core flow for all interaction commands is: resolve target → get element co
 6. Output result
 ```
 
+### Data Flow — `interact click s1 --hold Shift`
+
+```
+1. User runs: agentchrome interact click s1 --hold Shift
+2. CLI layer parses → ClickArgs { target: "s1", hold: ["Shift"], ... }
+3. validate_held_keys(["Shift"]) runs before session setup and rejects invalid or duplicate keys
+4. setup_session_with_interceptors() → CdpClient + ManagedSession
+5. Resolve target "s1" to click coordinates using the existing click flow
+6. Press held keys in declared order via Input.dispatchKeyEvent:
+   - keyDown { key: "Shift", code: "ShiftLeft", modifiers: 8, windowsVirtualKeyCode: 16 }
+7. Dispatch click via Input.dispatchMouseEvent with modifiers: 8 on every mousePressed/mouseReleased payload
+8. Release held keys in reverse order via Input.dispatchKeyEvent:
+   - keyUp { key: "Shift", code: "ShiftLeft", modifiers: 0, windowsVirtualKeyCode: 16 }
+9. Build the normal ClickResult; no new output field is required
+```
+
+### Data Flow — `interact click-at 100 200 --hold Space --hold Alt`
+
+```
+1. User runs: agentchrome interact click-at 100 200 --hold Space --hold Alt
+2. CLI layer parses → ClickAtArgs { x: 100.0, y: 200.0, hold: ["Space", "Alt"], ... }
+3. validate_held_keys(["Space", "Alt"]) runs before session setup
+4. setup_session_with_interceptors() → CdpClient + ManagedSession
+5. Resolve click coordinates, including --relative-to and frame offset handling when supplied
+6. Press held keys in declared order:
+   - keyDown Space without text synthesis
+   - keyDown Alt with modifiers: 1
+7. Dispatch click via Input.dispatchMouseEvent with modifiers: 1 on every mouse payload
+8. Release held keys in reverse order:
+   - keyUp Alt
+   - keyUp Space
+9. Build the normal ClickAtResult; no new output field is required
+```
+
 ### Data Flow — `interact hover s3`
 
 ```
@@ -155,6 +189,7 @@ The core flow for all interaction commands is: resolve target → get element co
 | `--double` | click, click-at | bool | Double-click instead of single click |
 | `--right` | click, click-at | bool | Right-click (context menu) instead of left click |
 | `--include-snapshot` | click, click-at, hover, drag | bool | Include updated accessibility snapshot in output |
+| `--hold <KEY>` | click, click-at | repeatable key name | Hold any valid AgentChrome key while dispatching the click |
 
 ### Request / Response Schemas
 
@@ -162,7 +197,7 @@ The core flow for all interaction commands is: resolve target → get element co
 
 **Input (CLI args):**
 ```
-agentchrome interact click <TARGET> [--double] [--right] [--include-snapshot] [--tab ID]
+agentchrome interact click <TARGET> [--double] [--right] [--hold KEY]... [--include-snapshot] [--tab ID]
 ```
 
 **Output (success — JSON):**
@@ -223,6 +258,11 @@ Clicked s1
 | 5 (ProtocolError) | CDP protocol error |
 
 #### `interact click-at <X> <Y>`
+
+**Input (CLI args):**
+```
+agentchrome interact click-at <X> <Y> [--double] [--right] [--hold KEY]... [--relative-to TARGET] [--include-snapshot]
+```
 
 **Output (JSON):**
 ```json
@@ -322,6 +362,35 @@ Input.dispatchMouseEvent(s)
 Build + output result
 ```
 
+### Held-Key State
+
+Held keys are command-scoped and never persisted. `--hold` accepts the same key-name inventory as `interact key`, but the click path treats those names as held-key state rather than as a full keypress. For printable keys, keyDown/keyUp events are dispatched without the `text` field so holding `a` while clicking does not type into a focused input as a side effect.
+
+```rust
+/// A validated held key for click/click-at.
+struct HeldKey {
+    name: String,
+    key: String,
+    code: String,
+    windows_virtual_key_code: u32,
+    modifier_bit: Option<u8>,
+}
+```
+
+Held-key execution:
+
+```
+validate held keys (before session setup)
+    ↓
+press held keys in declaration order
+    ↓
+dispatch click with mouse modifiers bitmask derived from held modifier keys
+    ↓
+release held keys in reverse order, including cleanup after click errors
+```
+
+Only the real modifier keys (`Alt`, `Control`, `Meta`, `Shift`) contribute to the CDP mouse `modifiers` field. Other held keys are represented by keyDown/keyUp events around the click.
+
 ---
 
 ## UI Components
@@ -337,6 +406,8 @@ N/A — this is a CLI tool, no UI components.
 | **A: JavaScript-based clicking** | Use `Runtime.evaluate` to call `element.click()` in page context | Simple, no coordinate math | Doesn't simulate real mouse events (no hover, no coordinates, may not trigger all event listeners) | Rejected — not a real mouse simulation |
 | **B: CDP Input.dispatchMouseEvent** | Low-level mouse event dispatch with computed coordinates | Full fidelity, matches real user interaction, works with all event listeners | Requires coordinate computation (getBoxModel), scroll management | **Selected** — matches MCP server approach |
 | **C: CDP DOM.focus + synthetic events** | Focus element then fire synthetic click | Simpler than Input dispatch | Missing coordinate info, doesn't trigger pointer events | Rejected — incomplete simulation |
+| **D: Mouse modifiers only** | Add the CDP `modifiers` bitmask to click payloads without keyDown/keyUp events | Minimal CDP traffic and simple implementation | Only supports Alt/Control/Meta/Shift and does not model game-style held keys such as Space | Rejected for issue #291 — user intent is key-hold plus click |
+| **E: Held-key wrapper around click dispatch** | Press any valid key, dispatch the click with matching modifier bitmask, then release keys | Supports arbitrary held keys and preserves DOM modifier booleans for true modifiers | Requires cleanup on click errors and extra CDP events | **Selected for issue #291** |
 
 **Design Decision**: Use `Input.dispatchMouseEvent` with coordinates computed from `DOM.getBoxModel`. This matches how the MCP server implements these tools and provides full-fidelity mouse simulation including hover effects, pointer events, and coordinate-dependent handlers. Elements are scrolled into view with `DOM.scrollIntoViewIfNeeded` before coordinate computation.
 
@@ -370,6 +441,9 @@ N/A — this is a CLI tool, no UI components.
 | Plain Text Formatting | Unit | Plain text output for all result types |
 | CLI Args | Unit | Clap parsing for interact subcommands |
 | Feature | BDD (cucumber-rs) | All 22 acceptance criteria from requirements.md |
+| Held-Key Helpers | Unit | Key validation, duplicate detection, modifier-bitmask calculation, press/release ordering |
+| Held-Key Clicks | BDD + fixture | Shift+click, arbitrary held key + coordinate click, invalid/duplicate held keys, and no-regression unheld clicks |
+| Manual Smoke | Headless Chrome | Purpose-built fixture confirms keydown → click → keyup order and DOM modifier booleans |
 
 ---
 
@@ -382,6 +456,9 @@ N/A — this is a CLI tool, no UI components.
 | Stale snapshot UIDs (page changed since snapshot) | Medium | Medium | `DOM.describeNode` will fail if backendNodeId is invalid — return clear error suggesting re-snapshot |
 | Navigation detection false positives | Low | Low | Only check for `Page.frameNavigated` on main frame, ignore subframe navigations |
 | Drag doesn't work on all pages | Medium | Low | Some drag implementations require specific HTML5 drag events; CDP `Input.dispatchMouseEvent` may not trigger all of them. Document this limitation. |
+| Held keys remain down after click dispatch fails | Low | High | Wrap click dispatch so keyup cleanup runs in reverse order before returning the original error |
+| Printable held keys type into focused inputs | Medium | Medium | Omit `text` from held-key keyDown events; this models key state without synthesizing text input |
+| Validation happens after browser session setup | Low | Medium | Validate invalid and duplicate held keys before opening or using a Chrome session |
 
 ---
 
@@ -396,6 +473,7 @@ N/A — this is a CLI tool, no UI components.
 | Issue | Date | Summary |
 |-------|------|---------|
 | #14 | 2026-02-13 | Initial feature spec |
+| #291 | 2026-05-26 | Added held-key click design for click and click-at commands |
 
 ## Validation Checklist
 
