@@ -15,9 +15,9 @@
 
 1. Start a page that emits `console.error("Login validation setup failed: selector #missing-password returned null")` during load.
 2. On the same page load, throw an uncaught exception such as `TypeError: Cannot read properties of null (reading 'addEventListener')`.
-3. Run `agentchrome connect --launch --headless`.
-4. Run `agentchrome navigate <fixture-url> --wait-until networkidle`.
-5. Run `agentchrome console read --errors-only`.
+3. Start the browser with `agentchrome connect --launch --headless`.
+4. Navigate to the fixture URL with `agentchrome navigate <fixture-url> --wait-until networkidle`.
+5. Read console errors using `agentchrome console read --errors-only`.
 
 ### Environment
 

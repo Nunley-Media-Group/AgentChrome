@@ -388,15 +388,6 @@ fn parse_exception_record(
         .filter(|exception| !exception.is_null())
         .map_or_else(Vec::new, |exception| vec![exception.clone()]);
 
-    let message = ConsoleMessage {
-        id,
-        msg_type: "error".to_string(),
-        text: text.clone(),
-        timestamp: timestamp.clone(),
-        url: url.clone(),
-        line,
-        column,
-    };
     let detail = ConsoleMessageDetail {
         id,
         msg_type: "error".to_string(),
@@ -407,6 +398,15 @@ fn parse_exception_record(
         column,
         args,
         stack_trace,
+    };
+    let message = ConsoleMessage {
+        id,
+        msg_type: detail.msg_type.clone(),
+        text: detail.text.clone(),
+        timestamp: detail.timestamp.clone(),
+        url: detail.url.clone(),
+        line,
+        column,
     };
 
     Some(CapturedConsoleRecord {
