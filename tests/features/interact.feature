@@ -57,7 +57,14 @@ Feature: Mouse Interactions
     Then the exit code should be 0
     And stdout should contain "--double"
     And stdout should contain "--right"
+    And stdout should contain "--hold"
     And stdout should contain "--include-snapshot"
+
+  Scenario: Duplicate held click keys are rejected
+    Given agentchrome is built
+    When I run "agentchrome interact click s1 --hold Space --hold Space"
+    Then the exit code should be nonzero
+    And stderr should contain "Duplicate held key"
 
   # --- Click: Happy Paths (require Chrome) ---
 
@@ -134,6 +141,28 @@ Feature: Mouse Interactions
     When I run "agentchrome interact click-at 100 200 --double"
     Then the output JSON should contain "double_click" equal to true
     And the output JSON "clicked_at.x" should be 100
+
+  # Added by issue #291
+  Scenario: Shift-click an element
+    Given Chrome is running with CDP enabled
+    And the click held-keys fixture is loaded
+    And a snapshot has been taken with UIDs assigned
+    And the page has a button with snapshot UID "s1"
+    When I run "agentchrome interact click s1 --hold Shift"
+    Then the output JSON should contain "clicked" equal to "s1"
+    And the click event log should show "keydown:Shift,click:target,keyup:Shift"
+    And the click event log should contain "click" with "shiftKey" equal to true
+    And the exit code should be 0
+
+  # Added by issue #291
+  Scenario: Hold arbitrary key during coordinate click
+    Given Chrome is running with CDP enabled
+    And the click held-keys fixture is loaded
+    When I run "agentchrome interact click-at 100 200 --hold Space --hold Alt"
+    Then the output JSON "clicked_at.x" should be 100
+    And the click event log should show "keydown:Space,keydown:Alt,click:pad,keyup:Alt,keyup:Space"
+    And the click event log should contain "click" with "altKey" equal to true
+    And the exit code should be 0
 
   # --- Hover ---
 

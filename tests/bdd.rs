@@ -299,6 +299,7 @@ struct CliWorld {
     fixture_path: Option<PathBuf>,
     large_fixture_path: Option<PathBuf>,
     frame_guidance_commands: Vec<String>,
+    temp_home: Option<tempfile::TempDir>,
 }
 
 #[derive(Debug, Clone)]
@@ -347,14 +348,19 @@ fn run_agentchrome(
         &parts[..]
     };
 
-    let unique = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|duration| duration.as_nanos())
-        .unwrap_or_default();
-    let isolated_home = std::env::temp_dir().join(format!(
-        "agentchrome-bdd-cli-{}-{unique}",
-        std::process::id()
-    ));
+    let (isolated_home, remove_home) = if let Some(temp_home) = world.temp_home.as_ref() {
+        (temp_home.path().to_path_buf(), false)
+    } else {
+        let unique = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map(|duration| duration.as_nanos())
+            .unwrap_or_default();
+        let isolated_home = std::env::temp_dir().join(format!(
+            "agentchrome-bdd-cli-{}-{unique}",
+            std::process::id()
+        ));
+        (isolated_home, true)
+    };
     let _ = std::fs::create_dir_all(&isolated_home);
 
     let mut command = std::process::Command::new(binary);
@@ -381,12 +387,22 @@ fn run_agentchrome(
         .wait_with_output()
         .unwrap_or_else(|e| panic!("Failed to wait for {}: {e}", binary.display()));
 
-    let _ = std::fs::remove_dir_all(&isolated_home);
+    if remove_home {
+        let _ = std::fs::remove_dir_all(&isolated_home);
+    }
 
     CommandCapture {
         stdout: String::from_utf8_lossy(&output.stdout).to_string(),
         stderr: String::from_utf8_lossy(&output.stderr).to_string(),
         exit_code: output.status.code().unwrap_or(-1),
+    }
+}
+
+impl Drop for CliWorld {
+    fn drop(&mut self) {
+        if self.binary_path.is_some() && self.temp_home.is_some() {
+            let _ = run_agentchrome(self, "agentchrome connect --disconnect", None);
+        }
     }
 }
 
@@ -587,6 +603,173 @@ fn stderr_should_contain(world: &mut CliWorld, expected: String) {
         "stderr does not contain '{expected}'\nstderr: {}",
         world.stderr
     );
+}
+
+#[given("Chrome is running with CDP enabled")]
+fn cli_chrome_running(world: &mut CliWorld) {
+    agentchrome_is_built(world);
+    if world.temp_home.is_none() {
+        world.temp_home =
+            Some(tempfile::tempdir().expect("failed to create isolated CliWorld home"));
+    }
+
+    let capture = run_agentchrome(world, "agentchrome connect --launch --headless", None);
+    assert_eq!(
+        capture.exit_code, 0,
+        "failed to launch Chrome\nstdout: {}\nstderr: {}",
+        capture.stdout, capture.stderr
+    );
+}
+
+#[given("the click held-keys fixture is loaded")]
+fn click_held_keys_fixture_loaded(world: &mut CliWorld) {
+    let fixture = project_root().join("tests/fixtures/click-held-keys.html");
+    assert!(fixture.is_file(), "missing fixture {}", fixture.display());
+    let capture = run_agentchrome(
+        world,
+        &format!(
+            "agentchrome navigate file://{} --wait-until networkidle",
+            fixture.display()
+        ),
+        None,
+    );
+    assert_eq!(
+        capture.exit_code, 0,
+        "failed to load fixture\nstdout: {}\nstderr: {}",
+        capture.stdout, capture.stderr
+    );
+}
+
+#[given("a snapshot has been taken with UIDs assigned")]
+fn cli_snapshot_taken(world: &mut CliWorld) {
+    let capture = run_agentchrome(world, "agentchrome page snapshot --compact", None);
+    assert_eq!(
+        capture.exit_code, 0,
+        "failed to take snapshot\nstdout: {}\nstderr: {}",
+        capture.stdout, capture.stderr
+    );
+    world.stdout = capture.stdout;
+    world.stderr = capture.stderr;
+    world.exit_code = Some(capture.exit_code);
+}
+
+#[given(expr = "the page has a button with snapshot UID {string}")]
+fn page_has_button_uid(world: &mut CliWorld, uid: String) {
+    assert!(
+        world.stdout.contains(&format!("[{uid}]")),
+        "snapshot does not contain UID {uid}\nsnapshot: {}",
+        world.stdout
+    );
+}
+
+#[then(expr = "the output JSON should contain {string} equal to {string}")]
+fn output_json_string_field_equals(world: &mut CliWorld, field: String, expected: String) {
+    let json = stdout_json(world);
+    assert_eq!(
+        json_pointer(&json, &field),
+        JsonValue::String(expected.clone()),
+        "expected stdout JSON field {field} to equal {expected}\nstdout: {}",
+        world.stdout
+    );
+}
+
+#[then(expr = "the output JSON should contain {string} equal to {word}")]
+fn output_json_word_field_equals(world: &mut CliWorld, field: String, expected: String) {
+    let json = stdout_json(world);
+    let expected_json = match expected.as_str() {
+        "true" => JsonValue::Bool(true),
+        "false" => JsonValue::Bool(false),
+        _ => JsonValue::String(expected.clone()),
+    };
+    assert_eq!(
+        json_pointer(&json, &field),
+        expected_json,
+        "expected stdout JSON field {field} to equal {expected}\nstdout: {}",
+        world.stdout
+    );
+}
+
+#[then(expr = "the output JSON {string} should be {float}")]
+fn output_json_number_field_equals(world: &mut CliWorld, field: String, expected: f64) {
+    let json = stdout_json(world);
+    let actual = json_pointer(&json, &field);
+    let actual = actual
+        .as_f64()
+        .unwrap_or_else(|| panic!("field {field} is not a number in stdout: {}", world.stdout));
+    assert!(
+        (actual - expected).abs() < f64::EPSILON,
+        "expected stdout JSON field {field} to equal {expected}, got {actual}\nstdout: {}",
+        world.stdout
+    );
+}
+
+#[then(expr = "the click event log should show {string}")]
+fn click_event_log_should_show(world: &mut CliWorld, expected: String) {
+    let events = click_event_log(world);
+    let actual = events
+        .iter()
+        .map(|event| {
+            let event_type = event["type"].as_str().unwrap_or_default();
+            let label = if event_type == "click" {
+                event["target"].as_str().unwrap_or_default().to_string()
+            } else {
+                normalize_event_key(event["key"].as_str().unwrap_or_default())
+            };
+            format!("{event_type}:{label}")
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    assert_eq!(actual, expected, "event log mismatch: {events:?}");
+}
+
+#[then(expr = "the click event log should contain {string} with {string} equal to true")]
+fn click_event_log_should_contain_true(world: &mut CliWorld, event_type: String, field: String) {
+    let events = click_event_log(world);
+    let event = events
+        .iter()
+        .find(|event| event["type"].as_str() == Some(event_type.as_str()))
+        .unwrap_or_else(|| panic!("missing {event_type} event in log: {events:?}"));
+    assert_eq!(
+        event[&field],
+        JsonValue::Bool(true),
+        "expected {event_type}.{field} to be true in log: {events:?}"
+    );
+}
+
+fn json_pointer(json: &JsonValue, dotted_path: &str) -> JsonValue {
+    dotted_path
+        .split('.')
+        .try_fold(json, |current, segment| current.get(segment))
+        .unwrap_or(&JsonValue::Null)
+        .clone()
+}
+
+fn click_event_log(world: &mut CliWorld) -> Vec<JsonValue> {
+    let capture = run_agentchrome(
+        world,
+        "agentchrome js exec JSON.stringify(window.AGENTCHROME_CLICK_EVENTS)",
+        None,
+    );
+    assert_eq!(
+        capture.exit_code, 0,
+        "failed to read click event log\nstdout: {}\nstderr: {}",
+        capture.stdout, capture.stderr
+    );
+    let outer: JsonValue = serde_json::from_str(capture.stdout.trim())
+        .unwrap_or_else(|e| panic!("js stdout is not JSON: {e}\nstdout: {}", capture.stdout));
+    let result = outer["result"]
+        .as_str()
+        .unwrap_or_else(|| panic!("js stdout missing string result: {}", capture.stdout));
+    serde_json::from_str(result)
+        .unwrap_or_else(|e| panic!("event log result is not JSON: {e}\nresult: {result}"))
+}
+
+fn normalize_event_key(key: &str) -> String {
+    if key == " " {
+        "Space".to_string()
+    } else {
+        key.to_string()
+    }
 }
 
 #[then(expr = "stderr should not contain {string}")]
@@ -5131,6 +5314,7 @@ const INTERACT_TESTABLE_SCENARIOS: &[&str] = &[
     "Double and right flags are mutually exclusive",
     "Interact help displays all subcommands",
     "Click help displays all options",
+    "Duplicate held click keys are rejected",
 ];
 
 /// Wait-until click BDD scenarios that can be tested without a running Chrome instance.

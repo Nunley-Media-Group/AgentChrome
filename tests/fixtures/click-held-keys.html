@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Click Held Keys Fixture</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 32px;
+        min-height: 420px;
+      }
+
+      #target,
+      #pad {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 220px;
+        height: 96px;
+        margin-right: 16px;
+        border: 2px solid #246;
+        background: #eef7ff;
+      }
+
+      #pad {
+        position: absolute;
+        left: 32px;
+        top: 160px;
+      }
+
+      #events {
+        margin-top: 180px;
+        min-height: 180px;
+        padding: 12px;
+        border: 1px solid #bbb;
+        background: #f7f7f7;
+        white-space: pre-wrap;
+      }
+    </style>
+  </head>
+  <body>
+    <button id="target" type="button">Held-key target</button>
+    <div id="pad" role="button" tabindex="0">Coordinate pad</div>
+    <pre id="events">[]</pre>
+    <script>
+      window.AGENTCHROME_CLICK_EVENTS = [];
+
+      function record(event) {
+        window.AGENTCHROME_CLICK_EVENTS.push({
+          type: event.type,
+          key: event.key || null,
+          target: event.target.id || event.target.tagName.toLowerCase(),
+          altKey: event.altKey,
+          ctrlKey: event.ctrlKey,
+          metaKey: event.metaKey,
+          shiftKey: event.shiftKey,
+        });
+        document.getElementById("events").textContent = JSON.stringify(
+          window.AGENTCHROME_CLICK_EVENTS,
+          null,
+          2
+        );
+      }
+
+      for (const type of ["keydown", "keyup"]) {
+        document.addEventListener(type, record, true);
+      }
+
+      for (const target of [document.getElementById("target"), document.getElementById("pad")]) {
+        target.addEventListener("click", record);
+      }
+    </script>
+  </body>
+</html>

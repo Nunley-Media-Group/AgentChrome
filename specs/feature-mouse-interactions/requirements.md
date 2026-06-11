@@ -1,7 +1,7 @@
 # Requirements: Mouse Interactions
 
-**Issues**: #14
-**Date**: 2026-02-13
+**Issues**: #14, #291
+**Date**: 2026-05-26
 **Status**: Draft
 **Author**: Claude (writing-specs)
 
@@ -194,6 +194,35 @@ Targets are identified either by accessibility UID (from `page snapshot`, e.g., 
 **When** I run `agentchrome interact drag s1 s2 --plain`
 **Then** plain text output is returned (e.g., `Dragged s1 to s2`)
 
+### AC23: Hold Shift while clicking an element
+
+**Given** a connected browser session is on a page that records held keys and click event modifier state
+**When** I run `agentchrome interact click s1 --hold Shift`
+**Then** the page observes the click event with `shiftKey` set to `true`
+**And** the page records `Shift` as held during the click
+**And** the AgentChrome command exits successfully with the existing structured click output shape preserved
+
+### AC24: Hold any supported key during coordinate clicks
+
+**Given** a connected browser session is on a page that records keydown, click, and keyup event order at viewport coordinates
+**When** I run `agentchrome interact click-at 100 200 --hold Space --hold Alt`
+**Then** the page records `Space` and `Alt` keydown events before the click
+**And** the click event observes `altKey` set to `true`
+**And** the page records matching keyup events after the click
+
+### AC25: Existing click behavior is preserved when held keys are omitted
+
+**Given** a connected browser session is on a page with normal clickable elements
+**When** I run `agentchrome interact click`, `agentchrome interact click-at`, right-click, double-click, `--wait-until`, and `--include-snapshot` flows without held-key flags
+**Then** their existing output fields, navigation waiting behavior, button behavior, and snapshot behavior remain compatible
+
+### AC26: Invalid or duplicate held keys are rejected
+
+**Given** a user provides an unsupported key name or repeats the same held key on a click command
+**When** AgentChrome parses the command
+**Then** it exits nonzero with a structured validation error
+**And** no browser mouse event is dispatched
+
 ### Generated Gherkin Preview
 
 ```gherkin
@@ -326,6 +355,12 @@ Feature: Mouse Interactions
 | FR10 | Wait for navigation after click if navigation occurs | Must | Similar to navigate command |
 | FR11 | Wait for DOM stability after interactions | Should | Similar to MCP's WaitForHelper |
 | FR12 | JSON, pretty-JSON, and plain text output formats | Must | Consistent with all other commands |
+| FR13 | `--hold <KEY>` on `interact click` — hold any valid AgentChrome key while dispatching an element-targeted click | Must | Reuses the key-name inventory from `interact key` |
+| FR14 | `--hold <KEY>` on `interact click-at` — hold one or more distinct keys while dispatching coordinate clicks, including `--relative-to` coordinates | Must | Multiple `--hold` flags may be supplied |
+| FR15 | Held modifier keys (`Alt`, `Control`, `Meta`, `Shift`) set the matching CDP mouse `modifiers` bitmask during click dispatch | Must | Ensures DOM click handlers observe `altKey`, `ctrlKey`, `metaKey`, and `shiftKey` |
+| FR16 | Invalid or duplicate held-key values fail during argument validation before any browser dispatch | Must | Preserve structured stderr and typed exit-code behavior |
+| FR17 | Existing click/click-at behavior, output fields, wait behavior, and snapshot behavior remain backward-compatible when held keys are omitted | Must | No new output field is required for unmodified clicks |
+| FR18 | Clap help, built-in examples, and BDD coverage document and exercise at least one `--hold <KEY>` click invocation | Should | Supports agent discovery through help, examples, and tests |
 
 ---
 
@@ -370,6 +405,7 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 | --right | Boolean flag | N/A | No |
 | --include-snapshot | Boolean flag | N/A | No |
 | --tab | String | Valid tab ID or index | No (defaults to active tab) |
+| --hold | Repeatable key-name flag | Any key accepted by `interact key`; no duplicates | No |
 
 ### Output Data — `interact click`
 
@@ -433,6 +469,8 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 - Form filling (select dropdown, toggle checkbox) — separate issue (#15)
 - Mouse move without hover semantics (raw `Input.dispatchMouseEvent` with `mouseMoved`)
 - Multi-step interaction sequences (click + wait + click) — users compose commands in scripts
+- Held-key support for drag, mousedown-at, and mouseup-at unless required internally to satisfy modified click behavior
+- Browser-game-specific automation heuristics or gameplay logic
 
 ---
 
@@ -458,6 +496,7 @@ Reference `structure.md` and `product.md` for project-specific design standards.
 | Issue | Date | Summary |
 |-------|------|---------|
 | #14 | 2026-02-13 | Initial feature spec |
+| #291 | 2026-05-26 | Added held-key support for click and click-at commands |
 
 ## Validation Checklist
 

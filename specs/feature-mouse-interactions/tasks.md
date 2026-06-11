@@ -1,8 +1,8 @@
 # Tasks: Mouse Interactions
 
-**Issues**: #14
-**Date**: 2026-02-13
-**Status**: Planning
+**Issues**: #14, #291
+**Date**: 2026-05-26
+**Status**: Implementation complete for #291
 **Author**: Claude (writing-specs)
 
 ---
@@ -15,7 +15,8 @@
 | Backend | 4 | [ ] |
 | Integration | 1 | [ ] |
 | Testing | 2 | [ ] |
-| **Total** | **9** | |
+| Enhancement #291 | 8 | [x] |
+| **Total** | **17** | |
 
 ---
 
@@ -294,6 +295,113 @@ Map `{layer}/` placeholders to actual project paths using `structure.md`.
 
 ---
 
+## Phase 5: Enhancement — Issue #291 Held-Key Clicks
+
+### T012: Add held-key CLI args and help examples
+
+**File(s)**: `src/cli/mod.rs`
+**Type**: Modify
+**Depends**: None
+**Acceptance**:
+- [x] `ClickArgs` includes a repeatable `--hold <KEY>` argument for held keys
+- [x] `ClickAtArgs` includes a repeatable `--hold <KEY>` argument for held keys
+- [x] The held-key argument documents that values use the same key names as `interact key`
+- [x] `interact click --help` includes at least one worked `--hold` example
+- [x] `interact click-at --help` includes at least one worked `--hold` example
+- [x] Existing `--double`, `--right`, `--wait-until`, `--relative-to`, `--compact`, and `--include-snapshot` help remains present
+
+**Notes**: Prefer a canonical `--hold <KEY>` surface because issue #291 requires arbitrary held keys, not only the four DOM modifier keys.
+
+### T013: Add held-key validation and metadata helpers
+
+**File(s)**: `src/interact.rs`
+**Type**: Modify
+**Depends**: T012
+**Acceptance**:
+- [x] Held-key validation accepts any key currently accepted by `interact key`
+- [x] Duplicate held keys return a structured validation error before session setup
+- [x] Invalid held keys return a structured validation error before session setup
+- [x] Helper computes the CDP mouse modifier bitmask from held `Alt`, `Control`, `Meta`, and `Shift`
+- [x] Unit tests cover valid arbitrary keys, real modifier keys, duplicate keys, invalid keys, and bitmask calculation
+
+### T014: Wrap click dispatch in keyDown/click/keyUp lifecycle
+
+**File(s)**: `src/interact.rs`
+**Type**: Modify
+**Depends**: T013
+**Acceptance**:
+- [x] `execute_click` validates held keys before opening or using a browser session
+- [x] `execute_click_at` validates held keys before opening or using a browser session
+- [x] Held keys are pressed in declaration order before the click dispatch
+- [x] Click dispatch includes the derived mouse `modifiers` bitmask on every `mousePressed` and `mouseReleased` payload, including double-click payloads
+- [x] Held keys are released in reverse order after click dispatch
+- [x] Held keys are released in reverse order when click dispatch returns an error, and the original click error remains visible
+- [x] Printable held keys do not synthesize text input as a side effect of the hold
+- [x] Existing unheld click and click-at behavior remains unchanged
+
+### T015: Add built-in examples for held-key clicks
+
+**File(s)**: `src/examples_data.rs`
+**Type**: Modify
+**Depends**: T012
+**Acceptance**:
+- [x] `agentchrome examples interact` includes an element-targeted held-key click example
+- [x] `agentchrome examples interact` includes a coordinate held-key click example or equivalent note
+- [x] Example text uses the canonical `--hold <KEY>` flag
+- [x] Existing interact examples remain intact
+
+### T016: Create deterministic held-click fixture
+
+**File(s)**: `tests/fixtures/click-held-keys.html`
+**Type**: Create
+**Depends**: None
+**Acceptance**:
+- [x] Fixture records keydown events, click event modifier fields, and keyup events in order
+- [x] Fixture exposes a clickable element targetable by both UID/snapshot and CSS selector
+- [x] Fixture exposes a coordinate-click target area
+- [x] Fixture provides an inspectable result element or script state that BDD steps can query with AgentChrome
+- [x] Fixture is deterministic and uses no network dependencies
+
+### T017: Append issue #291 BDD scenarios
+
+**File(s)**: `tests/features/interact.feature`, `specs/feature-mouse-interactions/feature.gherkin`
+**Type**: Modify
+**Depends**: T016
+**Acceptance**:
+- [x] Scenario for `interact click <target> --hold Shift` verifies `shiftKey` and held-key event order
+- [x] Scenario for `interact click-at <x> <y> --hold Space --hold Alt` verifies arbitrary key hold, `altKey`, and keyup cleanup
+- [x] Scenario for unheld click/click-at regression verifies existing output behavior remains compatible
+- [x] Scenario for invalid or duplicate held keys verifies nonzero structured error and no browser event
+- [x] Scenarios are marked or documented as added by issue #291
+
+### T018: Wire BDD and unit tests
+
+**File(s)**: `tests/bdd.rs`, `src/interact.rs`
+**Type**: Modify
+**Depends**: T013, T014, T017
+**Acceptance**:
+- [x] BDD harness can load `tests/fixtures/click-held-keys.html`
+- [x] BDD steps can assert recorded keydown/click/keyup order from the fixture
+- [x] BDD steps can assert DOM click modifier booleans for real modifier keys
+- [x] BDD steps verify invalid or duplicate held-key commands do not mutate fixture state
+- [x] Unit tests cover held-key helper behavior without Chrome
+
+### T019: Verify held-key click behavior
+
+**File(s)**: `specs/feature-mouse-interactions/verification-report.md`
+**Type**: Create
+**Depends**: T014, T015, T018
+**Acceptance**:
+- [x] `cargo build` passes
+- [x] `cargo test --lib` passes
+- [x] Focused BDD scenarios for issue #291 pass or are documented with an explicit environment reason
+- [x] `cargo fmt --check` passes
+- [x] `cargo clippy --all-targets` passes
+- [x] Manual headless Chrome smoke test exercises the fixture with `--hold Shift` and `--hold Space --hold Alt`
+- [x] Verification report records every acceptance criterion result and any residual risk
+
+---
+
 ## Dependency Graph
 
 ```
@@ -311,6 +419,13 @@ T002 (errors) ────┘                                          │
                                                               │
                                                               ▼
                                                     T009 (step defs + unit tests)
+
+Issue #291:
+T012 (held-key CLI args)
+  ├──▶ T013 (held-key helpers) ──▶ T014 (keyDown/click/keyUp lifecycle) ──┬──▶ T018 (BDD/unit wiring) ──▶ T019 (verification)
+  │                                                                       │
+  └──▶ T015 (examples)                                                    │
+T016 (fixture) ──▶ T017 (BDD scenarios) ──────────────────────────────────┘
 ```
 
 ---
@@ -320,6 +435,7 @@ T002 (errors) ────┘                                          │
 | Issue | Date | Summary |
 |-------|------|---------|
 | #14 | 2026-02-13 | Initial feature spec |
+| #291 | 2026-05-26 | Added held-key click implementation plan |
 
 ## Validation Checklist
 

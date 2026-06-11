@@ -474,6 +474,16 @@ pub fn all_examples() -> Vec<CommandGroupSummary> {
                     flags: Some(vec!["--wait-until".into()]),
                 },
                 ExampleEntry {
+                    cmd: "agentchrome interact click s5 --hold Shift".into(),
+                    description: "Hold Shift while clicking an element".into(),
+                    flags: Some(vec!["--hold".into()]),
+                },
+                ExampleEntry {
+                    cmd: "agentchrome interact click-at 100 200 --hold Space --hold Alt".into(),
+                    description: "Hold multiple keys while clicking coordinates".into(),
+                    flags: Some(vec!["--hold".into()]),
+                },
+                ExampleEntry {
                     cmd: "agentchrome interact type \"Hello, world!\"".into(),
                     description: "Type text into the focused element".into(),
                     flags: None,
