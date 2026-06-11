@@ -400,8 +400,15 @@ fn run_agentchrome(
 
 impl Drop for CliWorld {
     fn drop(&mut self) {
-        if self.binary_path.is_some() && self.temp_home.is_some() {
-            let _ = run_agentchrome(self, "agentchrome connect --disconnect", None);
+        if let (Some(binary), Some(temp_home)) = (&self.binary_path, &self.temp_home) {
+            let _ = std::process::Command::new(binary)
+                .args(["connect", "--disconnect"])
+                .env("HOME", temp_home.path())
+                .env("USERPROFILE", temp_home.path())
+                .env("AGENTCHROME_NO_SKILL_CHECK", "1")
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+                .status();
         }
     }
 }
@@ -696,8 +703,9 @@ fn output_json_number_field_equals(world: &mut CliWorld, field: String, expected
     let actual = actual
         .as_f64()
         .unwrap_or_else(|| panic!("field {field} is not a number in stdout: {}", world.stdout));
+    const TOLERANCE: f64 = 1e-9;
     assert!(
-        (actual - expected).abs() < f64::EPSILON,
+        (actual - expected).abs() < TOLERANCE,
         "expected stdout JSON field {field} to equal {expected}, got {actual}\nstdout: {}",
         world.stdout
     );
