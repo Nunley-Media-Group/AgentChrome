@@ -698,12 +698,13 @@ fn output_json_word_field_equals(world: &mut CliWorld, field: String, expected: 
 
 #[then(expr = "the output JSON {string} should be {float}")]
 fn output_json_number_field_equals(world: &mut CliWorld, field: String, expected: f64) {
+    const TOLERANCE: f64 = 1e-9;
+
     let json = stdout_json(world);
     let actual = json_pointer(&json, &field);
     let actual = actual
         .as_f64()
         .unwrap_or_else(|| panic!("field {field} is not a number in stdout: {}", world.stdout));
-    const TOLERANCE: f64 = 1e-9;
     assert!(
         (actual - expected).abs() < TOLERANCE,
         "expected stdout JSON field {field} to equal {expected}, got {actual}\nstdout: {}",
