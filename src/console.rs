@@ -63,6 +63,8 @@ struct StreamMessage {
 /// Normalized console read record from any Runtime event source.
 struct CapturedConsoleRecord {
     sort_timestamp: f64,
+    source_rank: u8,
+    source_sequence: usize,
     message: ConsoleMessage,
     detail: ConsoleMessageDetail,
 }
@@ -73,6 +75,23 @@ impl CapturedConsoleRecord {
         self.detail.id = id;
         self
     }
+}
+
+const CONSOLE_EVENT_SOURCE_RANK: u8 = 0;
+const EXCEPTION_EVENT_SOURCE_RANK: u8 = 1;
+
+fn finalize_read_records(mut records: Vec<CapturedConsoleRecord>) -> Vec<CapturedConsoleRecord> {
+    records.sort_by(|a, b| {
+        a.sort_timestamp
+            .total_cmp(&b.sort_timestamp)
+            .then_with(|| a.source_rank.cmp(&b.source_rank))
+            .then_with(|| a.source_sequence.cmp(&b.source_sequence))
+    });
+    records
+        .into_iter()
+        .enumerate()
+        .map(|(id, record)| record.with_id(id))
+        .collect()
 }
 
 // =============================================================================
@@ -302,6 +321,7 @@ fn parse_console_event_detail(
 fn parse_console_record(
     event_params: &serde_json::Value,
     id: usize,
+    source_sequence: usize,
 ) -> Option<CapturedConsoleRecord> {
     let message = parse_console_event(event_params, id)?;
     let detail = parse_console_event_detail(event_params, id)?;
@@ -309,6 +329,8 @@ fn parse_console_record(
 
     Some(CapturedConsoleRecord {
         sort_timestamp,
+        source_rank: CONSOLE_EVENT_SOURCE_RANK,
+        source_sequence,
         message,
         detail,
     })
@@ -323,7 +345,9 @@ fn exception_text(exception_details: &serde_json::Value) -> String {
 
     exception["description"]
         .as_str()
+        .filter(|text| !text.is_empty())
         .or_else(|| exception_details["text"].as_str())
+        .filter(|text| !text.is_empty())
         .map(str::to_string)
         .or_else(|| {
             exception.get("value").and_then(|value| {
@@ -370,6 +394,7 @@ fn exception_source(exception_details: &serde_json::Value) -> (String, u64, u64)
 fn parse_exception_record(
     event_params: &serde_json::Value,
     id: usize,
+    source_sequence: usize,
 ) -> Option<CapturedConsoleRecord> {
     let exception_details = &event_params["exceptionDetails"];
     if exception_details.is_null() {
@@ -411,6 +436,8 @@ fn parse_exception_record(
 
     Some(CapturedConsoleRecord {
         sort_timestamp,
+        source_rank: EXCEPTION_EVENT_SOURCE_RANK,
+        source_sequence,
         message,
         detail,
     })
@@ -536,6 +563,8 @@ async fn collect_read_records(
     let mut idle_deadline = tokio::time::Instant::now() + Duration::from_millis(IDLE_DRAIN_MS);
     let mut console_open = true;
     let mut exception_open = true;
+    let mut console_sequence = 0;
+    let mut exception_sequence = 0;
 
     loop {
         if !console_open && !exception_open {
@@ -552,7 +581,11 @@ async fn collect_read_records(
             event = console_rx.recv(), if console_open => {
                 match event {
                     Some(ev) => {
-                        if let Some(record) = parse_console_record(&ev.params, records.len()) {
+                        let source_sequence = console_sequence;
+                        console_sequence += 1;
+                        if let Some(record) =
+                            parse_console_record(&ev.params, records.len(), source_sequence)
+                        {
                             records.push(record);
                         }
                         // Reset idle timer on each received event
@@ -565,7 +598,11 @@ async fn collect_read_records(
             event = exception_rx.recv(), if exception_open => {
                 match event {
                     Some(ev) => {
-                        if let Some(record) = parse_exception_record(&ev.params, records.len()) {
+                        let source_sequence = exception_sequence;
+                        exception_sequence += 1;
+                        if let Some(record) =
+                            parse_exception_record(&ev.params, records.len(), source_sequence)
+                        {
                             records.push(record);
                         }
                         // Reset idle timer on each received event
@@ -579,14 +616,7 @@ async fn collect_read_records(
         }
     }
 
-    records.sort_by(|a, b| a.sort_timestamp.total_cmp(&b.sort_timestamp));
-    let records: Vec<CapturedConsoleRecord> = records
-        .into_iter()
-        .enumerate()
-        .map(|(id, record)| record.with_id(id))
-        .collect();
-
-    Ok(records)
+    Ok(finalize_read_records(records))
 }
 
 async fn execute_read(global: &GlobalOpts, args: &ConsoleReadArgs) -> Result<(), AppError> {
@@ -1172,7 +1202,7 @@ mod tests {
             }
         });
 
-        let record = parse_exception_record(&params, 2).unwrap();
+        let record = parse_exception_record(&params, 2, 0).unwrap();
         assert_eq!(record.message.id, 2);
         assert_eq!(record.message.msg_type, "error");
         assert!(record.message.text.contains("TypeError"));
@@ -1205,7 +1235,7 @@ mod tests {
             }
         });
 
-        let record = parse_exception_record(&params, 0).unwrap();
+        let record = parse_exception_record(&params, 0, 0).unwrap();
         assert_eq!(
             record.message.text,
             "Uncaught ReferenceError: missing is not defined"
@@ -1232,21 +1262,78 @@ mod tests {
             }
         });
 
-        let mut records = vec![
-            parse_console_record(&console_params, 0).unwrap(),
-            parse_exception_record(&exception_params, 1).unwrap(),
+        let records = vec![
+            parse_console_record(&console_params, 0, 0).unwrap(),
+            parse_exception_record(&exception_params, 1, 0).unwrap(),
         ];
-        records.sort_by(|a, b| a.sort_timestamp.total_cmp(&b.sort_timestamp));
-        let records: Vec<CapturedConsoleRecord> = records
-            .into_iter()
-            .enumerate()
-            .map(|(id, record)| record.with_id(id))
-            .collect();
+        let records = finalize_read_records(records);
 
         assert_eq!(records[0].message.id, 0);
         assert_eq!(records[0].message.text, "Uncaught TypeError: boom");
         assert_eq!(records[1].message.id, 1);
         assert_eq!(records[1].message.text, "explicit");
+    }
+
+    #[test]
+    fn parse_exception_record_skips_empty_text_fields() {
+        let params = serde_json::json!({
+            "timestamp": 1_707_912_000_000.0_f64,
+            "exceptionDetails": {
+                "text": "Uncaught TypeError: fallback text",
+                "exception": {
+                    "type": "object",
+                    "subtype": "error",
+                    "description": ""
+                },
+                "stackTrace": {"callFrames": []}
+            }
+        });
+
+        let record = parse_exception_record(&params, 0, 0).unwrap();
+        assert_eq!(record.message.text, "Uncaught TypeError: fallback text");
+        assert_eq!(record.detail.text, "Uncaught TypeError: fallback text");
+    }
+
+    #[test]
+    fn merged_records_use_deterministic_equal_timestamp_tie_breakers() {
+        let first_console = serde_json::json!({
+            "type": "error",
+            "args": [{"type": "string", "value": "first console"}],
+            "timestamp": 1_707_912_000_000.0_f64,
+            "stackTrace": {"callFrames": []}
+        });
+        let second_console = serde_json::json!({
+            "type": "error",
+            "args": [{"type": "string", "value": "second console"}],
+            "timestamp": 1_707_912_000_000.0_f64,
+            "stackTrace": {"callFrames": []}
+        });
+        let exception = serde_json::json!({
+            "timestamp": 1_707_912_000_000.0_f64,
+            "exceptionDetails": {
+                "text": "Uncaught TypeError: same timestamp",
+                "exception": {"type": "object", "subtype": "error"},
+                "stackTrace": {"callFrames": []}
+            }
+        });
+
+        let records = finalize_read_records(vec![
+            parse_exception_record(&exception, 0, 0).unwrap(),
+            parse_console_record(&second_console, 1, 1).unwrap(),
+            parse_console_record(&first_console, 2, 0).unwrap(),
+        ]);
+
+        assert_eq!(records[0].message.id, 0);
+        assert_eq!(records[0].message.text, "first console");
+        assert_eq!(records[0].detail.text, "first console");
+        assert_eq!(records[1].message.id, 1);
+        assert_eq!(records[1].message.text, "second console");
+        assert_eq!(records[2].message.id, 2);
+        assert_eq!(
+            records[2].message.text,
+            "Uncaught TypeError: same timestamp"
+        );
+        assert_eq!(records[2].detail.text, "Uncaught TypeError: same timestamp");
     }
 
     // =========================================================================

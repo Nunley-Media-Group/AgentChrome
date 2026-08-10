@@ -1,6 +1,7 @@
 # Verification Report: console read misses uncaught page exceptions
 
-**Date**: 2026-06-10
+**Date**: 2026-06-10 (original verification checkpoint)
+**Delivery revalidation**: 2026-08-09
 **Issue**: #290
 **Reviewer**: Codex
 **Scope**: Defect-fix verification against spec
@@ -44,7 +45,7 @@
 | T001 | Normalize Runtime exception events into console read records | Complete | Exception records are converted into existing list and detail contracts. |
 | T002 | Drain console API and exception events together | Complete | Both Runtime event streams are subscribed before `Runtime.enable`, drained, sorted, and re-id'd before filters. |
 | T003 | Add regression tests and fixture coverage | Complete | Added unit tests, feature file, fixture, and BDD registration. |
-| T004 | Verify no regressions | Complete | Rust gates and real-browser smoke passed; cucumber focused invocation produced repeated Chrome-required skip summaries under the existing harness pattern. |
+| T004 | Verify no regressions | Complete | Rust gates and real-browser smoke passed; cucumber-focused invocation produced repeated Chrome-required skip summaries under the existing harness pattern. |
 
 ---
 
@@ -80,8 +81,8 @@ Blast-radius answers:
 Coverage summary:
 
 - Feature files: 1 defect regression feature, 3 scenarios, all tagged `@regression @requires-chrome`.
-- Unit tests: `cargo test --bin agentchrome console -- --nocapture` passed 47 tests.
-- Library tests: `cargo test --lib 2>&1` passed 256 tests.
+- Unit tests: `cargo test --bin agentchrome console -- --nocapture` passed 49 tests.
+- Library tests: `cargo test --lib 2>&1` passed 257 tests.
 - BDD execution: `cargo test --test bdd -- --input tests/features/290-fix-console-read-missing-uncaught-page-exceptions.feature --tags '@requires-chrome' --fail-fast` produced repeated Chrome-required skip summaries under the existing multi-runner harness and was stopped after confirming the behavior. This matches nearby Chrome-required registrations that document scenarios and rely on unit plus smoke verification.
 - Real-browser smoke: passed against a freshly built debug binary and headless Chrome.
 
@@ -92,7 +93,7 @@ Coverage summary:
 | Gate | Status | Evidence |
 |------|--------|----------|
 | Debug Build | Pass | `cargo build 2>&1` exited 0. |
-| Unit Tests | Pass | `cargo test --lib 2>&1` exited 0; 256 passed. |
+| Unit Tests | Pass | `cargo test --lib 2>&1` exited 0; 257 passed. |
 | Clippy | Pass | `cargo clippy --all-targets 2>&1` exited 0. |
 | Format Check | Pass | `cargo fmt --check 2>&1` exited 0. |
 | Feature Exercise | Pass | Headless Chrome smoke returned explicit console error id `2`, uncaught `TypeError` id `3`, warn-only output, limit output, detail lookup, and clean disconnect. |
