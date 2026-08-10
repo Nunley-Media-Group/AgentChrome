@@ -60,6 +60,40 @@ struct StreamMessage {
     timestamp: String,
 }
 
+/// Normalized console read record from any Runtime event source.
+struct CapturedConsoleRecord {
+    sort_timestamp: f64,
+    source_rank: u8,
+    source_sequence: usize,
+    message: ConsoleMessage,
+    detail: ConsoleMessageDetail,
+}
+
+impl CapturedConsoleRecord {
+    fn with_id(mut self, id: usize) -> Self {
+        self.message.id = id;
+        self.detail.id = id;
+        self
+    }
+}
+
+const CONSOLE_EVENT_SOURCE_RANK: u8 = 0;
+const EXCEPTION_EVENT_SOURCE_RANK: u8 = 1;
+
+fn finalize_read_records(mut records: Vec<CapturedConsoleRecord>) -> Vec<CapturedConsoleRecord> {
+    records.sort_by(|a, b| {
+        a.sort_timestamp
+            .total_cmp(&b.sort_timestamp)
+            .then_with(|| a.source_rank.cmp(&b.source_rank))
+            .then_with(|| a.source_sequence.cmp(&b.source_sequence))
+    });
+    records
+        .into_iter()
+        .enumerate()
+        .map(|(id, record)| record.with_id(id))
+        .collect()
+}
+
 // =============================================================================
 // Output formatting
 // =============================================================================
@@ -283,6 +317,132 @@ fn parse_console_event_detail(
     })
 }
 
+/// Parse a `Runtime.consoleAPICalled` event into the normalized read record.
+fn parse_console_record(
+    event_params: &serde_json::Value,
+    id: usize,
+    source_sequence: usize,
+) -> Option<CapturedConsoleRecord> {
+    let message = parse_console_event(event_params, id)?;
+    let detail = parse_console_event_detail(event_params, id)?;
+    let sort_timestamp = event_params["timestamp"].as_f64().unwrap_or(0.0);
+
+    Some(CapturedConsoleRecord {
+        sort_timestamp,
+        source_rank: CONSOLE_EVENT_SOURCE_RANK,
+        source_sequence,
+        message,
+        detail,
+    })
+}
+
+fn first_stack_frame(stack_trace: &serde_json::Value) -> Option<&serde_json::Value> {
+    stack_trace["callFrames"].as_array()?.first()
+}
+
+fn exception_text(exception_details: &serde_json::Value) -> String {
+    let exception = &exception_details["exception"];
+
+    exception["description"]
+        .as_str()
+        .filter(|text| !text.is_empty())
+        .or_else(|| exception_details["text"].as_str())
+        .filter(|text| !text.is_empty())
+        .map(str::to_string)
+        .or_else(|| {
+            exception.get("value").and_then(|value| {
+                if value.is_null() {
+                    None
+                } else if let Some(text) = value.as_str() {
+                    Some(text.to_string())
+                } else {
+                    serde_json::to_string(value).ok()
+                }
+            })
+        })
+        .unwrap_or_else(|| "Uncaught exception".to_string())
+}
+
+fn exception_source(exception_details: &serde_json::Value) -> (String, u64, u64) {
+    let stack_trace = &exception_details["stackTrace"];
+    let frame = first_stack_frame(stack_trace);
+
+    let url = exception_details["url"]
+        .as_str()
+        .filter(|url| !url.is_empty())
+        .map(str::to_string)
+        .or_else(|| {
+            frame
+                .and_then(|f| f["url"].as_str())
+                .filter(|url| !url.is_empty())
+                .map(str::to_string)
+        })
+        .unwrap_or_default();
+    let line = exception_details["lineNumber"]
+        .as_u64()
+        .or_else(|| frame.and_then(|f| f["lineNumber"].as_u64()))
+        .unwrap_or(0);
+    let column = exception_details["columnNumber"]
+        .as_u64()
+        .or_else(|| frame.and_then(|f| f["columnNumber"].as_u64()))
+        .unwrap_or(0);
+
+    (url, line, column)
+}
+
+/// Parse a `Runtime.exceptionThrown` event into the normalized read record.
+fn parse_exception_record(
+    event_params: &serde_json::Value,
+    id: usize,
+    source_sequence: usize,
+) -> Option<CapturedConsoleRecord> {
+    let exception_details = &event_params["exceptionDetails"];
+    if exception_details.is_null() {
+        return None;
+    }
+
+    let sort_timestamp = event_params["timestamp"].as_f64().unwrap_or(0.0);
+    let timestamp = event_params["timestamp"]
+        .as_f64()
+        .map_or_else(String::new, timestamp_to_iso);
+    let text = exception_text(exception_details);
+    let (url, line, column) = exception_source(exception_details);
+    let stack_trace = extract_stack_trace(&exception_details["stackTrace"], MAX_STACK_FRAMES);
+    let args = exception_details
+        .get("exception")
+        .filter(|exception| !exception.is_null())
+        .map_or_else(Vec::new, |exception| vec![exception.clone()]);
+
+    let detail = ConsoleMessageDetail {
+        id,
+        msg_type: "error".to_string(),
+        text,
+        timestamp,
+        url,
+        line,
+        column,
+        args,
+        stack_trace,
+    };
+    let message = ConsoleMessage {
+        id,
+        msg_type: detail.msg_type.clone(),
+        text: detail.text.clone(),
+        timestamp: detail.timestamp.clone(),
+        url: detail.url.clone(),
+        line,
+        column,
+    };
+
+    Some(CapturedConsoleRecord {
+        sort_timestamp,
+        source_rank: EXCEPTION_EVENT_SOURCE_RANK,
+        source_sequence,
+        message,
+        detail,
+    })
+}
+
 /// Resolve `--type` / `--errors-only` into an optional type filter list.
 fn resolve_type_filter(type_arg: Option<&str>, errors_only: bool) -> Option<Vec<String>> {
     if errors_only {
@@ -371,14 +531,12 @@ const DEFAULT_DRAIN_TIMEOUT_MS: u64 = 5000;
 /// Idle timeout — no event within this window means drain is complete (ms).
 const IDLE_DRAIN_MS: u64 = 200;
 
-async fn execute_read(global: &GlobalOpts, args: &ConsoleReadArgs) -> Result<(), AppError> {
-    let (_client, mut managed) = setup_session(global).await?;
-
-    let total_timeout = Duration::from_millis(global.timeout.unwrap_or(DEFAULT_DRAIN_TIMEOUT_MS));
-
-    // Subscribe to console events BEFORE enabling Runtime domain.
-    // CDP replays buffered Runtime.consoleAPICalled events when Runtime.enable
-    // is called; subscribing first ensures we capture the replay.
+async fn collect_read_records(
+    managed: &mut agentchrome::connection::ManagedSession,
+    total_timeout: Duration,
+) -> Result<Vec<CapturedConsoleRecord>, AppError> {
+    // Subscribe to Runtime events BEFORE enabling the domain. CDP replays buffered
+    // events when Runtime.enable is called, so listeners must already be active.
     let mut console_rx = managed
         .subscribe("Runtime.consoleAPICalled")
         .await
@@ -387,16 +545,32 @@ async fn execute_read(global: &GlobalOpts, args: &ConsoleReadArgs) -> Result<(),
             code: ExitCode::GeneralError,
             custom_json: None,
         })?;
+    let mut exception_rx = managed
+        .subscribe("Runtime.exceptionThrown")
+        .await
+        .map_err(|e| AppError {
+            message: format!("Failed to subscribe to exception events: {e}"),
+            code: ExitCode::GeneralError,
+            custom_json: None,
+        })?;
 
     // Enable Runtime domain — triggers CDP replay buffer drain
     managed.ensure_domain("Runtime").await?;
 
     // Drain replayed events until idle timeout or absolute deadline
-    let mut events: Vec<serde_json::Value> = Vec::new();
+    let mut records: Vec<CapturedConsoleRecord> = Vec::new();
     let absolute_deadline = tokio::time::Instant::now() + total_timeout;
     let mut idle_deadline = tokio::time::Instant::now() + Duration::from_millis(IDLE_DRAIN_MS);
+    let mut console_open = true;
+    let mut exception_open = true;
+    let mut console_sequence = 0;
+    let mut exception_sequence = 0;
 
     loop {
+        if !console_open && !exception_open {
+            break;
+        }
+
         let effective_deadline = idle_deadline.min(absolute_deadline);
         let remaining = effective_deadline.saturating_duration_since(tokio::time::Instant::now());
         if remaining.is_zero() {
@@ -404,50 +578,77 @@ async fn execute_read(global: &GlobalOpts, args: &ConsoleReadArgs) -> Result<(),
         }
 
         tokio::select! {
-            event = console_rx.recv() => {
+            event = console_rx.recv(), if console_open => {
                 match event {
                     Some(ev) => {
-                        events.push(ev.params);
+                        let source_sequence = console_sequence;
+                        console_sequence += 1;
+                        if let Some(record) =
+                            parse_console_record(&ev.params, records.len(), source_sequence)
+                        {
+                            records.push(record);
+                        }
                         // Reset idle timer on each received event
                         idle_deadline = tokio::time::Instant::now()
                             + Duration::from_millis(IDLE_DRAIN_MS);
                     }
-                    None => break,
+                    None => console_open = false,
+                }
+            }
+            event = exception_rx.recv(), if exception_open => {
+                match event {
+                    Some(ev) => {
+                        let source_sequence = exception_sequence;
+                        exception_sequence += 1;
+                        if let Some(record) =
+                            parse_exception_record(&ev.params, records.len(), source_sequence)
+                        {
+                            records.push(record);
+                        }
+                        // Reset idle timer on each received event
+                        idle_deadline = tokio::time::Instant::now()
+                            + Duration::from_millis(IDLE_DRAIN_MS);
+                    }
+                    None => exception_open = false,
                 }
             }
             () = tokio::time::sleep(remaining) => break,
         }
     }
 
+    Ok(finalize_read_records(records))
+}
+
+async fn execute_read(global: &GlobalOpts, args: &ConsoleReadArgs) -> Result<(), AppError> {
+    let (_client, mut managed) = setup_session(global).await?;
+
+    let total_timeout = Duration::from_millis(global.timeout.unwrap_or(DEFAULT_DRAIN_TIMEOUT_MS));
+    let records = collect_read_records(&mut managed, total_timeout).await?;
+
     // Handle detail mode (MSG_ID provided)
     if let Some(msg_id) = args.msg_id {
         #[allow(clippy::cast_possible_truncation)]
         let id = msg_id as usize;
-        if id >= events.len() {
+        let Some(record) = records.get(id) else {
             return Err(AppError {
                 message: format!("Message ID {id} not found"),
                 code: ExitCode::GeneralError,
                 custom_json: None,
             });
-        }
-        let detail = parse_console_event_detail(&events[id], id).ok_or_else(|| AppError {
-            message: format!("Failed to parse message ID {id}"),
-            code: ExitCode::GeneralError,
-            custom_json: None,
-        })?;
+        };
+        let detail = &record.detail;
 
         if global.output.plain {
-            print_detail_plain(&detail);
+            print_detail_plain(detail);
             return Ok(());
         }
-        return print_output(&detail, &global.output);
+        return print_output(detail, &global.output);
     }
 
-    // List mode: parse all events into ConsoleMessages
-    let messages: Vec<ConsoleMessage> = events
+    // List mode: parse all records into ConsoleMessages
+    let messages: Vec<ConsoleMessage> = records
         .iter()
-        .enumerate()
-        .filter_map(|(i, params)| parse_console_event(params, i))
+        .map(|record| record.message.clone())
         .collect();
 
     // Apply type filter
@@ -974,6 +1175,165 @@ mod tests {
         });
         let msg = parse_console_event(&params, 0).unwrap();
         assert_eq!(msg.msg_type, "warn");
+    }
+
+    #[test]
+    fn parse_exception_record_uses_description_and_source_fields() {
+        let params = serde_json::json!({
+            "timestamp": 1_707_912_000_000.0_f64,
+            "exceptionDetails": {
+                "text": "Uncaught",
+                "url": "https://example.com/app.js",
+                "lineNumber": 42,
+                "columnNumber": 7,
+                "exception": {
+                    "type": "object",
+                    "subtype": "error",
+                    "description": "TypeError: Cannot read properties of null (reading 'addEventListener')"
+                },
+                "stackTrace": {
+                    "callFrames": [{
+                        "url": "https://example.com/app.js",
+                        "lineNumber": 42,
+                        "columnNumber": 7,
+                        "functionName": "boot"
+                    }]
+                }
+            }
+        });
+
+        let record = parse_exception_record(&params, 2, 0).unwrap();
+        assert_eq!(record.message.id, 2);
+        assert_eq!(record.message.msg_type, "error");
+        assert!(record.message.text.contains("TypeError"));
+        assert_eq!(record.message.url, "https://example.com/app.js");
+        assert_eq!(record.message.line, 42);
+        assert_eq!(record.message.column, 7);
+        assert_eq!(record.detail.stack_trace.len(), 1);
+        assert_eq!(record.detail.stack_trace[0].function_name, "boot");
+        assert_eq!(record.detail.args.len(), 1);
+    }
+
+    #[test]
+    fn parse_exception_record_falls_back_to_stack_source() {
+        let params = serde_json::json!({
+            "timestamp": 1_707_912_000_000.0_f64,
+            "exceptionDetails": {
+                "text": "Uncaught ReferenceError: missing is not defined",
+                "exception": {
+                    "type": "object",
+                    "subtype": "error"
+                },
+                "stackTrace": {
+                    "callFrames": [{
+                        "url": "https://example.com/fallback.js",
+                        "lineNumber": 9,
+                        "columnNumber": 3,
+                        "functionName": ""
+                    }]
+                }
+            }
+        });
+
+        let record = parse_exception_record(&params, 0, 0).unwrap();
+        assert_eq!(
+            record.message.text,
+            "Uncaught ReferenceError: missing is not defined"
+        );
+        assert_eq!(record.message.url, "https://example.com/fallback.js");
+        assert_eq!(record.message.line, 9);
+        assert_eq!(record.message.column, 3);
+    }
+
+    #[test]
+    fn merged_records_sort_then_reassign_ids() {
+        let console_params = serde_json::json!({
+            "type": "error",
+            "args": [{"type": "string", "value": "explicit"}],
+            "timestamp": 1_707_912_000_200.0_f64,
+            "stackTrace": {"callFrames": []}
+        });
+        let exception_params = serde_json::json!({
+            "timestamp": 1_707_912_000_100.0_f64,
+            "exceptionDetails": {
+                "text": "Uncaught TypeError: boom",
+                "exception": {"type": "object", "subtype": "error"},
+                "stackTrace": {"callFrames": []}
+            }
+        });
+
+        let records = vec![
+            parse_console_record(&console_params, 0, 0).unwrap(),
+            parse_exception_record(&exception_params, 1, 0).unwrap(),
+        ];
+        let records = finalize_read_records(records);
+
+        assert_eq!(records[0].message.id, 0);
+        assert_eq!(records[0].message.text, "Uncaught TypeError: boom");
+        assert_eq!(records[1].message.id, 1);
+        assert_eq!(records[1].message.text, "explicit");
+    }
+
+    #[test]
+    fn parse_exception_record_skips_empty_text_fields() {
+        let params = serde_json::json!({
+            "timestamp": 1_707_912_000_000.0_f64,
+            "exceptionDetails": {
+                "text": "Uncaught TypeError: fallback text",
+                "exception": {
+                    "type": "object",
+                    "subtype": "error",
+                    "description": ""
+                },
+                "stackTrace": {"callFrames": []}
+            }
+        });
+
+        let record = parse_exception_record(&params, 0, 0).unwrap();
+        assert_eq!(record.message.text, "Uncaught TypeError: fallback text");
+        assert_eq!(record.detail.text, "Uncaught TypeError: fallback text");
+    }
+
+    #[test]
+    fn merged_records_use_deterministic_equal_timestamp_tie_breakers() {
+        let first_console = serde_json::json!({
+            "type": "error",
+            "args": [{"type": "string", "value": "first console"}],
+            "timestamp": 1_707_912_000_000.0_f64,
+            "stackTrace": {"callFrames": []}
+        });
+        let second_console = serde_json::json!({
+            "type": "error",
+            "args": [{"type": "string", "value": "second console"}],
+            "timestamp": 1_707_912_000_000.0_f64,
+            "stackTrace": {"callFrames": []}
+        });
+        let exception = serde_json::json!({
+            "timestamp": 1_707_912_000_000.0_f64,
+            "exceptionDetails": {
+                "text": "Uncaught TypeError: same timestamp",
+                "exception": {"type": "object", "subtype": "error"},
+                "stackTrace": {"callFrames": []}
+            }
+        });
+
+        let records = finalize_read_records(vec![
+            parse_exception_record(&exception, 0, 0).unwrap(),
+            parse_console_record(&second_console, 1, 1).unwrap(),
+            parse_console_record(&first_console, 2, 0).unwrap(),
+        ]);
+
+        assert_eq!(records[0].message.id, 0);
+        assert_eq!(records[0].message.text, "first console");
+        assert_eq!(records[0].detail.text, "first console");
+        assert_eq!(records[1].message.id, 1);
+        assert_eq!(records[1].message.text, "second console");
+        assert_eq!(records[2].message.id, 2);
+        assert_eq!(
+            records[2].message.text,
+            "Uncaught TypeError: same timestamp"
+        );
+        assert_eq!(records[2].detail.text, "Uncaught TypeError: same timestamp");
     }
 
     // =========================================================================

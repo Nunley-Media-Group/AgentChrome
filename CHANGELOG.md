@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.63.0] - 2026-08-09
+
+### Fixed
+
+- Capture uncaught page exceptions from `Runtime.exceptionThrown` in `console read` while preserving structured filters, pagination, detail lookup, and existing console behavior. (#290)
+
 ## [1.62.0] - 2026-04-28
 
 ### Fixed
